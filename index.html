@@ -1041,9 +1041,9 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       "<rect x='-8' y='-16' width='16' height='20' rx='7' fill='#10131a' stroke='" + dk + "' stroke-width='1.4'/><rect x='-5.5' y='-13' width='11' height='3.2' rx='1.6' fill='#8a93a3'/><rect x='-5' y='-4' width='10' height='6' rx='3' fill='#232a36'/>";
     if (sp && SPLOGO[sp]) o += "<rect x='-12.5' y='6' width='25' height='18' rx='3.5' fill='#fff' stroke='" + dk + "' stroke-width='1.1'/><image href='sponsors/" + SPLOGO[sp] + ".png' x='-11' y='7.5' width='22' height='15' preserveAspectRatio='xMidYMid meet'/>";
     if (showTeam && team) {
-      var tt = team.length > 16 ? team.slice(0, 15) + "…" : team, tl = Math.min(tt.length * 3.1, 40);
-      o += "<text transform='translate(-15.6 22) rotate(-90)' font-size='4.6' fill='#fff' stroke='" + dk + "' stroke-width='.6' paint-order='stroke' textLength='" + tl.toFixed(1) + "' lengthAdjust='spacingAndGlyphs' style='font-family: var(--font-label); font-weight: 700'>" + esc(tt) + "</text>" +
-        "<text transform='translate(15.6 -18) rotate(90)' font-size='4.6' fill='#fff' stroke='" + dk + "' stroke-width='.6' paint-order='stroke' textLength='" + tl.toFixed(1) + "' lengthAdjust='spacingAndGlyphs' style='font-family: var(--font-label); font-weight: 700'>" + esc(tt) + "</text>";
+      var tt = team.length > 18 ? team.slice(0, 17) + "\u2026" : team, fl = Math.min(tt.length * 3.0, 40), rl = Math.min(tt.length * 2.6, 34);
+      o += "<text x='0' y='-35.9' text-anchor='middle' font-size='4.8' fill='#fff' textLength='" + fl.toFixed(1) + "' lengthAdjust='spacingAndGlyphs' style='font-family: var(--font-label); font-weight: 700'>" + esc(tt) + "</text>" +
+        "<text x='0' y='35.4' text-anchor='middle' font-size='4.2' fill='#fff' textLength='" + rl.toFixed(1) + "' lengthAdjust='spacingAndGlyphs' style='font-family: var(--font-label); font-weight: 700'>" + esc(tt) + "</text>";
     }
     return o;
   }
@@ -1114,7 +1114,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       var nm = r.pname.length > 7 ? r.pname.slice(0, 6) + "…" : r.pname;
       var lab = (i2 + 1) + " " + nm.toUpperCase() + (me ? " •" : ""), lw = Math.round(lab.length * 5.4 + 12);
       o += "<g transform='translate(" + cx.toFixed(1) + " " + yy.toFixed(1) + ") scale(" + sc.toFixed(3) + ")'><g class='kg' style='--dy:" + Math.round(START + 24 - yy) + "px;--d:" + (i2 * 0.06).toFixed(2) + "s'>" +
-        (me ? "<ellipse cx='0' cy='30' rx='36' ry='12' fill='none' stroke='#ffd23f' stroke-width='3.5'/>" : "") + kartBody(col, duel.lv[r.pname], duel.sp[r.pname], null, "t" + i2, false) +
+        (me ? "<ellipse cx='0' cy='30' rx='36' ry='12' fill='none' stroke='#ffd23f' stroke-width='3.5'/>" : "") + kartBody(col, duel.lv[r.pname], duel.sp[r.pname], duel.team[r.pname], "t" + i2, true) +
         "<circle cx='30' cy='-30' r='11' fill='#ffd23f' stroke='#0b1a2e' stroke-width='2'/><text x='30' y='-26' text-anchor='middle' font-size='" + (String(r.pts).length > 2 ? 9 : 11) + "' fill='#0b1a2e' style='font-family: var(--font-display)'>" + r.pts + "</text>" +
         "<rect x='" + (-lw / 2) + "' y='41' width='" + lw + "' height='15' rx='7.5' fill='" + (me ? "#ffd23f" : "#ffffff") + "' stroke='#0b1a2e' stroke-width='1.6'/>" +
         "<text x='0' y='51.8' text-anchor='middle' font-size='9' fill='#0b1a2e' style='font-family: var(--font-label); font-weight: 600'>" + esc(lab) + "</text>" + teamPill(r.pname) +
