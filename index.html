@@ -292,7 +292,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .prow button.danger { background: var(--bad); color: #fff; }
 
 /* Scambi ufficiali / proposte oscene */
-.tkinds { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 4px 12px 0; }
+.tkinds { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 0 4px 12px 0; }
 .tkinds button { font-family: var(--font-display); font-weight: 400; font-size: .72rem; text-transform: uppercase; padding: 11px 4px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 2px 2px 0 var(--shade); }
 .tkinds button[aria-pressed=true] { background: var(--giallo); color: var(--giallo-ink); }
 .tr-who { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: var(--font-display); font-size: 1rem; }
@@ -1206,7 +1206,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 
   /* ---------- scambi ufficiali / proposte oscene ---------- */
   var tr = { kind: "ufficiale", list: null, edit: null, del: null, busy: false, open: {} };
-  var TR_L = { ufficiale: "Scambi ufficiali", oscena: "Proposte oscene" };
+  var TR_L = { ufficiale: "Scambi ufficiali", oscena: "Proposte oscene", comitato: "&#9878; Comitato" };
+  function kindsBar() { return "<div class='tkinds'>" + ["ufficiale", "oscena", "comitato"].map(function (k) { return "<button type='button' data-tk='" + k + "' aria-pressed='" + (tr.kind === k) + "'>" + TR_L[k] + "</button>"; }).join("") + "</div>"; }
   function trUrl(t) { return SB + "/storage/v1/object/public/ble-gems/" + t.path; }
   function trRate(t) {
     if (t.status !== "done") return "<p class='tr-pend'>Il voto si apre dopo la trascrizione (ogni sera).</p>";
@@ -1262,7 +1263,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function drawTrades() {
     var h = "<h2 class='gold-h'>Scambi</h2><p class='gold-sub'>Il mercato del gruppo: carica lo screenshot, poi si vota quanto conviene a uno o all'altro.</p>" +
       "<label class='gform' style='padding:0;margin:0 4px 12px 0'>Il tuo nickname al fantacalcio<span class='adm-row'><input type='text' id='myFanta' maxlength='40' placeholder='Es. Stolto Ceruleo' value='" + esc(state.fanta || "") + "'><button type='button' class='wa' id='myFantaBtn' style='background:var(--giallo);color:var(--giallo-ink)'>Salva</button></span></label>" +
-      "<div class='tkinds'>" + ["ufficiale", "oscena"].map(function (k) { return "<button type='button' data-tk='" + k + "' aria-pressed='" + (tr.kind === k) + "'>" + TR_L[k] + "</button>"; }).join("") + "</div>" +
+      kindsBar() +
       "<details class='gadd' id='trAdd'><summary>+ Carica uno screenshot</summary><form class='gform' id='trForm'>" +
       "<label>Screenshot<input type='file' id='trFile' accept='image/*' required></label>" +
       "<p class='gmeta'>Verr&agrave; salvato in &laquo;" + TR_L[tr.kind] + "&raquo;. Partecipanti e giocatori li trascrivo io ogni sera, poi si apre il voto.</p>" +
@@ -1272,9 +1273,79 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function renderTrades() {
     if (!tr.list) $("tradePane").innerHTML = "<p class='empty'>Carico il mercato&hellip;</p>";
     var load = rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; });
+    if (tr.kind === "comitato") { load.then(loadCommittee).catch(function (err) { $("tradePane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; }); return; }
     load.then(function () { return rpc("ble_list_trades", { p_name: state.me.name, p_pin: state.me.pin, p_kind: tr.kind }); })
       .then(function (l) { tr.list = l; if (!$("trList")) drawTrades(); else drawTradeList(); })
       .catch(function (err) { $("tradePane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
+  }
+  /* ---------- il comitato delli scambi ---------- */
+  var cm = { st: null, pick: null, tie: null };
+  var VERD = { regolare: "Regolare", irregolare: "Irregolare", pareggio: "Pareggio: decide il supremo" };
+  function loadCommittee() {
+    return rpc("ble_committee_state", { p_name: state.me.name, p_pin: state.me.pin }).then(function (st) {
+      cm.st = st; if (cm.pick === null || !st.election) cm.pick = st.election ? (st.election.mine || []).slice() : [];
+      if (tr.kind === "comitato") drawCommittee();
+    });
+  }
+  function cmCase(c) {
+    var a = esc(c.party_a), b = esc(c.party_b), st = cm.st, v = Number(c.avg);
+    var h = "<article class='gem open' data-c='" + c.trade_id + "'><div class='gem-head' style='cursor:default'><span class='gh-main'><span class='tr-who'><span>" + a + "</span><i>&#8646;</i><span>" + b + "</span></span>" +
+      "<span class='gmeta'>" + c.votes + " voti, tutti " + (v > 0 ? "+5 (a favore di " + b + ")" : "&minus;5 (a favore di " + a + ")") + "</span></span><span class='gscore'>" + (c.verdict ? "&#9878;" : "&#8987;") + "</span></div>";
+    h += "<a href='" + esc(SB + "/storage/v1/object/public/ble-gems/" + c.path) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(SB + "/storage/v1/object/public/ble-gems/" + c.path) + "' style='width:100%;border-radius:10px;display:block;max-height:320px;object-fit:contain;background:var(--surface-2)'></a>";
+    h += "<div class='tr-gives'><div><b>" + a + " cede</b>" + esc(c.gives_a || "—") + "</div><div><b>" + b + " cede</b>" + esc(c.gives_b || "—") + "</div></div>";
+    if (c.verdict) {
+      h += "<p class='tr-pend'><b>Sentenza: " + VERD[c.verdict] + "</b></p>";
+      if (c.jv.length) h += "<p class='gmeta'>" + c.jv.map(function (j) { return esc(j.name) + ": " + VERD[j.verdict]; }).join(" &middot; ") + "</p>";
+    } else {
+      h += "<p class='gmeta'>Hanno votato " + c.voted + " giudici su " + c.needed + ".</p>";
+      if (st.judge && c.conflict) h += "<p class='gmeta'>Sei coinvolto in questo scambio: ti astieni.</p>";
+      else if (st.judge) h += "<div class='rate-b' style='grid-template-columns:1fr 1fr'><button type='button' data-cv='regolare' aria-pressed='" + (c.my === "regolare") + "'>Regolare</button><button type='button' data-cv='irregolare' aria-pressed='" + (c.my === "irregolare") + "'>Irregolare</button></div>";
+    }
+    if (st.admin && !c.conflict && (!c.verdict || c.verdict === "pareggio")) h += "<div class='gact'><button type='button' data-cf='regolare'>Supremo: regolare</button><button type='button' data-cf='irregolare'>Supremo: irregolare</button></div>";
+    return h + "</article>";
+  }
+  function drawCommittee() {
+    var st = cm.st; if (!st) return;
+    var h = "<h2 class='gold-h'>Il Comitato delli Scambi</h2><p class='gold-sub'>I giudici decidono sugli scambi ufficiali votati da tutti al massimo (almeno 4 voti, tutti +5 oppure tutti &minus;5). Il giudice supremo scioglie i pareggi.</p>" + kindsBar();
+    h += "<div class='gform' style='padding:0;margin:0 4px 12px 0'><p class='gmeta'><b>Giudici:</b> " + (st.judges.length ? st.judges.map(function (j) { return esc(j.name) + (j.admin ? " (supremo)" : ""); }).join(", ") : "nessuno") + "</p></div>";
+    if (st.pending > 0) h += "<div class='note'><p>&#9878; Hai " + st.pending + (st.pending === 1 ? " scambio" : " scambi") + " da giudicare.</p></div>";
+    var el = st.election;
+    if (el) {
+      h += "<div class='gform' style='padding:0;margin:0 4px 12px 0'><h4>&#128499; Elezioni dei giudici aperte</h4><p class='gmeta'>Scegli fino a 2 nomi (non te stesso). Hanno votato " + el.voters + " su " + el.total + ".</p><div class='tkinds' style='grid-template-columns:1fr 1fr'>" +
+        el.candidates.map(function (c) { return "<button type='button' data-cmc='" + c.id + "' aria-pressed='" + (cm.pick.indexOf(c.id) >= 0) + "'>" + esc(c.name) + "</button>"; }).join("") + "</div>" +
+        "<button type='button' class='go' data-cm='vote'>Conferma il voto</button>";
+      if (st.admin) {
+        h += "<div class='gact'><button type='button' data-cm='close'>Chiudi le elezioni</button></div>";
+        if (cm.tie) h += "<p class='gmeta'><b>Pareggio:</b> scegli " + cm.tie.need + (cm.tie.need === 1 ? " nome" : " nomi") + " tra questi.</p><div class='tkinds' style='grid-template-columns:1fr 1fr'>" + cm.tie.tied.map(function (c) { return "<button type='button' data-cmt='" + c.id + "' aria-pressed='" + (cm.tie.pick.indexOf(c.id) >= 0) + "'>" + esc(c.name) + "</button>"; }).join("") + "</div><button type='button' class='go' data-cm='closepick'>Conferma scelta</button>";
+      }
+      h += "</div>";
+    } else if (st.admin) h += "<div class='gact' style='margin:0 4px 12px 0'><button type='button' data-cm='open'>Indici le elezioni dei giudici</button></div>";
+    h += st.cases.length ? st.cases.map(cmCase).join("") : "<p class='empty'>Nessun caso al Comitato. Ci arrivano gli scambi votati da tutti al massimo.</p>";
+    $("tradePane").innerHTML = h;
+  }
+  function cmDo(fn, args, ok) {
+    args.p_name = state.me.name; args.p_pin = state.me.pin;
+    return rpc(fn, args).then(function (r) { play("chip"); if (ok) toast(ok); return loadCommittee().then(function () { return r; }); }).catch(function (err) { toast(err.message); });
+  }
+  function cmClick(b) {
+    var x;
+    if ((x = b.getAttribute("data-cmc")) !== null) { x = Number(x); var i = cm.pick.indexOf(x); if (i >= 0) cm.pick.splice(i, 1); else if (cm.pick.length < 2) cm.pick.push(x); else toast("Massimo 2 nomi"); drawCommittee(); return true; }
+    if ((x = b.getAttribute("data-cmt")) !== null) { x = Number(x); var t = cm.tie, j = t.pick.indexOf(x); if (j >= 0) t.pick.splice(j, 1); else if (t.pick.length < t.need) t.pick.push(x); drawCommittee(); return true; }
+    var act = b.getAttribute("data-cm");
+    if (act === "open") { cmDo("ble_open_election", {}, "Elezioni aperte"); return true; }
+    if (act === "vote") { cmDo("ble_vote_election", { p_cands: cm.pick }, "Voto salvato"); return true; }
+    if (act === "close" || act === "closepick") {
+      cmDo("ble_close_election", { p_pick: act === "closepick" ? cm.tie.pick : null }).then(function (r) {
+        if (r && r.tie) { cm.tie = { need: r.need, tied: r.tied, pick: [] }; drawCommittee(); toast("Pareggio: scegli tu"); }
+        else if (r && r.ok) { cm.tie = null; cm.pick = null; toast("Giudici eletti"); loadCommittee(); }
+      });
+      return true;
+    }
+    var card = b.closest("[data-c]"); if (!card) return false;
+    var id = Number(card.getAttribute("data-c"));
+    if ((x = b.getAttribute("data-cv"))) { cmDo("ble_committee_vote", { p_trade: id, p_verdict: x }, "Voto salvato"); return true; }
+    if ((x = b.getAttribute("data-cf"))) { cmDo("ble_committee_force", { p_trade: id, p_verdict: x }, "Sentenza emessa"); return true; }
+    return false;
   }
   function refreshTrades() {
     return rpc("ble_list_trades", { p_name: state.me.name, p_pin: state.me.pin, p_kind: tr.kind }).then(function (l) {
@@ -1316,6 +1387,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       return;
     }
     if (b.hasAttribute("data-tk")) { tr.kind = b.getAttribute("data-tk"); tr.list = null; tr.edit = null; tr.del = null; play("chip"); $("tradePane").innerHTML = ""; renderTrades(); return; }
+    if (tr.kind === "comitato") { cmClick(b); return; }
     var card = b.closest("[data-t]"); if (!card) return;
     var id = Number(card.getAttribute("data-t"));
     if (b.hasAttribute("data-tv")) {
@@ -1424,14 +1496,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function refreshDots() {
     if (!state.me || document.hidden) return;
     var a = { p_name: state.me.name, p_pin: state.me.pin }, me = state.me.name.toLowerCase();
-    Promise.all([rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: "gold" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "ufficiale" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "oscena" })]).then(function (r) {
-      var gl = r[0], tl = r[1].concat(r[2]);
+    Promise.all([rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: "gold" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "ufficiale" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "oscena" }), rpc("ble_committee_state", { p_name: a.p_name, p_pin: a.p_pin }).catch(function () { return { pending: 0 }; })]).then(function (r) {
+      var gl = r[0], tl = r[1].concat(r[2]), pend = Number(r[3].pending || 0);
       dots.maxGold = maxId(gl); dots.maxTr = maxId(tl);
       if (store("ble.seenGold") === null || store("ble.seenGold") === undefined) { store("ble.seenGold", String(dots.maxGold)); store("ble.seenTr", String(dots.maxTr)); }
       var sg = Number(store("ble.seenGold") || 0), st = Number(store("ble.seenTr") || 0);
       var other = function (x) { return !(x.author && String(x.author).toLowerCase() === me); };
       var ng = state.tab === "gold" ? 0 : gl.filter(function (x) { return x.id > sg && other(x); }).length;
-      var nt = state.tab === "scambi" ? 0 : tl.filter(function (x) { return x.id > st && other(x); }).length;
+      var nt = state.tab === "scambi" ? 0 : tl.filter(function (x) { return x.id > st && other(x); }).length + pend;
       setDot("tabGold", ng); setDot("tabScambi", nt);
     }).catch(function () {});
   }
