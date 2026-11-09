@@ -328,6 +328,10 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .sug .sact button { flex: 1; font-family: var(--font-label); font-weight: 600; font-size: .72rem; text-transform: uppercase; padding: 8px 4px; border: 2px solid var(--edge); border-radius: 10px; color: var(--ink); background: var(--surface); }
 .sug .sact .acc { background: var(--ok); color: #fff; border-color: var(--ok); }
 .sug .sact .rej { background: var(--bad); color: #fff; border-color: var(--bad); }
+.nick { font-style: normal; font-family: var(--font-label); font-size: .62rem; background: var(--giallo); color: var(--giallo-ink); border-radius: 6px; padding: 1px 5px; margin-left: 4px; }
+#rankExtra { display: grid; gap: 10px; margin-top: 16px; }
+.xh { margin: 8px 0 0; font-family: var(--font-display); font-weight: 400; text-transform: uppercase; }
+.sug input[type=text], .sug select { font: inherit; padding: 9px 10px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); width: 100%; }
 </style>
 </head>
 <body>
@@ -431,6 +435,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   var HEAD = { apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json" };
 
   var $ = function (id) { return document.getElementById(id); };
+  var duel = { list: null, pag: [], nicks: {}, names: [] };
   var state = { view: store("ble.view") === "classic" ? "classic" : "race", rankRows: null, hist: null, sel: null, me: null, mds: [], md: null, matches: [], preds: {}, ans: {}, revP: [], revA: [], scope: "md", tab: "play" };
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return null; }
@@ -807,7 +812,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function classicHtml(rows) {
     return "<ol class='rank'>" + rows.map(function (r, i) {
       return "<li class='" + (r.pname.toLowerCase() === state.me.name.toLowerCase() ? "me" : "") + "'><span class='pos'>" + (i + 1) + "</span>" +
-        "<span class='nm'>" + esc(r.pname) + "<span class='det'>" + r.n_outcomes + " esiti &middot; " + r.n_exact + " esatti &middot; " + r.n_bonus + " extra</span></span>" +
+        "<span class='nm'>" + esc(r.pname) + (duel.nicks[r.pname] ? " <em class='nick'>&laquo;" + esc(duel.nicks[r.pname]) + "&raquo;</em>" : "") + "<span class='det'>" + r.n_outcomes + " esiti &middot; " + r.n_exact + " esatti &middot; " + r.n_bonus + " extra</span></span>" +
         "<span class='pts'>" + r.pts + "</span></li>";
     }).join("") + "</ol>";
   }
@@ -881,14 +886,72 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var box = $("rankPane");
     box.innerHTML = "<div class='scope'><button type='button' data-s='md' aria-pressed='" + (state.scope === "md") + "'>Giornata " + state.md + "</button><button type='button' data-s='all' aria-pressed='" + (state.scope === "all") + "'>Generale</button></div>" +
       "<div class='scope view'><button type='button' data-v='race' aria-pressed='" + (state.view === "race") + "'>Corsa</button><button type='button' data-v='classic' aria-pressed='" + (state.view === "classic") + "'>Classica</button></div>" +
-      "<div id='rankList'><p class='empty'>Carico la classifica…</p></div>";
+      "<div id='rankList'><p class='empty'>Carico la classifica…</p></div><div id='rankExtra'></div>";
+    loadExtra();
     if (noFetch && state.rankRows) { drawRank(); return; }
     rpc("ble_leaderboard", { p_matchday: state.scope === "md" ? state.md : null }).then(function (rows) {
       state.rankRows = rows; drawRank();
     }).catch(function (err) { var l = $("rankList"); if (l) l.innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
   }
+  /* ---------- pagella e sfide a due ---------- */
+  function loadExtra() {
+    var a = { p_name: state.me.name, p_pin: state.me.pin };
+    Promise.all([rpc("ble_nicknames"), rpc("ble_pagella"), rpc("ble_list_duels", a), rpc("ble_leaderboard", { p_matchday: null })]).then(function (r) {
+      duel.nicks = {}; r[0].forEach(function (x) { duel.nicks[x.pname] = x.nick; });
+      duel.pag = r[1]; duel.list = r[2]; duel.names = r[3].map(function (x) { return x.pname; });
+      drawExtra(); drawRank();
+    }).catch(function () {});
+  }
+  function drawExtra() {
+    var box = $("rankExtra"); if (!box || !duel.list) return;
+    var me = state.me.name.toLowerCase(), h = "";
+    if (duel.pag.length) {
+      var by = {}, order = [];
+      duel.pag.forEach(function (x) { if (!by[x.title]) { by[x.title] = []; order.push(x.title); } by[x.title].push(x.pname); });
+      h += "<div class='sug'><b>Pagella &middot; Giornata " + duel.pag[0].md + "</b>" + order.map(function (t) { return "<p><strong>" + esc(t) + "</strong>: " + by[t].map(esc).join(", ") + "</p>"; }).join("") + "</div>";
+    }
+    h += "<h3 class='xh'>Sfide a due</h3>";
+    var open = duel.list.filter(function (d) { return d.status !== "done"; });
+    var mine = function (d) { return d.a_name.toLowerCase() === me || d.b_name.toLowerCase() === me; };
+    duel.list.forEach(function (d) {
+      var iA = d.a_name.toLowerCase() === me, iB = d.b_name.toLowerCase() === me;
+      h += "<div class='sug' data-d='" + d.id + "'><p><strong>" + esc(d.a_name) + "</strong> vs <strong>" + esc(d.b_name) + "</strong> &middot; Giornata " + d.matchday + "</p>";
+      if (d.status === "proposed") {
+        h += "<small>Se perde " + esc(d.b_name) + ": &laquo;" + esc(d.nick_for_b) + "&raquo;</small>";
+        if (iB) h += "<input type='text' maxlength='30' placeholder='Soprannome per " + esc(d.a_name) + " se perde' class='dnick'><div class='sact'><button type='button' class='acc' data-da='yes'>Accetta</button><button type='button' class='rej' data-da='no'>Rifiuta</button></div>";
+        else if (iA) h += "<small>In attesa di " + esc(d.b_name) + "</small><div class='sact'><button type='button' data-da='no'>Annulla</button></div>";
+        else h += "<small>In attesa di " + esc(d.b_name) + "</small>";
+      } else if (d.status === "active") {
+        h += "<small>Se perde " + esc(d.a_name) + ": &laquo;" + esc(d.nick_for_a) + "&raquo; &middot; se perde " + esc(d.b_name) + ": &laquo;" + esc(d.nick_for_b) + "&raquo;</small>";
+      } else {
+        h += "<p>" + d.a_pts + " &ndash; " + d.b_pts + "</p><small>" + (d.winner ? "Vince " + esc(d.winner) + ". " + (d.winner === d.a_name ? esc(d.b_name) + " &egrave; " + "&laquo;" + esc(d.nick_for_b) + "&raquo;" : esc(d.a_name) + " &egrave; &laquo;" + esc(d.nick_for_a) + "&raquo;") : "Pareggio: nessuno si salva e nessuno perde") + "</small>";
+      }
+      h += "</div>";
+    });
+    if (!duel.list.length) h += "<p class='gmeta'>Nessuna sfida. Lancia la prima!</p>";
+    var busy = open.some(mine);
+    if (!busy) {
+      var mds = state.mds.filter(function (m) { return m >= state.md; });
+      h += "<form class='sug' id='duelForm'><b>Lancia una sfida</b><select id='dOpp' class='tr-sel'>" + duel.names.filter(function (n) { return n.toLowerCase() !== me; }).map(function (n) { return "<option>" + esc(n) + "</option>"; }).join("") + "</select>" +
+        "<select id='dMd' class='tr-sel'>" + mds.map(function (m) { return "<option value='" + m + "'>Giornata " + m + "</option>"; }).join("") + "</select>" +
+        "<input type='text' id='dNick' maxlength='30' placeholder='Soprannome che avr&agrave; se perde' required><button class='go' type='submit' style='font-family:var(--font-label);font-weight:600;text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--azzurro);color:var(--azzurro-ink)'>Sfida</button></form>";
+    }
+    box.innerHTML = h;
+  }
+  $("rankPane").addEventListener("submit", function (e) {
+    if (e.target.id !== "duelForm") return;
+    e.preventDefault();
+    rpc("ble_create_duel_n", { p_name: state.me.name, p_pin: state.me.pin, p_matchday: Number($("dMd").value), p_opp: $("dOpp").value, p_nick: $("dNick").value })
+      .then(function () { play("done"); toast("Salvato"); loadExtra(); }).catch(function (err) { toast(err.message); });
+  });
   $("rankPane").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
+    if (b.hasAttribute("data-da")) {
+      var card = b.closest("[data-d]"), yes = b.getAttribute("data-da") === "yes";
+      rpc("ble_answer_duel", { p_name: state.me.name, p_pin: state.me.pin, p_duel: Number(card.getAttribute("data-d")), p_accept: yes, p_nick: yes ? card.querySelector(".dnick").value : null })
+        .then(function () { toast("Salvato"); loadExtra(); }).catch(function (err) { toast(err.message); });
+      return;
+    }
     if (b.hasAttribute("data-s")) { state.scope = b.getAttribute("data-s"); renderRank(); }
     else if (b.hasAttribute("data-v")) { state.view = b.getAttribute("data-v"); store("ble.view", state.view); play("chip"); renderRank(true); }
   });
