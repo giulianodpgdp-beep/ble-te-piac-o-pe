@@ -117,8 +117,8 @@ nav.md .title { flex: 1; text-align: center; font-family: var(--font-display); l
 nav.md .md-l { display: block; font-family: var(--font-label); font-weight: 600; font-size: .72rem; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
 nav.md .md-n { font-size: 2.6rem; color: var(--ink); text-shadow: 3px 3px 0 var(--giallo); }
 nav.md .title small { display: block; margin-top: 6px; font-family: var(--font-label); font-weight: 500; font-size: .72rem; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
-.tabs { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); padding: 4px; gap: 4px; margin: 0 4px 18px 0; }
-.tabs button { background: none; border: 0; padding: 10px 4px; border-radius: 9px; font-family: var(--font-display); font-weight: 400; font-size: .62rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+.tabs { display: grid; grid-template-columns: repeat(5, 1fr); background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); padding: 4px; gap: 4px; margin: 0 4px 18px 0; }
+.tabs button { background: none; border: 0; padding: 10px 4px; border-radius: 9px; font-family: var(--font-display); font-weight: 400; font-size: .56rem; text-transform: uppercase; letter-spacing: 0; color: var(--muted); }
 .tabs button[aria-selected=true] { background: var(--azzurro); color: var(--azzurro-ink); }
 
 /* selezione partite */
@@ -350,6 +350,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       <button type="button" role="tab" id="tabRank" aria-selected="false">Classifica</button>
       <button type="button" role="tab" id="tabHist" aria-selected="false">Storico</button>
       <button type="button" role="tab" id="tabGold" aria-selected="false">Gold</button>
+      <button type="button" role="tab" id="tabScambi" aria-selected="false">Scambi</button>
     </div>
     <div id="playPane"></div>
     <div id="rankPane" hidden></div>
@@ -808,7 +809,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   /* ---------- old but gold ---------- */
   var KIND_L = { text: "Frase", audio: "Audio", image: "Immagine", video: "Video" };
   var ACCEPT = { audio: "audio/*,.opus,.m4a,.mp3", image: "image/*", video: "video/*" };
-  var gold = { gems: null, admin: false, sort: "new", kind: "text", edit: null, del: null, busy: false };
+  var gold = { sec: "gold", drawn: null, gems: null, admin: false, sort: "new", kind: "text", edit: null, del: null, busy: false };
   function gemUrl(g) { return g.path ? SB + "/storage/v1/object/public/ble-gems/" + g.path : g.url; }
   function fmtDay(iso) { return new Date(iso).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Rome" }); }
   function rateHtml(g) {
@@ -847,7 +848,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function drawGemList() {
     var a = sortedGems();
-    $("gemList").innerHTML = a.length ? a.map(gemHtml).join("") : "<p class='empty'>Ancora nessuna pietra preziosa. Aggiungi la prima!</p>";
+    $("gemList").innerHTML = a.length ? a.map(gemHtml).join("") : "<p class='empty'>" + (gold.sec === "scambi" ? "Ancora nessuno scambio memorabile. Aggiungi il primo!" : "Ancora nessuna pietra preziosa. Aggiungi la prima!") + "</p>";
   }
   function paintKinds() {
     var k = gold.kind;
@@ -859,15 +860,16 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (k !== "text") $("gFile").setAttribute("accept", ACCEPT[k]);
   }
   function drawGold() {
-    var h = "<h2 class='gold-h'>Old but Gold</h2><p class='gold-sub'>Le pietre preziose del gruppo: vocali, frasi, foto e video da ricordare.</p>" +
-      "<details class='gadd' id='gAdd'><summary>+ Aggiungi una pietra preziosa</summary><form class='gform' id='gForm'>" +
-      "<div class='kinds' id='gKinds'>" + ["text", "audio", "image", "video"].map(function (k) { return "<button type='button' data-k='" + k + "' aria-pressed='false'>" + KIND_L[k] + "</button>"; }).join("") + "</div>" +
+    var sc = gold.sec === "scambi", kinds = sc ? ["text", "image"] : ["text", "audio", "image", "video"];
+    var h = "<h2 class='gold-h'>" + (sc ? "Scambi memorabili" : "Old but Gold") + "</h2><p class='gold-sub'>" + (sc ? "Gli scambi di battute da ricordare: testo e screenshot." : "Le pietre preziose del gruppo: vocali, frasi, foto e video da ricordare.") + "</p>" +
+      "<details class='gadd' id='gAdd'><summary>+ " + (sc ? "Aggiungi uno scambio" : "Aggiungi una pietra preziosa") + "</summary><form class='gform' id='gForm'>" +
+      "<div class='kinds' id='gKinds' style='grid-template-columns:repeat(" + kinds.length + ",1fr)'>" + kinds.map(function (k) { return "<button type='button' data-k='" + k + "' aria-pressed='false'>" + KIND_L[k] + "</button>"; }).join("") + "</div>" +
       "<label>Titolo<input type='text' id='gTitle' maxlength='80' required placeholder='Es. Il vocale del secolo'></label>" +
       "<label id='gBodyL'>Frase<textarea id='gBody' maxlength='1000'></textarea></label>" +
       "<label id='gFileL' hidden>File (max 40 MB)<input type='file' id='gFile'></label>" +
       "<button class='go' id='gGo' type='submit'>Aggiungi</button></form></details>" +
       "<div class='gbar'><button type='button' data-sort='new' aria-pressed='" + (gold.sort === "new") + "'>Novit&agrave;</button><button type='button' data-sort='top' aria-pressed='" + (gold.sort === "top") + "'>Pi&ugrave; votate</button></div>" +
-      "<div id='gemList'></div>" + (gold.admin ? "<details class='gadd' id='pAdmin'><summary>Admin: gestisci partecipanti</summary><div class='gform' id='pList'></div></details>" : "");
+      "<div id='gemList'></div>" + (gold.admin && !sc ? "<details class='gadd' id='pAdmin'><summary>Admin: gestisci partecipanti</summary><div class='gform' id='pList'></div></details>" : "");
     $("goldPane").innerHTML = h; paintKinds(); drawGemList();
   }
   function drawPlayers() {
@@ -880,15 +882,15 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     }).join("") + "<p class='gmeta'>Eliminando un partecipante spariscono anche pronostici, voti e pietre che ha aggiunto.</p>";
   }
   function loadPlayers() {
-    if (!gold.admin) return;
+    if (!gold.admin || gold.sec !== "gold") return;
     rpc("ble_list_players", { p_name: state.me.name, p_pin: state.me.pin }).then(function (l) { gold.players = l; drawPlayers(); }).catch(function () {});
   }
   function renderGold() {
     if (!gold.gems) $("goldPane").innerHTML = "<p class='empty'>Apro il forziere&hellip;</p>";
     var a = { p_name: state.me.name, p_pin: state.me.pin };
-    Promise.all([rpc("ble_whoami", a), rpc("ble_list_gems", a)]).then(function (r) {
+    Promise.all([rpc("ble_whoami", a), rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: gold.sec })]).then(function (r) {
       gold.admin = !!r[0].is_admin; gold.gems = r[1];
-      if (!$("gemList") || !!$("pAdmin") !== gold.admin) drawGold(); else drawGemList();
+      if (!$("gemList") || gold.drawn !== gold.sec || (!!$("pAdmin") !== (gold.admin && gold.sec === "gold"))) { gold.drawn = gold.sec; drawGold(); } else drawGemList();
       loadPlayers();
     }).catch(function (err) { $("goldPane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
   }
@@ -915,14 +917,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       });
     }
     step.then(function (path) {
-      return rpc("ble_add_gem", { p_name: state.me.name, p_pin: state.me.pin, p_kind: k, p_title: title, p_body: body || null, p_path: path });
+      return rpc("ble_add_gem", { p_name: state.me.name, p_pin: state.me.pin, p_kind: k, p_title: title, p_body: body || null, p_path: path, p_section: gold.sec });
     }).then(function () {
       done(); $("gTitle").value = ""; $("gBody").value = ""; $("gFile").value = ""; $("gAdd").open = false;
       play("done"); toast("Salvato"); gold.sort = "new"; renderGold();
     }).catch(function (err) { done(); toast(err.message); });
   }
   function refreshRates() {
-    return rpc("ble_list_gems", { p_name: state.me.name, p_pin: state.me.pin }).then(function (list) {
+    return rpc("ble_list_gems", { p_name: state.me.name, p_pin: state.me.pin, p_section: gold.sec }).then(function (list) {
       gold.gems = list;
       list.forEach(function (g) { var el = document.querySelector("#gemList [data-g='" + g.id + "'] .rate"); if (el) el.innerHTML = rateHtml(g); });
     });
@@ -967,13 +969,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function setTab(t) {
     if (state.tab !== t) play(t === "rank" ? "rank" : t === "hist" ? "hist" : "chip");
     state.tab = t;
-    $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank"); $("tabHist").setAttribute("aria-selected", t === "hist"); $("tabGold").setAttribute("aria-selected", t === "gold");
-    $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist"; $("goldPane").hidden = t !== "gold"; document.querySelector("nav.md").hidden = t === "gold";
+    $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank"); $("tabHist").setAttribute("aria-selected", t === "hist"); $("tabGold").setAttribute("aria-selected", t === "gold"); $("tabScambi").setAttribute("aria-selected", t === "scambi");
+    $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist"; $("goldPane").hidden = t !== "gold" && t !== "scambi"; document.querySelector("nav.md").hidden = t === "gold" || t === "scambi";
     if (t === "rank") renderRank();
     if (t === "hist") renderHist();
-    if (t === "gold") renderGold();
+    if (t === "gold" || t === "scambi") { if (gold.sec !== t) { gold.sec = t; gold.gems = null; gold.kind = "text"; gold.edit = null; gold.del = null; gold.sort = "new"; } renderGold(); }
   }
   $("tabGold").addEventListener("click", function () { setTab("gold"); });
+  $("tabScambi").addEventListener("click", function () { setTab("scambi"); });
   $("tabHist").addEventListener("click", function () { setTab("hist"); });
   $("tabPlay").addEventListener("click", function () { setTab("play"); });
   $("tabRank").addEventListener("click", function () { setTab("rank"); });
