@@ -460,7 +460,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   <button type="button" class="go" id="helpOk">Ho capito</button></div></div>
 <div class="dov" id="dov"></div>
 <aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
-  <div class="dbody"><div id="adminBox"></div><h4>Partecipanti</h4><div class="gform" style="padding:0" id="pList"></div><p class="gmeta">Gemme e scambi si modificano o eliminano direttamente dalla loro scheda.</p></div></aside>
+  <div class="dbody"><div id="adminBox"></div><h4>Chi ha l'app e le notifiche</h4><div id="stBox" class="gform" style="padding:0"></div><h4>Partecipanti</h4><div class="gform" style="padding:0" id="pList"></div><p class="gmeta">Gemme e scambi si modificano o eliminano direttamente dalla loro scheda.</p></div></aside>
 <aside class="drawer" id="chatDrawer" aria-label="Chat"><div class="dhead"><h3>Chat</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody chatbody"><div id="chatList" class="chatlist"></div><form id="chatForm" class="chatform"><input type="text" id="chatText" maxlength="500" placeholder="Scrivi un messaggio" autocomplete="off"><button class="go" type="submit">Invia</button></form></div></aside>
 <aside class="drawer" id="sugDrawer" aria-label="Suggerimenti"><div class="dhead"><h3>Suggerimenti</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
@@ -588,7 +588,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         state.md = pick;
         $("who").hidden = false; $("whoName").textContent = state.me.name; $("hdrLogo").removeAttribute("hidden");
         $("loading").hidden = true; $("appView").hidden = false;
-        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); loadRx(); }).catch(function () {});
+        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); loadRx(); pingDev(); }).catch(function () {});
         return loadMd();
       });
     }).catch(function (err) { $("loading").hidden = false; $("loading").textContent = err.message; });
@@ -647,7 +647,20 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     box.innerHTML = h + "</div>";
     state.late = late.map(function (r) { return r.name; });
   }
+  function pingDev() {
+    if (!state.me) return;
+    rpc("ble_ping", { p_name: state.me.name, p_pin: state.me.pin, p_installed: !!STANDALONE, p_perm: ("Notification" in window) ? Notification.permission : "none", p_in_app: !!IN_APP }).catch(function () {});
+  }
+  function drawDev(l) {
+    var ago = function (iso) { if (!iso) return "mai aperto"; var m = Math.round((Date.now() - new Date(iso).getTime()) / 60000); return m < 60 ? m + " min fa" : m < 2880 ? Math.round(m / 60) + " h fa" : Math.round(m / 1440) + " gg fa"; };
+    $("stBox").innerHTML = "<p class='gmeta'>Si aggiorna quando ognuno apre il gioco. App = aperta dall&apos;icona installata almeno una volta. Notifiche = il telefono le ha attivate e registrate.</p>" +
+      l.map(function (d) {
+        var n = d.push > 0 ? "&#128276; notifiche attive" : d.perm === "denied" ? "&#128277; bloccate dal telefono" : d.perm === "default" ? "&#128277; non ancora attivate" : d.perm === "none" ? "&#128277; non supportate" : d.seen ? "&#128277; spente" : "&#128277; sconosciuto";
+        return "<div class='pg'><span>" + esc(d.name) + " &middot; " + (d.installed ? "&#128241; app installata" : d.seen ? "solo browser" : "app: sconosciuto") + "</span><small>" + n + " &middot; visto: " + ago(d.seen) + (d.in_app ? " &middot; dal browser di un'altra app" : "") + "</small></div>";
+      }).join("");
+  }
   function loadAdmin() {
+    if (state.admin) rpc("ble_device_list", { p_name: state.me.name, p_pin: state.me.pin }).then(drawDev).catch(function () {});
     var box = $("adminBox");
     if (!state.admin || !box) return;
     rpc("ble_progress", { p_name: state.me.name, p_pin: state.me.pin, p_matchday: state.md })
