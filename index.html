@@ -1647,7 +1647,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var box = $("chatList"); if (!box) return;
     var atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
     box.innerHTML = chat.msgs.length ? chat.msgs.map(function (m) {
-      return "<div class='msg" + (m.mine ? " mine" : "") + "'><small>" + (m.mine ? "Tu" : esc(m.author)) + " &middot; " + hhmm(m.created_at) + (state.admin ? "<button type='button' class='cdel' data-cd='" + m.id + "' aria-label='Elimina'>&times;</button>" : "") + "</small><p>" + esc(m.body) + "</p></div>";
+      var mc = carCol(m.mine ? state.me.name : (m.author || "Cronista")); return "<div class='msg" + (m.mine ? " mine" : "") + "' style='background:color-mix(in srgb," + mc + " 32%,#ffffff);color:#0b1a2e;border-color:" + mc + "'><small>" + (m.mine ? "Tu" : esc(m.author)) + " &middot; " + hhmm(m.created_at) + (state.admin ? "<button type='button' class='cdel' data-cd='" + m.id + "' aria-label='Elimina'>&times;</button>" : "") + "</small><p>" + esc(m.body) + "</p></div>";
     }).join("") : "<p class='gmeta'>Nessun messaggio. Rompi il ghiaccio!</p>";
     if (atEnd || chat.justOpened) { box.scrollTop = box.scrollHeight; chat.justOpened = false; }
   }
