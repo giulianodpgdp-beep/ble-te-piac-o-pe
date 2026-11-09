@@ -342,6 +342,18 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .chatform { display: flex; gap: 8px; margin-top: 10px; }
 .chatform input { flex: 1; font: inherit; padding: 10px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); min-width: 0; }
 .chatform .go { font-family: var(--font-label); font-weight: 600; text-transform: uppercase; padding: 0 14px; border: 2px solid var(--edge); border-radius: 10px; background: var(--azzurro); color: var(--azzurro-ink); }
+.note { border: 2px solid var(--edge); border-radius: 12px; padding: 10px 12px; background: var(--giallo); color: var(--giallo-ink); margin: 0 4px 14px 0; display: grid; gap: 8px; }
+.note p { margin: 0; }
+.note .nact { display: flex; gap: 8px; }
+.note .nact button { flex: 1; font-family: var(--font-label); font-weight: 600; font-size: .72rem; text-transform: uppercase; padding: 9px 4px; border: 2px solid var(--giallo-ink); border-radius: 10px; background: var(--giallo-ink); color: var(--giallo); }
+.note .nact button.ghost { background: none; color: var(--giallo-ink); }
+.dlg { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dlg[hidden] { display: none; }
+.dlgcard { background: var(--surface); color: var(--ink); border: 3px solid var(--edge); border-radius: 16px; padding: 16px; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+.dlgcard h3 { margin: 0 0 8px; font-family: var(--font-display); font-weight: 400; text-transform: uppercase; font-size: 1rem; }
+.dlgcard ol { padding-left: 20px; margin: 8px 0 14px; display: grid; gap: 6px; }
+.dlgcard .go { width: 100%; font-family: var(--font-label); font-weight: 600; text-transform: uppercase; padding: 12px; border: 2px solid var(--edge); border-radius: 10px; background: var(--azzurro); color: var(--azzurro-ink); }
+.tabs button[data-n]:not([data-n="0"])::after { content: attr(data-n); background: var(--bad); color: #fff; border-radius: 8px; font-family: var(--font-label); font-size: .55rem; padding: 1px 5px; margin-left: 3px; vertical-align: middle; }
 </style>
 </head>
 <body>
@@ -409,6 +421,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   </section>
 
   <section id="appView" hidden>
+    <div id="topNote"></div>
     <nav class="md" aria-label="Giornata">
       <button class="step" id="prevMd" type="button" aria-label="Giornata precedente">&#8249;</button>
       <div class="title" id="mdTitle">Giornata</div>
@@ -431,6 +444,13 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 
   <p class="empty" id="loading">Carico il gioco&hellip;</p>
 </div>
+<div class="dlg" id="helpDlg" hidden><div class="dlgcard"><h3>Notifiche bloccate dal telefono</h3>
+  <p>Il telefono ha rifiutato le notifiche per questo sito. Prova così:</p>
+  <ol><li>Apri il gioco da <b>Chrome</b> o <b>Safari</b>, non dal browser interno di WhatsApp.</li>
+  <li>Tocca il lucchetto accanto all'indirizzo &rarr; <b>Autorizzazioni</b> &rarr; <b>Notifiche</b> &rarr; <b>Consenti</b>.</li>
+  <li>Se non cambia, prova da <b>un altro browser</b> (Samsung Internet, Firefox&hellip;): basta farlo una volta e le notifiche arrivano sempre.</li>
+  <li>iPhone: Condividi &rarr; <b>Aggiungi a Home</b> e apri l'app dall'icona (serve iOS 16.4 o pi&ugrave; recente).</li></ol>
+  <button type="button" class="go" id="helpOk">Ho capito</button></div></div>
 <div class="dov" id="dov"></div>
 <aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><div id="adminBox"></div><h4>Partecipanti</h4><div class="gform" style="padding:0" id="pList"></div><p class="gmeta">Gemme e scambi si modificano o eliminano direttamente dalla loro scheda.</p></div></aside>
@@ -561,7 +581,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         state.md = pick;
         $("who").hidden = false; $("whoName").textContent = state.me.name; $("hdrLogo").removeAttribute("hidden");
         $("loading").hidden = true; $("appView").hidden = false;
-        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); }).catch(function () {});
+        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); }).catch(function () {});
         return loadMd();
       });
     }).catch(function (err) { $("loading").hidden = false; $("loading").textContent = err.message; });
@@ -1375,6 +1395,51 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var j = sub.toJSON();
     return rpc("ble_save_push", { p_name: state.me.name, p_pin: state.me.pin, p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
   }
+  function showHelp() { $("helpDlg").hidden = false; }
+  $("helpOk").addEventListener("click", function () { $("helpDlg").hidden = true; });
+  var UA = navigator.userAgent;
+  var IN_APP = /FBAN|FBAV|Instagram|Line\/|WhatsApp|Telegram|LinkedInApp|Snapchat|TikTok|musical_ly|; wv\)/.test(UA);
+  var IS_IOS = /iPhone|iPad|iPod/.test(UA);
+  var STANDALONE = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  function noteHtml(id, text, yes, no) {
+    return "<div class='note' data-note='" + id + "'><p>" + text + "</p><div class='nact'>" + (yes ? "<button type='button' data-ny='" + id + "'>" + yes + "</button>" : "") + "<button type='button' class='ghost' data-nn='" + id + "'>" + (no || "Ho capito") + "</button></div></div>";
+  }
+  function drawNote() {
+    var h = "";
+    if (IN_APP && !store("ble.noteWV")) h = noteHtml("wv", "Stai usando il browser interno di un'altra app (ad esempio WhatsApp). Qui notifiche e installazione non funzionano: tocca <b>&#8942;</b> e scegli <b>Apri nel browser</b> (Chrome o Safari).");
+    else if (!pushOk()) { if (IS_IOS && !STANDALONE && !store("ble.noteIOS")) h = noteHtml("ios", "Per le notifiche su iPhone: apri il gioco con Safari, tocca <b>Condividi &rarr; Aggiungi a Home</b> e usa l'icona. Serve iOS 16.4 o pi&ugrave; recente."); }
+    else if (Notification.permission === "default" && !store("ble.noteNtf")) h = noteHtml("ntf", "Vuoi le notifiche? Ti avviso di nuove pietre, scambi, sfide, chat e risultati.", "Attiva", "Non ora");
+    $("topNote").innerHTML = h;
+  }
+  $("topNote").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    var yes = b.getAttribute("data-ny"), no = b.getAttribute("data-nn");
+    if (yes === "ntf") { store("ble.noteNtf", "1"); $("topNote").innerHTML = ""; ntfEnable(); }
+    else if (no) { store("ble.note" + (no === "ntf" ? "Ntf" : no === "wv" ? "WV" : "IOS"), "1"); drawNote(); }
+  });
+  /* puntini sulle novita */
+  var dots = { gold: 0, tr: 0, maxGold: 0, maxTr: 0 };
+  function setDot(id, n) { $(id).setAttribute("data-n", String(n)); }
+  function maxId(l) { return l.reduce(function (m, x) { return Math.max(m, x.id); }, 0); }
+  function refreshDots() {
+    if (!state.me || document.hidden) return;
+    var a = { p_name: state.me.name, p_pin: state.me.pin }, me = state.me.name.toLowerCase();
+    Promise.all([rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: "gold" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "ufficiale" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "oscena" })]).then(function (r) {
+      var gl = r[0], tl = r[1].concat(r[2]);
+      dots.maxGold = maxId(gl); dots.maxTr = maxId(tl);
+      if (store("ble.seenGold") === null || store("ble.seenGold") === undefined) { store("ble.seenGold", String(dots.maxGold)); store("ble.seenTr", String(dots.maxTr)); }
+      var sg = Number(store("ble.seenGold") || 0), st = Number(store("ble.seenTr") || 0);
+      var other = function (x) { return !(x.author && String(x.author).toLowerCase() === me); };
+      var ng = state.tab === "gold" ? 0 : gl.filter(function (x) { return x.id > sg && other(x); }).length;
+      var nt = state.tab === "scambi" ? 0 : tl.filter(function (x) { return x.id > st && other(x); }).length;
+      setDot("tabGold", ng); setDot("tabScambi", nt);
+    }).catch(function () {});
+  }
+  function markSeen(t) {
+    if (t === "gold") { store("ble.seenGold", String(dots.maxGold)); setDot("tabGold", 0); }
+    if (t === "scambi") { store("ble.seenTr", String(dots.maxTr)); setDot("tabScambi", 0); }
+  }
+  setInterval(refreshDots, 60000);
   function ntfInit() {
     if (!pushOk()) { ntfLabel(false); return; }
     navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; }).then(function (reg) {
@@ -1386,9 +1451,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function ntfEnable() {
     if (!pushOk()) { toast("Per le notifiche installa l'app dalla schermata Home"); return; }
-    var diag = "[v4 perm=" + Notification.permission + " app=" + ((window.matchMedia && matchMedia("(display-mode: standalone)").matches) ? "installata" : "browser") + "]";
     Notification.requestPermission().then(function (perm) {
-      if (perm !== "granted") { toast((perm === "denied" ? "Notifiche bloccate dal telefono per questo sito." : "Richiesta chiusa senza consentire.") + " " + diag + " result=" + perm); return; }
+      if (perm !== "granted") { if (perm === "denied") showHelp(); else toast("Richiesta chiusa senza consentire: riprova e premi Consenti"); return; }
       return navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; }).then(function (reg) {
         return reg.pushManager.getSubscription().then(function (sub) { return sub || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID) }); });
       }).then(function (sub) { return ntfSave(sub); }).then(function () { ntfLabel(true); toast("Salvato"); });
@@ -1457,6 +1521,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     $("playPane").hidden = t !== "play"; $("duelPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist"; $("goldPane").hidden = t !== "gold"; $("tradePane").hidden = t !== "scambi"; document.querySelector("nav.md").hidden = t === "gold" || t === "scambi";
     if (t === "rank") renderRank();
     if (t === "hist") renderHist();
+    markSeen(t);
     if (t === "gold") { if (gold.sec !== t) { gold.sec = t; gold.gems = null; gold.filter = "all"; gold.edit = null; gold.del = null; gold.sort = "new"; } renderGold(); }
     if (t === "scambi") renderTrades();
   }
