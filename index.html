@@ -1093,7 +1093,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       duel.pag = r[1]; duel.list = r[2]; duel.names = r[3].map(function (x) { return x.pname; });
       duel.colors = {}; r[4].forEach(function (x) { duel.colors[x.pname] = x.color; });
       duel.titles = {}; r[5].forEach(function (x) { duel.titles[x.pname] = x.title; });
-      if (state.me) $("whoName").textContent = state.me.name + (duel.titles[state.me.name] ? " " + duel.titles[state.me.name].split(" ")[0] : "");
+      if (state.me) $("whoName").textContent = state.me.name + (duel.titles[state.me.name] ? " " + duel.titles[state.me.name].split(" · ").map(function (t) { return t.split(" ")[0]; }).join("") : "");
       drawExtra(); drawRank(); if (state.tab === "hist" && state.hist) drawHist();
     }).catch(function () {});
   }
@@ -1505,14 +1505,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     h += "<a href='" + esc(trUrl(c)) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(trUrl(c)) + "' style='width:100%;border-radius:10px;display:block;max-height:320px;object-fit:contain;background:var(--surface-2)'></a>";
     h += "<div class='tr-gives'><div><b>" + a + " cede</b>" + esc(c.gives_a || "—") + "</div><div><b>" + b + " cede</b>" + esc(c.gives_b || "—") + "</div></div>";
     if (c.verdict) {
-      h += "<p class='tr-pend'><b>Sentenza: " + VERD[c.verdict] + "</b></p><div class='gact'><button type='button' class='wabtn' data-cs='1'>" + WAI + "Condividi su WhatsApp</button></div>";
-      if (c.jv.length) h += "<p class='gmeta'>" + c.jv.map(function (j) { return esc(j.name) + ": " + VERD[j.verdict]; }).join(" &middot; ") + "</p>";
+      h += "<p class='tr-pend'><b>Sentenza: " + VERD[c.verdict] + (c.verdict === "irregolare" && c.culprit ? " &mdash; la colpa &egrave; di " + esc(c.culprit) : "") + "</b></p><div class='gact'><button type='button' class='wabtn' data-cs='1'>" + WAI + "Condividi su WhatsApp</button></div>";
+      if (c.jv.length) h += "<p class='gmeta'>" + c.jv.map(function (j) { return esc(j.name) + ": " + VERD[j.verdict] + (j.verdict === "irregolare" && j.culprit ? " (" + esc(j.culprit) + ")" : ""); }).join(" &middot; ") + "</p>";
     } else {
       h += "<p class='gmeta'>Hanno votato " + c.voted + " giudici su " + c.needed + ".</p>";
       if (st.judge && c.conflict) h += "<p class='gmeta'>Sei coinvolto in questo scambio: ti astieni.</p>";
-      else if (st.judge) h += "<div class='rate-b' style='grid-template-columns:1fr 1fr'><button type='button' data-cv='regolare' aria-pressed='" + (c.my === "regolare") + "'>Regolare</button><button type='button' data-cv='irregolare' aria-pressed='" + (c.my === "irregolare") + "'>Pacco</button></div>";
+      else if (st.judge) h += "<div class='rate-b' style='grid-template-columns:1fr 1fr 1fr'><button type='button' data-cv='regolare' aria-pressed='" + (c.my === "regolare") + "'>Regolare</button><button type='button' data-cv='irregolare' data-cu='" + a + "' aria-pressed='" + (c.my === "irregolare" && c.my_culprit === c.party_a) + "'>Pacco di " + a + "</button><button type='button' data-cv='irregolare' data-cu='" + b + "' aria-pressed='" + (c.my === "irregolare" && c.my_culprit === c.party_b) + "'>Pacco di " + b + "</button></div>";
     }
-    if (st.admin && !c.conflict && (!c.verdict || c.verdict === "pareggio")) h += "<div class='gact'><button type='button' data-cf='regolare'>Supremo: regolare</button><button type='button' data-cf='irregolare'>Supremo: pacco</button></div>";
+    if (st.admin && !c.conflict && (!c.verdict || c.verdict === "pareggio")) h += "<div class='gact'><button type='button' data-cf='regolare'>Supremo: regolare</button><button type='button' data-cf='irregolare' data-cu='" + a + "'>Supremo: pacco di " + a + "</button><button type='button' data-cf='irregolare' data-cu='" + b + "'>Supremo: pacco di " + b + "</button></div>";
     return h + "</article>";
   }
   function drawCommittee() {
@@ -1562,9 +1562,9 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     }
     var card = b.closest("[data-c]"); if (!card) return false;
     var id = Number(card.getAttribute("data-c"));
-    if (b.hasAttribute("data-cs")) { var cc = cm.st.cases.filter(function (z) { return z.trade_id === id; })[0]; if (cc) shareWa("⚖️ Il Comitato degli scambi ha deciso: " + cc.party_a + " ⇄ " + cc.party_b + " → " + VERD[cc.verdict]); return true; }
-    if ((x = b.getAttribute("data-cv"))) { cmDo("ble_committee_vote", { p_trade: id, p_verdict: x }, "Voto salvato"); return true; }
-    if ((x = b.getAttribute("data-cf"))) { cmDo("ble_committee_force", { p_trade: id, p_verdict: x }, "Sentenza emessa"); return true; }
+    if (b.hasAttribute("data-cs")) { var cc = cm.st.cases.filter(function (z) { return z.trade_id === id; })[0]; if (cc) shareWa("⚖️ Il Comitato degli scambi ha deciso: " + cc.party_a + " ⇄ " + cc.party_b + " → " + VERD[cc.verdict] + (cc.verdict === "irregolare" && cc.culprit ? " (colpa di " + cc.culprit + ")" : "")); return true; }
+    if ((x = b.getAttribute("data-cv"))) { cmDo("ble_committee_vote", { p_trade: id, p_verdict: x, p_culprit: b.getAttribute("data-cu") }, "Voto salvato"); return true; }
+    if ((x = b.getAttribute("data-cf"))) { cmDo("ble_committee_force", { p_trade: id, p_verdict: x, p_culprit: b.getAttribute("data-cu") }, "Sentenza emessa"); return true; }
     return false;
   }
   function refreshTrades() {
