@@ -354,6 +354,10 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .dlgcard ol { padding-left: 20px; margin: 8px 0 14px; display: grid; gap: 6px; }
 .dlgcard .go { width: 100%; font-family: var(--font-label); font-weight: 600; text-transform: uppercase; padding: 12px; border: 2px solid var(--edge); border-radius: 10px; background: var(--azzurro); color: var(--azzurro-ink); }
 .tabs button[data-n]:not([data-n="0"])::after { content: attr(data-n); background: var(--bad); color: #fff; border-radius: 8px; font-family: var(--font-label); font-size: .55rem; padding: 1px 5px; margin-left: 3px; vertical-align: middle; }
+.pfchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 5px 0 0; }
+.pfchips button { font-family: var(--font-label); font-weight: 600; font-size: .7rem; text-transform: uppercase; padding: 7px 10px; border: 2px solid var(--edge); border-radius: 999px; background: var(--surface); color: var(--ink); }
+.pfrow { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px dashed var(--edge); }
+.pfrow b { text-align: right; }
 .rxbox { display: inline-flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .rxbox button { font-size: .85rem; padding: 3px 9px; border: 2px solid var(--edge); border-radius: 999px; background: var(--surface); color: var(--ink); }
 .rxbox button[aria-pressed=true] { background: var(--giallo); color: var(--giallo-ink); }
@@ -458,6 +462,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   <li>Se non cambia, prova da <b>un altro browser</b> (Samsung Internet, Firefox&hellip;): basta farlo una volta e le notifiche arrivano sempre.</li>
   <li>iPhone: Condividi &rarr; <b>Aggiungi a Home</b> e apri l'app dall'icona (serve iOS 16.4 o pi&ugrave; recente).</li></ol>
   <button type="button" class="go" id="helpOk">Ho capito</button></div></div>
+<div class="dlg" id="profDlg" hidden><div class="dlgcard" id="profCard"></div></div>
 <div class="dov" id="dov"></div>
 <aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><div id="adminBox"></div><h4>Chi ha l'app e le notifiche</h4><div id="stBox" class="gform" style="padding:0"></div><h4>Partecipanti</h4><div class="gform" style="padding:0" id="pList"></div><p class="gmeta">Gemme e scambi si modificano o eliminano direttamente dalla loro scheda.</p></div></aside>
@@ -963,12 +968,34 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var list = $("rankList"); if (!list || !state.rankRows) return;
     if (!state.rankRows.length) { list.innerHTML = "<p class='empty'>Ancora nessun giocatore.</p>"; return; }
     list.innerHTML = state.view === "race" ? trackHtml(state.rankRows) : classicHtml(state.rankRows);
+    var pc = $("pfChips"); if (pc) pc.innerHTML = state.rankRows.map(function (r) { return "<button type='button' data-pf='" + esc(r.pname) + "'>" + esc(r.pname) + "</button>"; }).join("");
   }
+  function pfShow(name) {
+    $("profCard").innerHTML = "<h3>" + esc(name) + "</h3><p class='gmeta'>Carico&hellip;</p>"; $("profDlg").hidden = false;
+    rpc("ble_profile", { p_name: state.me.name, p_pin: state.me.pin, p_player: name }).then(function (d) {
+      var pct = function (a, b) { return b ? Math.round(a / b * 100) + "%" : "&ndash;"; };
+      var row = function (k, v) { return "<div class='pfrow'><span>" + k + "</span><b>" + v + "</b></div>"; };
+      var nk = (duel.nicks || {})[d.name];
+      $("profCard").innerHTML = "<h3>" + esc(d.name) + (nk ? " <em class='nick'>" + esc(nk) + "</em>" : "") + "</h3>" +
+        row("Punti totali", d.points) + row("Giornate giocate", d.days) + row("Giornate vinte", d.wins) +
+        row("Media a giornata", d.days ? (d.points / d.days).toFixed(1) : "&ndash;") +
+        row("Miglior giornata", d.best_md ? d.best_md.pts + " punti (G" + d.best_md.md + ")" : "&ndash;") +
+        row("Esiti indovinati", d.played ? d.ok + "/" + d.played + " (" + pct(d.ok, d.played) + ")" : "&ndash;") +
+        row("Risultati esatti", d.exact) +
+        row("Domande extra", d.q_n ? d.q_r + "/" + d.q_n + " (" + pct(d.q_r, d.q_n) + ")" : "&ndash;") +
+        row("Esatto pi&ugrave; bello", d.best_exact ? esc(d.best_exact.home) + " " + esc(d.best_exact.res) + " " + esc(d.best_exact.away) : "&ndash;") +
+        row("Squadra amica", d.friend ? esc(d.friend.team) + " (" + d.friend.r + "/" + d.friend.n + ")" : "&ndash;") +
+        row("Squadra nemica", d.enemy ? esc(d.enemy.team) + " (sbaglia " + d.enemy.w + "/" + d.enemy.n + ")" : "&ndash;") +
+        row("Sfide vinte / perse", d.duel_w + " / " + d.duel_l) +
+        "<button type='button' class='go' id='pfOk' style='margin-top:12px'>Chiudi</button>";
+    }).catch(function (err) { $("profCard").innerHTML = "<p class='gmeta'>" + esc(err.message) + "</p><button type='button' class='go' id='pfOk'>Chiudi</button>"; });
+  }
+  $("profDlg").addEventListener("click", function (e) { if (e.target.id === "profDlg" || e.target.id === "pfOk") $("profDlg").hidden = true; });
   function renderRank(noFetch) {
     var box = $("rankPane");
     box.innerHTML = "<div class='scope'><button type='button' data-s='md' aria-pressed='" + (state.scope === "md") + "'>Giornata " + state.md + "</button><button type='button' data-s='all' aria-pressed='" + (state.scope === "all") + "'>Generale</button></div>" +
       "<div class='scope view'><button type='button' data-v='race' aria-pressed='" + (state.view === "race") + "'>Corsa</button><button type='button' data-v='classic' aria-pressed='" + (state.view === "classic") + "'>Classica</button></div>" +
-      "<div id='rankList'><p class='empty'>Carico la classifica…</p></div><button type='button' class='go' data-share='rank' style='margin:12px 5px 0 0;width:calc(100% - 5px)'>Condividi su WhatsApp</button>";
+      "<div id='rankList'><p class='empty'>Carico la classifica…</p></div><h4 style='margin:16px 0 0;font-family:var(--font-display);font-weight:400'>Profili</h4><div class='pfchips' id='pfChips'></div><button type='button' class='go' data-share='rank' style='margin:12px 5px 0 0;width:calc(100% - 5px)'>Condividi su WhatsApp</button>";
     loadExtra();
     if (noFetch && state.rankRows) { drawRank(); return; }
     rpc("ble_leaderboard", { p_matchday: state.scope === "md" ? state.md : null }).then(function (rows) {
@@ -1038,6 +1065,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   });
   $("rankPane").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
+    if (b.hasAttribute("data-pf")) { play("chip"); pfShow(b.getAttribute("data-pf")); return; }
     if (b.hasAttribute("data-share")) {
       var rows = (state.rankRows || []).filter(function (r) { return r.pts > 0 || state.scope === "all"; });
       shareWa("🏆 Ble te piac o' Pe — Classifica " + (state.scope === "md" ? "giornata " + state.md : "generale") + "\n" + rows.map(function (r, i) { return (["🥇", "🥈", "🥉"][i] || (i + 1) + ".") + " " + r.pname + " " + r.pts; }).join("\n"));
