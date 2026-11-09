@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test notifiche</title>
+<style>body{font:16px system-ui;margin:16px;background:#fff;color:#111}button{font:inherit;padding:14px;width:100%;margin:8px 0;border-radius:10px;border:2px solid #111;background:#cfe9fb}pre{white-space:pre-wrap;background:#f2f2f2;padding:10px;border-radius:8px;font-size:14px}</style></head>
+<body><h2>Test notifiche</h2>
+<p>Premi i bottoni nell'ordine e mandami il testo che compare sotto.</p>
+<button id="b1">1. Controlla stato</button>
+<button id="b2">2. Chiedi il permesso</button>
+<button id="b3">3. Registra e iscrivi</button>
+<pre id="out">in attesa…</pre>
+<script>
+var out=document.getElementById("out"), log=[];
+function w(t){log.push(t);out.textContent=log.join("\n");}
+function ua(){return navigator.userAgent.replace(/\(.*?\)/,"(…)");}
+document.getElementById("b1").onclick=function(){
+  log=[];
+  w("secure="+isSecureContext+" origin="+location.origin);
+  w("standalone="+(matchMedia("(display-mode: standalone)").matches));
+  w("Notification="+("Notification" in window)+" perm="+(window.Notification?Notification.permission:"-"));
+  w("serviceWorker="+("serviceWorker" in navigator)+" PushManager="+("PushManager" in window));
+  w("UA="+ua());
+  if(navigator.permissions){navigator.permissions.query({name:"notifications"}).then(function(s){w("permissions.query="+s.state);}).catch(function(e){w("query err "+e.message);});}
+};
+document.getElementById("b2").onclick=function(){
+  var t0=Date.now();
+  w("chiedo… (perm prima="+Notification.permission+")");
+  try{
+    var p=Notification.requestPermission(function(r){w("callback: "+r+" dopo "+(Date.now()-t0)+"ms");});
+    if(p&&p.then)p.then(function(r){w("promise: "+r+" dopo "+(Date.now()-t0)+"ms");}).catch(function(e){w("errore "+e.message);});
+  }catch(e){w("eccezione "+e.message);}
+};
+document.getElementById("b3").onclick=function(){
+  navigator.serviceWorker.register("sw.js").then(function(){return navigator.serviceWorker.ready;}).then(function(reg){
+    w("sw ok scope="+reg.scope);
+    return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:Uint8Array.from(atob("BLthw13Zc1acRANtrpTedbEOnRs3gbNRnLVDCbRIXIWomtOGAz2ZsUvLAivCMPjxxUk7WcRPaj9IWMxmw6_2zrA".replace(/-/g,"+").replace(/_/g,"/")+"="),function(c){return c.charCodeAt(0);})});
+  }).then(function(s){w("iscrizione ok: "+s.endpoint.slice(0,50)+"…");}).catch(function(e){w("ERRORE: "+e.name+" - "+e.message);});
+};
+</script></body></html>
