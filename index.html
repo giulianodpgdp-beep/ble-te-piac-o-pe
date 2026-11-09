@@ -117,8 +117,8 @@ nav.md .title { flex: 1; text-align: center; font-family: var(--font-display); l
 nav.md .md-l { display: block; font-family: var(--font-label); font-weight: 600; font-size: .72rem; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
 nav.md .md-n { font-size: 2.6rem; color: var(--ink); text-shadow: 3px 3px 0 var(--giallo); }
 nav.md .title small { display: block; margin-top: 6px; font-family: var(--font-label); font-weight: 500; font-size: .72rem; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
-.tabs { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); padding: 4px; gap: 4px; margin: 0 4px 18px 0; }
-.tabs button { background: none; border: 0; padding: 10px 4px; border-radius: 9px; font-family: var(--font-display); font-weight: 400; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.tabs { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); padding: 4px; gap: 4px; margin: 0 4px 18px 0; }
+.tabs button { background: none; border: 0; padding: 10px 4px; border-radius: 9px; font-family: var(--font-display); font-weight: 400; font-size: .62rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
 .tabs button[aria-selected=true] { background: var(--azzurro); color: var(--azzurro-ink); }
 
 /* selezione partite */
@@ -235,6 +235,41 @@ details.hday[open] summary::after { content: "\2212"; }
 .toast.on { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .toast, .btn, .mchip, .opts button, .stepper button, .scope button, nav.md .step { transition: none; } }
 @media (max-width: 380px) { h1 { font-size: 1.3rem; } .team { font-size: .95rem; } .stepper { grid-template-columns: 36px 48px 36px; } .stepper button { width: 36px; height: 36px; } .stepper output { width: 48px; height: 48px; } nav.md .md-n { font-size: 2.2rem; } }
+
+/* Old but Gold */
+.gold-h { margin: 0 0 4px; font-family: var(--font-display); font-weight: 400; font-size: 1.5rem; color: var(--ink); text-shadow: 3px 3px 0 var(--giallo); }
+.gold-sub { margin: 0 0 14px; color: var(--muted); font-size: .9rem; }
+details.gadd { background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); margin: 0 4px 14px 0; }
+details.gadd > summary { cursor: pointer; padding: 12px 14px; font-family: var(--font-display); font-size: .85rem; text-transform: uppercase; letter-spacing: .04em; list-style: none; }
+details.gadd > summary::-webkit-details-marker { display: none; }
+.gform { padding: 0 14px 14px; display: grid; gap: 10px; }
+.gform label { display: grid; gap: 4px; font-family: var(--font-label); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+.gform input[type=text], .gform textarea, .gform input[type=file] { font: inherit; font-family: var(--font-body); font-size: 1rem; text-transform: none; letter-spacing: normal; font-weight: 500; padding: 9px 10px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); width: 100%; }
+.gform textarea { min-height: 84px; resize: vertical; }
+.kinds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.kinds button, .gbar button, .gact button, .gform .go { font-family: var(--font-label); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; padding: 9px 4px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 2px 2px 0 var(--shade); }
+.kinds button[aria-pressed=true], .gbar button[aria-pressed=true] { background: var(--giallo); color: var(--giallo-ink); }
+.gform .go { background: var(--azzurro); color: var(--azzurro-ink); font-size: .85rem; padding: 12px; }
+.gform .go:disabled { opacity: .6; }
+.gbar { display: flex; gap: 6px; margin: 0 4px 12px 0; }
+.gbar button { flex: 1; }
+.gem { background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); margin: 0 4px 14px 0; padding: 12px; display: grid; gap: 8px; }
+.gem-top { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
+.gem h4 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1rem; overflow-wrap: anywhere; }
+.gkind { font-family: var(--font-label); font-weight: 600; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; background: var(--giallo); color: var(--giallo-ink); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.gmeta { font-size: .78rem; color: var(--muted); }
+.gem audio, .gem video, .gem img { width: 100%; border-radius: 10px; display: block; background: var(--surface-2); }
+.gem img, .gem video { max-height: 420px; object-fit: contain; }
+.gem blockquote { margin: 0; padding: 10px 12px; border-left: 5px solid var(--giallo); background: var(--surface-2); border-radius: 0 10px 10px 0; font-size: 1.02rem; overflow-wrap: anywhere; white-space: pre-wrap; }
+.gcap { margin: 0; font-size: .92rem; overflow-wrap: anywhere; white-space: pre-wrap; }
+.rate-h { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-label); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+.rate-h b { font-family: var(--font-display); font-weight: 400; font-size: 1.2rem; letter-spacing: 0; }
+.rate-b { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; margin-top: 6px; }
+.rate-b button { padding: 8px 0; font-family: var(--font-label); font-weight: 600; font-size: .78rem; border: 2px solid var(--edge); border-radius: 8px; background: var(--surface-2); color: var(--ink); }
+.rate-b button[aria-pressed=true] { background: var(--giallo); color: var(--giallo-ink); }
+.gact { display: flex; gap: 6px; }
+.gact button.danger { background: var(--bad); color: #fff; }
+.gform.inl { padding: 0; }
 </style>
 </head>
 <body>
@@ -311,10 +346,12 @@ details.hday[open] summary::after { content: "\2212"; }
       <button type="button" role="tab" id="tabPlay" aria-selected="true">Pronostici</button>
       <button type="button" role="tab" id="tabRank" aria-selected="false">Classifica</button>
       <button type="button" role="tab" id="tabHist" aria-selected="false">Storico</button>
+      <button type="button" role="tab" id="tabGold" aria-selected="false">Gold</button>
     </div>
     <div id="playPane"></div>
     <div id="rankPane" hidden></div>
     <div id="histPane" hidden></div>
+    <div id="goldPane" hidden></div>
   </section>
 
   <p class="empty" id="loading">Carico il gioco&hellip;</p>
@@ -764,14 +801,158 @@ details.hday[open] summary::after { content: "\2212"; }
       .catch(function (err) { $("histPane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
   }
 
+
+  /* ---------- old but gold ---------- */
+  var KIND_L = { text: "Frase", audio: "Audio", image: "Immagine", video: "Video" };
+  var ACCEPT = { audio: "audio/*,.opus,.m4a,.mp3", image: "image/*", video: "video/*" };
+  var gold = { gems: null, admin: false, sort: "new", kind: "text", edit: null, del: null, busy: false };
+  function gemUrl(g) { return g.path ? SB + "/storage/v1/object/public/ble-gems/" + g.path : g.url; }
+  function fmtDay(iso) { return new Date(iso).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Rome" }); }
+  function rateHtml(g) {
+    var own = g.author.toLowerCase() === state.me.name.toLowerCase();
+    var h = "<div class='rate-h'><span>" + (g.votes ? g.votes + (g.votes === 1 ? " voto" : " voti") : "Nessun voto") + "</span><b>" + (g.votes ? Number(g.avg).toFixed(1) : "&ndash;") + "</b></div>";
+    if (own) return h + "<p class='gmeta'>Non puoi votare la tua pietra.</p>";
+    h += "<div class='rate-b' role='group' aria-label='Voto da 1 a 10'>";
+    for (var i = 1; i <= 10; i++) h += "<button type='button' data-vote='" + i + "' aria-pressed='" + (g.mine === i) + "'>" + i + "</button>";
+    return h + "</div><p class='gmeta'>Memorabilit&agrave; e importanza, da 1 a 10.</p>";
+  }
+  function mediaHtml(g) {
+    var u = esc(gemUrl(g) || "");
+    if (g.kind === "audio") return "<audio controls preload='none' src='" + u + "'></audio>";
+    if (g.kind === "image") return "<a href='" + u + "' target='_blank' rel='noopener'><img loading='lazy' alt='" + esc(g.title) + "' src='" + u + "'></a>";
+    if (g.kind === "video") return "<video controls preload='metadata' playsinline src='" + u + "'></video>";
+    return "<blockquote>" + esc(g.body || "") + "</blockquote>";
+  }
+  function gemHtml(g) {
+    var h = "<article class='gem' data-g='" + g.id + "'>";
+    if (gold.edit === g.id) {
+      return h + "<form class='gform inl' data-edit='" + g.id + "'><label>Titolo<input type='text' name='t' maxlength='80' required value='" + esc(g.title) + "'></label><label>" + (g.kind === "text" ? "Frase" : "Didascalia") + "<textarea name='b' maxlength='1000'>" + esc(g.body || "") + "</textarea></label><div class='gact'><button type='submit'>Salva</button><button type='button' data-act='cancel'>Annulla</button></div></form></article>";
+    }
+    h += "<div class='gem-top'><h4>" + esc(g.title) + "</h4><span class='gkind'>" + KIND_L[g.kind] + "</span></div>";
+    h += "<div class='gmeta'>di " + esc(g.author) + " &middot; " + fmtDay(g.created_at) + "</div>";
+    h += mediaHtml(g);
+    if (g.kind !== "text" && g.body) h += "<p class='gcap'>" + esc(g.body) + "</p>";
+    h += "<div class='rate'>" + rateHtml(g) + "</div>";
+    if (gold.admin) {
+      h += "<div class='gact'><button type='button' data-act='edit'>Modifica</button>" +
+        (gold.del === g.id ? "<button type='button' class='danger' data-act='delok'>Sicuro? Elimina</button>" : "<button type='button' data-act='del'>Elimina</button>") + "</div>";
+    }
+    return h + "</article>";
+  }
+  function sortedGems() {
+    var a = (gold.gems || []).slice();
+    if (gold.sort === "top") a.sort(function (x, y) { return (y.votes ? Number(y.avg) : -1) - (x.votes ? Number(x.avg) : -1) || y.votes - x.votes; });
+    return a;
+  }
+  function drawGemList() {
+    var a = sortedGems();
+    $("gemList").innerHTML = a.length ? a.map(gemHtml).join("") : "<p class='empty'>Ancora nessuna pietra preziosa. Aggiungi la prima!</p>";
+  }
+  function paintKinds() {
+    var k = gold.kind;
+    Array.prototype.forEach.call(document.querySelectorAll("#gKinds button"), function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-k") === k); });
+    $("gBodyL").firstChild.nodeValue = k === "text" ? "Frase" : "Didascalia (facoltativa)";
+    $("gBody").required = k === "text";
+    $("gFileL").hidden = k === "text";
+    $("gFile").required = k !== "text";
+    if (k !== "text") $("gFile").setAttribute("accept", ACCEPT[k]);
+  }
+  function drawGold() {
+    var h = "<h2 class='gold-h'>Old but Gold</h2><p class='gold-sub'>Le pietre preziose del gruppo: vocali, frasi, foto e video da ricordare.</p>" +
+      "<details class='gadd' id='gAdd'><summary>+ Aggiungi una pietra preziosa</summary><form class='gform' id='gForm'>" +
+      "<div class='kinds' id='gKinds'>" + ["text", "audio", "image", "video"].map(function (k) { return "<button type='button' data-k='" + k + "' aria-pressed='false'>" + KIND_L[k] + "</button>"; }).join("") + "</div>" +
+      "<label>Titolo<input type='text' id='gTitle' maxlength='80' required placeholder='Es. Il vocale del secolo'></label>" +
+      "<label id='gBodyL'>Frase<textarea id='gBody' maxlength='1000'></textarea></label>" +
+      "<label id='gFileL' hidden>File (max 40 MB)<input type='file' id='gFile'></label>" +
+      "<button class='go' id='gGo' type='submit'>Aggiungi</button></form></details>" +
+      "<div class='gbar'><button type='button' data-sort='new' aria-pressed='" + (gold.sort === "new") + "'>Novit&agrave;</button><button type='button' data-sort='top' aria-pressed='" + (gold.sort === "top") + "'>Pi&ugrave; votate</button></div>" +
+      "<div id='gemList'></div>";
+    $("goldPane").innerHTML = h; paintKinds(); drawGemList();
+  }
+  function renderGold() {
+    if (!gold.gems) $("goldPane").innerHTML = "<p class='empty'>Apro il forziere&hellip;</p>";
+    var a = { p_name: state.me.name, p_pin: state.me.pin };
+    Promise.all([rpc("ble_whoami", a), rpc("ble_list_gems", a)]).then(function (r) {
+      gold.admin = !!r[0].is_admin; gold.gems = r[1];
+      if (!$("gemList")) drawGold(); else drawGemList();
+    }).catch(function (err) { $("goldPane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
+  }
+  function fnCall(body) {
+    body.name = state.me.name; body.pin = state.me.pin;
+    return fetch(SB + "/functions/v1/ble-gems", { method: "POST", headers: HEAD, body: JSON.stringify(body) }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || "Errore, riprova"); return j; });
+    });
+  }
+  function submitGem(e) {
+    e.preventDefault();
+    if (gold.busy) return;
+    var k = gold.kind, title = $("gTitle").value.trim(), body = $("gBody").value.trim(), f = $("gFile").files[0];
+    var go = $("gGo"); gold.busy = true; go.disabled = true; go.textContent = "Carico…";
+    var done = function () { gold.busy = false; go.disabled = false; go.textContent = "Aggiungi"; };
+    var step = Promise.resolve(null);
+    if (k !== "text") {
+      if (!f) { done(); toast("Scegli un file"); return; }
+      if (f.size > 40 * 1024 * 1024) { done(); toast("File troppo grande (max 40 MB)"); return; }
+      var ext = (f.name.split(".").pop() || "").toLowerCase();
+      step = fnCall({ action: "sign", kind: k, ext: ext }).then(function (s) {
+        var fd = new FormData(); fd.append("cacheControl", "31536000"); fd.append("", f);
+        return fetch(s.signedUrl, { method: "PUT", body: fd }).then(function (r) { if (!r.ok) throw new Error("Upload non riuscito"); return s.path; });
+      });
+    }
+    step.then(function (path) {
+      return rpc("ble_add_gem", { p_name: state.me.name, p_pin: state.me.pin, p_kind: k, p_title: title, p_body: body || null, p_path: path });
+    }).then(function () {
+      done(); $("gTitle").value = ""; $("gBody").value = ""; $("gFile").value = ""; $("gAdd").open = false;
+      play("done"); toast("Salvato"); gold.sort = "new"; renderGold();
+    }).catch(function (err) { done(); toast(err.message); });
+  }
+  function refreshRates() {
+    return rpc("ble_list_gems", { p_name: state.me.name, p_pin: state.me.pin }).then(function (list) {
+      gold.gems = list;
+      list.forEach(function (g) { var el = document.querySelector("#gemList [data-g='" + g.id + "'] .rate"); if (el) el.innerHTML = rateHtml(g); });
+    });
+  }
+  function findGem(id) { return (gold.gems || []).filter(function (g) { return g.id === id; })[0]; }
+  $("goldPane").addEventListener("submit", function (e) {
+    if (e.target.id === "gForm") return submitGem(e);
+    if (e.target.hasAttribute("data-edit")) {
+      e.preventDefault();
+      var id = Number(e.target.getAttribute("data-edit"));
+      rpc("ble_edit_gem", { p_name: state.me.name, p_pin: state.me.pin, p_gem: id, p_title: e.target.elements.t.value, p_body: e.target.elements.b.value })
+        .then(function () { gold.edit = null; toast("Salvato"); renderGold(); }).catch(function (err) { toast(err.message); });
+    }
+  });
+  $("goldPane").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    if (b.hasAttribute("data-k")) { gold.kind = b.getAttribute("data-k"); play("chip"); paintKinds(); return; }
+    if (b.hasAttribute("data-sort")) { gold.sort = b.getAttribute("data-sort"); play("chip"); var bs = document.querySelectorAll(".gbar button"); Array.prototype.forEach.call(bs, function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-sort") === gold.sort); }); drawGemList(); return; }
+    var card = b.closest("[data-g]"); if (!card) return;
+    var id = Number(card.getAttribute("data-g"));
+    if (b.hasAttribute("data-vote")) {
+      var sc = Number(b.getAttribute("data-vote"));
+      rpc("ble_vote_gem", { p_name: state.me.name, p_pin: state.me.pin, p_gem: id, p_score: sc })
+        .then(function () { play("chip"); toast("Salvato"); return refreshRates(); }).catch(function (err) { toast(err.message); });
+      return;
+    }
+    var act = b.getAttribute("data-act");
+    if (act === "edit") { gold.edit = id; drawGemList(); }
+    else if (act === "cancel") { gold.edit = null; drawGemList(); }
+    else if (act === "del") { gold.del = id; drawGemList(); }
+    else if (act === "delok") {
+      fnCall({ action: "delete", gem: id }).then(function () { gold.del = null; toast("Azzerato"); renderGold(); }).catch(function (err) { toast(err.message); });
+    }
+  });
+
   function setTab(t) {
     if (state.tab !== t) play(t === "rank" ? "rank" : t === "hist" ? "hist" : "chip");
     state.tab = t;
-    $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank"); $("tabHist").setAttribute("aria-selected", t === "hist");
-    $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist";
+    $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank"); $("tabHist").setAttribute("aria-selected", t === "hist"); $("tabGold").setAttribute("aria-selected", t === "gold");
+    $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist"; $("goldPane").hidden = t !== "gold"; document.querySelector("nav.md").hidden = t === "gold";
     if (t === "rank") renderRank();
     if (t === "hist") renderHist();
+    if (t === "gold") renderGold();
   }
+  $("tabGold").addEventListener("click", function () { setTab("gold"); });
   $("tabHist").addEventListener("click", function () { setTab("hist"); });
   $("tabPlay").addEventListener("click", function () { setTab("play"); });
   $("tabRank").addEventListener("click", function () { setTab("rank"); });
