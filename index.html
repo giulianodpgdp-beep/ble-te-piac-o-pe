@@ -1057,6 +1057,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   var ACCEPT = { audio: "audio/*,.opus,.m4a,.mp3", image: "image/*", video: "video/*" };
   var gold = { filter: "all", sec: "gold", drawn: null, gems: null, admin: false, sort: "new", kind: "text", edit: null, del: null, busy: false, open: {} };
   function gemUrl(g) { return g.path ? SB + "/storage/v1/object/public/ble-gems/" + g.path : g.url; }
+  function fmtDT(iso) { return new Date(iso).toLocaleString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" }); }
   function fmtDay(iso) { return new Date(iso).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Rome" }); }
   var RX = ["😂", "🔥", "💩"], rxData = {};
   function rxInner(key) {
@@ -1102,7 +1103,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     h += "<button type='button' class='gem-head' data-act='toggle' aria-expanded='" + open + "'>" +
       "<span class='gh-main'><span class='gh-row'><span class='gtitle'>" + (gold.pod && gold.pod.indexOf(g.id) >= 0 ? ["🥇", "🥈", "🥉"][gold.pod.indexOf(g.id)] + " " : "") + esc(g.title) + "</span><span class='gkind'>" + KIND_L[g.kind] + "</span></span>" +
       (!open && g.body ? "<span class='gdesc'>" + esc(g.body) + "</span>" : "") +
-      "<span class='gmeta'>di " + esc(g.author) + " &middot; " + fmtDay(g.created_at) + "</span></span>" +
+      "<span class='gmeta'>di " + esc(g.author) + " &middot; inserita il " + fmtDT(g.created_at) + "</span></span>" +
       "<span class='gscore'>" + (g.votes ? Number(g.avg).toFixed(1) : "&ndash;") + "</span><span class='gchev' aria-hidden='true'></span></button>";
     if (open) {
       h += mediaHtml(g);
@@ -1261,7 +1262,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   var tr = { kind: "ufficiale", list: null, edit: null, del: null, busy: false, open: {} };
   var TR_L = { ufficiale: "Scambi ufficiali", oscena: "Proposte oscene", comitato: "&#9878; Comitato" };
   function kindsBar() { return "<div class='tkinds'>" + ["ufficiale", "oscena", "comitato"].map(function (k) { return "<button type='button' data-tk='" + k + "' aria-pressed='" + (tr.kind === k) + "'>" + TR_L[k] + "</button>"; }).join("") + "</div>"; }
-  function trUrl(t) { return SB + "/storage/v1/object/public/ble-gems/" + t.path; }
+  function trUrl(t) { return t.path.indexOf("trades/") === 0 ? t.path : SB + "/storage/v1/object/public/ble-gems/" + t.path; }
   function trRate(t) {
     if (t.status !== "done") return "<p class='tr-pend'>Il voto si apre dopo la trascrizione (ogni sera).</p>";
     var h = "";
@@ -1294,7 +1295,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     h += "<button type='button' class='gem-head' data-tact='toggle' aria-expanded='" + open + "'><span class='gh-main'>" +
       (done ? "<span class='tr-who'><span>" + esc(t.party_a) + "</span><i>&#8646;</i><span>" + esc(t.party_b) + "</span></span>" : "<span class='tr-pend'>In attesa di trascrizione</span>") +
       (done && !open ? "<span class='gdesc'>" + esc(t.party_a) + " cede " + esc(t.gives_a || "—") + " &middot; " + esc(t.party_b) + " cede " + esc(t.gives_b || "—") + "</span>" : "") +
-      "<span class='gmeta'>caricato da " + esc(t.author) + " &middot; " + fmtDay(t.created_at) + "</span></span>" +
+      "<span class='gmeta'>caricato da " + esc(t.author) + " il " + fmtDT(t.created_at) + "</span></span>" +
       "<span class='gscore'>" + trScore(t) + "</span><span class='gchev' aria-hidden='true'></span></button>";
     if (open) {
       h += "<a href='" + esc(trUrl(t)) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(trUrl(t)) + "' style='width:100%;border-radius:10px;display:block;max-height:420px;object-fit:contain;background:var(--surface-2)'></a>";
@@ -1344,7 +1345,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var a = esc(c.party_a), b = esc(c.party_b), st = cm.st, v = Number(c.avg);
     var h = "<article class='gem open' data-c='" + c.trade_id + "'><div class='gem-head' style='cursor:default'><span class='gh-main'><span class='tr-who'><span>" + a + "</span><i>&#8646;</i><span>" + b + "</span></span>" +
       "<span class='gmeta'>" + c.votes + " voti, tutti " + (v > 0 ? "+5 (a favore di " + b + ")" : "&minus;5 (a favore di " + a + ")") + "</span></span><span class='gscore'>" + (c.verdict ? "&#9878;" : "&#8987;") + "</span></div>";
-    h += "<a href='" + esc(SB + "/storage/v1/object/public/ble-gems/" + c.path) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(SB + "/storage/v1/object/public/ble-gems/" + c.path) + "' style='width:100%;border-radius:10px;display:block;max-height:320px;object-fit:contain;background:var(--surface-2)'></a>";
+    h += "<a href='" + esc(trUrl(c)) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(trUrl(c)) + "' style='width:100%;border-radius:10px;display:block;max-height:320px;object-fit:contain;background:var(--surface-2)'></a>";
     h += "<div class='tr-gives'><div><b>" + a + " cede</b>" + esc(c.gives_a || "—") + "</div><div><b>" + b + " cede</b>" + esc(c.gives_b || "—") + "</div></div>";
     if (c.verdict) {
       h += "<p class='tr-pend'><b>Sentenza: " + VERD[c.verdict] + "</b></p>";
