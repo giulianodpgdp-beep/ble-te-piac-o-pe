@@ -1762,6 +1762,15 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       return rpc("ble_delete_push", { p_name: state.me.name, p_pin: state.me.pin, p_endpoint: ep }).then(function () { return sub.unsubscribe(); }).then(function () { ntfLabel(false); toast("Salvato"); });
     }).catch(function () {});
   }
+  /* richiesta automatica al primo tocco (il browser la permette solo dopo un gesto), al massimo una volta al giorno */
+  function autoAsk(e) {
+    if (!state.me || !pushOk() || Notification.permission !== "default") return;
+    if (e && e.target && e.target.closest && e.target.closest("#ntfBtn")) return;
+    var day = new Date().toISOString().slice(0, 10);
+    try { if (localStorage.getItem("ble.askDay") === day) return; localStorage.setItem("ble.askDay", day); } catch (x) {}
+    ntfEnable();
+  }
+  document.addEventListener("pointerup", autoAsk, true);
   $("ntfBtn").addEventListener("click", function () { if ($("ntfBtn").getAttribute("data-on") === "1") ntfDisable(); else ntfEnable(); });
   function ntfDetach() {
     if (!pushOk() || !state.me) return;
