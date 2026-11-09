@@ -83,9 +83,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 :focus-visible { outline: 3px solid var(--giallo); outline-offset: 2px; }
 [hidden] { display: none !important; }
 
-header.top { padding: 22px 0 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+header.top { padding: 18px 0 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hdr-logo { flex: none; width: 92px; height: auto; }
 h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.55rem; line-height: 1.08; text-wrap: balance; color: var(--ink); text-shadow: 3px 3px 0 var(--azzurro); letter-spacing: .01em; }
-.sub { margin: 8px 0 0; color: var(--muted); font-family: var(--font-label); font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 500; }
 .stripe { height: 10px; margin: 0 0 18px; border: 2px solid var(--edge); border-radius: 6px; background: repeating-linear-gradient(-45deg, var(--azzurro) 0 9px, var(--surface) 9px 18px); }
 .who { font-family: var(--font-label); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .75rem; color: var(--muted); min-width: 0; }
 .who button { display: inline-block; margin-left: 0; background: none; border: 0; padding: 4px 0; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; font-family: var(--font-label); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .75rem; }
@@ -239,18 +239,7 @@ details.hday[open] summary::after { content: "\2212"; }
 </head>
 <body>
 <div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Ble te piac o' Pe</h1>
-      <p class="sub">Pronostici Serie A del gruppo</p>
-    </div>
-  </header>
-
-  <div class="who" id="who" hidden><span id="whoName"></span><button type="button" id="sndBtn" aria-pressed="true">Suoni: sì</button><button type="button" id="logout">Esci</button></div>
-  <div class="stripe" aria-hidden="true"></div>
-
-  <section id="loginView" hidden>
-    <svg class="logo" viewBox="0 0 320 330" role="img" aria-label="Il ragazzo del gruppo con occhiali, maglioncino e borsello a tracolla che dice: non è equo">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="mascot" viewBox="0 0 320 330">
       <path d="M40 10H280Q296 10 296 26V56Q296 72 280 72H196L172 100L170 72H40Q24 72 24 56V26Q24 10 40 10Z" fill="var(--surface)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
       <text x="160" y="51" text-anchor="middle" font-size="26" style="font-family: var(--font-display); fill: var(--ink)">non è equo</text>
       <rect x="128" y="262" width="28" height="46" rx="8" fill="#2b3a55"/>
@@ -287,7 +276,17 @@ details.hday[open] summary::after { content: "\2212"; }
       <path d="M146 162Q160 172 174 162" stroke="#7a3b2e" stroke-width="3" stroke-linecap="round" fill="none"/>
       <circle cx="139" cy="158" r="5" fill="#e88f86" opacity=".35"/>
       <circle cx="181" cy="158" r="5" fill="#e88f86" opacity=".35"/>
-    </svg>
+    </symbol></svg>
+  <header class="top">
+    <h1>Ble te piac o' Pe</h1>
+    <svg class="hdr-logo" id="hdrLogo" viewBox="0 0 320 330" role="img" aria-label="Il ragazzo del gruppo che dice: non è equo" hidden><use href="#mascot"/></svg>
+  </header>
+
+  <div class="who" id="who" hidden><span id="whoName"></span><button type="button" id="sndBtn" aria-pressed="true">Suoni: sì</button><button type="button" id="logout">Esci</button></div>
+  <div class="stripe" aria-hidden="true"></div>
+
+  <section id="loginView" hidden>
+    <svg class="logo" viewBox="0 0 320 330" role="img" aria-label="Il ragazzo del gruppo con occhiali, maglioncino e borsello a tracolla che dice: non è equo"><use href="#mascot"/></svg>
     <form class="login" id="loginForm" autocomplete="off">
       <h2>Entra in gioco</h2>
       <p>Scrivi il tuo nome e scegli un PIN di 4 cifre. La prima volta crei il tuo profilo, poi rientri con gli stessi dati.</p>
@@ -337,7 +336,7 @@ details.hday[open] summary::after { content: "\2212"; }
 
   /* ---------- suoni ---------- */
   // Per usare i tuoi file: metti qui il percorso, per esempio chip: "sounds/pop.mp3". Se resta vuoto suona il suono di base.
-  var SOUND_FILES = { up: "", down: "", pick: "", chip: "", done: "sounds/completo.mp3", join: "sounds/ingresso.mp3", rank: "sounds/classifica.mp3", err: "" };
+  var SOUND_FILES = { up: "", down: "", pick: "", chip: "", done: "sounds/completo.mp3", join: "sounds/ingresso.mp3", rank: "sounds/classifica.mp3", hist: "sounds/storico.mp3", err: "" };
   var snd = { on: store("ble.snd") !== "0", ctx: null };
   function audioCtx() {
     try {
@@ -360,6 +359,7 @@ details.hday[open] summary::after { content: "\2212"; }
     chip: function (c) { tone(c, 440, 0, .06, "sine", .15, 660); },
     done: function (c) { [523, 659, 784, 1047].forEach(function (f, i) { tone(c, f, i * .085, .14, "square", .06); }); },
     rank: function (c) { [330, 392, 494, 659].forEach(function (f, i) { tone(c, f, i * .09, .16, "square", .06); }); },
+    hist: function (c) { [494, 392, 330].forEach(function (f, i) { tone(c, f, i * .09, .14, "triangle", .12); }); },
     join: function (c) { [392, 523, 659, 784].forEach(function (f, i) { tone(c, f, i * .11, .22, "triangle", .16); }); },
     err: function (c) { tone(c, 170, 0, .28, "sawtooth", .07, 105); }
   };
@@ -396,7 +396,7 @@ details.hday[open] summary::after { content: "\2212"; }
 
   /* ---------- login ---------- */
   function showLogin() {
-    $("loading").hidden = true; $("appView").hidden = true; $("who").hidden = true; $("loginView").hidden = false;
+    $("loading").hidden = true; $("appView").hidden = true; $("who").hidden = true; $("hdrLogo").setAttribute("hidden", ""); $("loginView").hidden = false;
   }
   $("loginForm").addEventListener("submit", function (e) {
     e.preventDefault();
@@ -427,7 +427,7 @@ details.hday[open] summary::after { content: "\2212"; }
           if (ms.some(function (m) { return m.status !== "finished" && new Date(m.kickoff).getTime() > now - 3 * 3600e3; })) { pick = n; break; }
         }
         state.md = pick;
-        $("who").hidden = false; $("whoName").textContent = state.me.name;
+        $("who").hidden = false; $("whoName").textContent = state.me.name; $("hdrLogo").removeAttribute("hidden");
         $("loading").hidden = true; $("appView").hidden = false;
         return loadMd();
       });
@@ -765,7 +765,7 @@ details.hday[open] summary::after { content: "\2212"; }
   }
 
   function setTab(t) {
-    if (state.tab !== t) play(t === "rank" ? "rank" : "chip");
+    if (state.tab !== t) play(t === "rank" ? "rank" : t === "hist" ? "hist" : "chip");
     state.tab = t;
     $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank"); $("tabHist").setAttribute("aria-selected", t === "hist");
     $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist";
