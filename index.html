@@ -117,8 +117,8 @@ nav.md .title { flex: 1; text-align: center; font-family: var(--font-display); l
 nav.md .md-l { display: block; font-family: var(--font-label); font-weight: 600; font-size: .72rem; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
 nav.md .md-n { font-size: 2.6rem; color: var(--ink); text-shadow: 3px 3px 0 var(--giallo); }
 nav.md .title small { display: block; margin-top: 6px; font-family: var(--font-label); font-weight: 500; font-size: .72rem; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
-.tabs { display: grid; grid-template-columns: repeat(2, 1fr); background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); padding: 4px; gap: 4px; margin: 0 4px 18px 0; }
-.tabs button { background: none; border: 0; padding: 10px; border-radius: 9px; font-family: var(--font-display); font-weight: 400; font-size: .85rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); padding: 4px; gap: 4px; margin: 0 4px 18px 0; }
+.tabs button { background: none; border: 0; padding: 10px 4px; border-radius: 9px; font-family: var(--font-display); font-weight: 400; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .tabs button[aria-selected=true] { background: var(--azzurro); color: var(--azzurro-ink); }
 
 /* selezione partite */
@@ -189,6 +189,32 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
 .reset:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--shade); }
 .reset.armed { background: var(--chip-ko-bg); color: var(--chip-ko-ink); }
 .reset.wide { display: block; width: calc(100% - 6px); margin-top: 18px; padding: 11px 12px; }
+
+/* storico */
+.trend { background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); padding: 12px 14px 10px; margin: 0 5px 16px 0; }
+.trend h3 { margin: 0 0 8px; font-family: var(--font-label); font-weight: 600; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.bars { display: flex; align-items: flex-end; gap: 8px; height: 96px; overflow-x: auto; padding-bottom: 2px; }
+.bar { flex: 0 0 34px; height: 100%; display: grid; grid-template-rows: 1fr auto auto; justify-items: center; align-items: end; gap: 2px; font-family: var(--font-label); font-weight: 600; font-size: .66rem; }
+.bar i { display: block; width: 100%; min-height: 3px; background: var(--azzurro); border: 2px solid var(--edge); border-radius: 6px 6px 2px 2px; }
+.bar b { font-family: var(--font-display); font-weight: 400; font-size: .8rem; }
+.bar span { color: var(--muted); letter-spacing: .04em; }
+.hdays { display: grid; gap: 14px; margin: 0 5px 0 0; }
+details.hday { background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); overflow: hidden; }
+details.hday summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 14px; background: var(--head-bg); color: var(--head-ink); font-family: var(--font-label); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .72rem; }
+details.hday summary::-webkit-details-marker { display: none; }
+details.hday summary::after { content: "+"; font-weight: 700; font-size: 1rem; }
+details.hday[open] summary::after { content: "\2212"; }
+.hday .hd-t { font-family: var(--font-display); font-size: .95rem; letter-spacing: .02em; }
+.hday .hd-w { margin-left: auto; text-align: right; overflow-wrap: anywhere; }
+.hday ul { list-style: none; margin: 0; padding: 6px 14px 10px; display: grid; }
+.hrow { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 2px dashed var(--line); }
+.hrow:last-child { border-bottom: 0; }
+.hrow .hi { font-family: var(--font-label); font-weight: 600; font-size: .72rem; color: var(--muted); }
+.hrow .hn { font-weight: 700; overflow-wrap: anywhere; }
+.hrow .hp { font-family: var(--font-display); font-size: 1.05rem; font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; }
+.hrow .ht { font-family: var(--font-label); font-weight: 600; font-size: .68rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); min-width: 58px; text-align: right; }
+.hrow.me { background: var(--giallo); color: var(--giallo-ink); margin: 0 -14px; padding: 8px 14px; border-bottom-color: transparent; }
+.hrow.me .hi, .hrow.me .ht { color: rgba(26, 20, 0, .72); }
 
 /* classifica a corsa */
 .scope.view { margin-top: -4px; }
@@ -285,9 +311,11 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
     <div class="tabs" role="tablist">
       <button type="button" role="tab" id="tabPlay" aria-selected="true">Pronostici</button>
       <button type="button" role="tab" id="tabRank" aria-selected="false">Classifica</button>
+      <button type="button" role="tab" id="tabHist" aria-selected="false">Storico</button>
     </div>
     <div id="playPane"></div>
     <div id="rankPane" hidden></div>
+    <div id="histPane" hidden></div>
   </section>
 
   <p class="empty" id="loading">Carico il gioco&hellip;</p>
@@ -302,7 +330,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
   var HEAD = { apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json" };
 
   var $ = function (id) { return document.getElementById(id); };
-  var state = { view: store("ble.view") === "classic" ? "classic" : "race", rankRows: null, sel: null, me: null, mds: [], md: null, matches: [], preds: {}, ans: {}, revP: [], revA: [], scope: "md", tab: "play" };
+  var state = { view: store("ble.view") === "classic" ? "classic" : "race", rankRows: null, hist: null, sel: null, me: null, mds: [], md: null, matches: [], preds: {}, ans: {}, revP: [], revA: [], scope: "md", tab: "play" };
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return null; }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -704,13 +732,47 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
     else if (b.hasAttribute("data-v")) { state.view = b.getAttribute("data-v"); store("ble.view", state.view); play("chip"); renderRank(true); }
   });
 
+  /* ---------- storico ---------- */
+  function drawHist() {
+    var box = $("histPane"), rows = state.hist || [];
+    if (!rows.length) { box.innerHTML = "<p class='empty'>Ancora nessuna giornata conclusa. Lo storico compare dopo le prime partite.</p>"; return; }
+    var mds = [], by = {}, cum = {}, mine = {}, meL = state.me.name.toLowerCase();
+    rows.forEach(function (r) { if (!by[r.h_md]) { by[r.h_md] = []; mds.push(r.h_md); } by[r.h_md].push({ n: r.pname, p: r.h_pts }); });
+    mds.sort(function (a, b) { return a - b; });
+    mds.forEach(function (md) {
+      by[md].sort(function (x, y) { return y.p - x.p || (x.n < y.n ? -1 : 1); });
+      by[md].forEach(function (r) { cum[r.n] = (cum[r.n] || 0) + r.p; r.c = cum[r.n]; if (r.n.toLowerCase() === meL) mine[md] = r.p; });
+    });
+    var mx = mds.reduce(function (m, md) { return Math.max(m, mine[md] || 0); }, 0);
+    var html = "<div class='trend'><h3>I tuoi punti per giornata</h3><div class='bars'>" + mds.map(function (md) {
+      var v = mine[md] || 0;
+      return "<div class='bar'><i style='height:" + (mx ? Math.max(4, Math.round(v / mx * 100)) : 4) + "%'></i><b>" + v + "</b><span>G" + md + "</span></div>";
+    }).join("") + "</div></div><div class='hdays'>";
+    mds.slice().reverse().forEach(function (md, idx) {
+      var top = by[md][0].p, win = top > 0 ? by[md].filter(function (r) { return r.p === top; }).map(function (r) { return r.n; }).join(", ") : "";
+      html += "<details class='hday'" + (idx === 0 ? " open" : "") + "><summary><span class='hd-t'>Giornata " + md + "</span><span class='hd-w'>" + (win ? "Vince " + esc(win) + " &middot; " + top : "Nessun punto") + "</span></summary><ul>" +
+        by[md].map(function (r, i) {
+          var me = r.n.toLowerCase() === meL;
+          return "<li class='hrow" + (me ? " me" : "") + "'><span class='hi'>" + (i + 1) + "</span><span class='hn'>" + esc(r.n) + (me ? " (tu)" : "") + "</span><span class='hp'>+" + r.p + "</span><span class='ht'>tot " + r.c + "</span></li>";
+        }).join("") + "</ul></details>";
+    });
+    box.innerHTML = html + "</div>";
+  }
+  function renderHist() {
+    $("histPane").innerHTML = "<p class='empty'>Carico lo storico…</p>";
+    rpc("ble_history").then(function (rows) { state.hist = rows; drawHist(); })
+      .catch(function (err) { $("histPane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
+  }
+
   function setTab(t) {
     if (state.tab !== t) play(t === "rank" ? "rank" : "chip");
     state.tab = t;
-    $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank");
-    $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank";
+    $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank"); $("tabHist").setAttribute("aria-selected", t === "hist");
+    $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist";
     if (t === "rank") renderRank();
+    if (t === "hist") renderHist();
   }
+  $("tabHist").addEventListener("click", function () { setTab("hist"); });
   $("tabPlay").addEventListener("click", function () { setTab("play"); });
   $("tabRank").addEventListener("click", function () { setTab("rank"); });
   $("prevMd").addEventListener("click", function () { var i = state.mds.indexOf(state.md); if (i > 0) { state.md = state.mds[i - 1]; loadMd(); } });
