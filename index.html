@@ -1386,8 +1386,9 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function ntfEnable() {
     if (!pushOk()) { toast("Per le notifiche installa l'app dalla schermata Home"); return; }
+    var diag = "[v4 perm=" + Notification.permission + " app=" + ((window.matchMedia && matchMedia("(display-mode: standalone)").matches) ? "installata" : "browser") + "]";
     Notification.requestPermission().then(function (perm) {
-      if (perm !== "granted") { toast(perm === "denied" ? "Notifiche bloccate: sblocca il sito dalle impostazioni del browser (lucchetto accanto all'indirizzo > Notifiche > Consenti)" : "Hai chiuso la richiesta senza consentire: riprova e premi Consenti"); return; }
+      if (perm !== "granted") { toast((perm === "denied" ? "Notifiche bloccate dal telefono per questo sito." : "Richiesta chiusa senza consentire.") + " " + diag + " result=" + perm); return; }
       return navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; }).then(function (reg) {
         return reg.pushManager.getSubscription().then(function (sub) { return sub || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID) }); });
       }).then(function (sub) { return ntfSave(sub); }).then(function () { ntfLabel(true); toast("Salvato"); });
