@@ -354,6 +354,13 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .dlgcard ol { padding-left: 20px; margin: 8px 0 14px; display: grid; gap: 6px; }
 .dlgcard .go { width: 100%; font-family: var(--font-label); font-weight: 600; text-transform: uppercase; padding: 12px; border: 2px solid var(--edge); border-radius: 10px; background: var(--azzurro); color: var(--azzurro-ink); }
 .tabs button[data-n]:not([data-n="0"])::after { content: attr(data-n); background: var(--bad); color: #fff; border-radius: 8px; font-family: var(--font-label); font-size: .55rem; padding: 1px 5px; margin-left: 3px; vertical-align: middle; }
+.rxbox { display: inline-flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.rxbox button { font-size: .85rem; padding: 3px 9px; border: 2px solid var(--edge); border-radius: 999px; background: var(--surface); color: var(--ink); }
+.rxbox button[aria-pressed=true] { background: var(--giallo); color: var(--giallo-ink); }
+.rxbox button b { font-family: var(--font-label); font-size: .7rem; margin-left: 4px; }
+.podio { border: 3px solid var(--edge); border-radius: 14px; background: var(--giallo); color: var(--giallo-ink); padding: 10px 12px; margin: 0 4px 14px 0; box-shadow: 3px 3px 0 var(--shade); }
+.podio h4 { margin: 0 0 6px; font-family: var(--font-display); font-weight: 400; text-transform: uppercase; font-size: .9rem; }
+.podio button { display: flex; width: 100%; justify-content: space-between; gap: 8px; text-align: left; background: none; border: 0; border-top: 1px dashed var(--giallo-ink); color: inherit; padding: 7px 0; font: inherit; }
 </style>
 </head>
 <body>
@@ -581,7 +588,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         state.md = pick;
         $("who").hidden = false; $("whoName").textContent = state.me.name; $("hdrLogo").removeAttribute("hidden");
         $("loading").hidden = true; $("appView").hidden = false;
-        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); }).catch(function () {});
+        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); loadRx(); }).catch(function () {});
         return loadMd();
       });
     }).catch(function (err) { $("loading").hidden = false; $("loading").textContent = err.message; });
@@ -777,7 +784,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     });
     return "<details class='others'><summary>Cosa hanno detto gli altri</summary><ul>" +
       Object.keys(byName).map(function (nm) {
-        return "<li><span>" + esc(nm) + " <b>" + esc(byName[nm].s) + "</b></span><span>" + esc(byName[nm].x.join(" · ")) + "</span></li>";
+        return "<li><span>" + esc(nm) + " <b>" + esc(byName[nm].s) + "</b>" + rxHtml("pred", m.id + "|" + nm) + "</span><span>" + esc(byName[nm].x.join(" · ")) + "</span></li>";
       }).join("") + "</ul></details>";
   }
 
@@ -1038,6 +1045,27 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   var gold = { filter: "all", sec: "gold", drawn: null, gems: null, admin: false, sort: "new", kind: "text", edit: null, del: null, busy: false, open: {} };
   function gemUrl(g) { return g.path ? SB + "/storage/v1/object/public/ble-gems/" + g.path : g.url; }
   function fmtDay(iso) { return new Date(iso).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Rome" }); }
+  var RX = ["😂", "🔥", "💩"], rxData = {};
+  function rxInner(key) {
+    return RX.map(function (e) { var d = (rxData[key] || {})[e] || { n: 0, mine: false }; return "<button type='button' data-rx='" + esc(key) + "' data-e='" + e + "' aria-pressed='" + d.mine + "'>" + e + (d.n ? "<b>" + d.n + "</b>" : "") + "</button>"; }).join("");
+  }
+  function rxHtml(kind, target) { var key = kind + "|" + target; return "<div class='rxbox' data-rxk='" + esc(key) + "'>" + rxInner(key) + "</div>"; }
+  function drawRx() { Array.prototype.forEach.call(document.querySelectorAll("[data-rxk]"), function (el) { el.innerHTML = rxInner(el.getAttribute("data-rxk")); }); }
+  function loadRx() {
+    if (!state.me) return;
+    rpc("ble_reactions_list", { p_name: state.me.name, p_pin: state.me.pin }).then(function (l) {
+      rxData = {}; l.forEach(function (r) { var k = r.kind + "|" + r.target; (rxData[k] = rxData[k] || {})[r.emoji] = { n: r.n, mine: r.mine }; });
+      drawRx();
+    }).catch(function () {});
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("button[data-rx]"); if (!b) return;
+    e.stopPropagation();
+    var key = b.getAttribute("data-rx"), i = key.indexOf("|"), em = b.getAttribute("data-e");
+    var d = (rxData[key] = rxData[key] || {}); var x = d[em] = d[em] || { n: 0, mine: false };
+    x.mine = !x.mine; x.n += x.mine ? 1 : -1; drawRx(); play("chip");
+    rpc("ble_react", { p_name: state.me.name, p_pin: state.me.pin, p_kind: key.slice(0, i), p_target: key.slice(i + 1), p_emoji: em }).then(loadRx).catch(function (err) { toast(err.message); loadRx(); });
+  }, true);
   function rateHtml(g) {
     var h = "<div class='rate-h'><span>" + (g.votes ? g.votes + (g.votes === 1 ? " voto" : " voti") : "Nessun voto") + "</span><b>" + (g.votes ? Number(g.avg).toFixed(1) : "&ndash;") + "</b></div>";
     h += "<div class='rate-b' role='group' aria-label='Voto da 1 a 10'>";
@@ -1059,14 +1087,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var open = !!gold.open[g.id];
     h = h.replace("class='gem'", "class='gem" + (open ? " open" : "") + "'");
     h += "<button type='button' class='gem-head' data-act='toggle' aria-expanded='" + open + "'>" +
-      "<span class='gh-main'><span class='gh-row'><span class='gtitle'>" + esc(g.title) + "</span><span class='gkind'>" + KIND_L[g.kind] + "</span></span>" +
+      "<span class='gh-main'><span class='gh-row'><span class='gtitle'>" + (gold.pod && gold.pod.indexOf(g.id) >= 0 ? ["🥇", "🥈", "🥉"][gold.pod.indexOf(g.id)] + " " : "") + esc(g.title) + "</span><span class='gkind'>" + KIND_L[g.kind] + "</span></span>" +
       (!open && g.body ? "<span class='gdesc'>" + esc(g.body) + "</span>" : "") +
       "<span class='gmeta'>di " + esc(g.author) + " &middot; " + fmtDay(g.created_at) + "</span></span>" +
       "<span class='gscore'>" + (g.votes ? Number(g.avg).toFixed(1) : "&ndash;") + "</span><span class='gchev' aria-hidden='true'></span></button>";
     if (open) {
       h += mediaHtml(g);
       if (g.kind !== "text" && g.body) h += "<p class='gcap'>" + esc(g.body) + "</p>";
-      h += "<div class='rate'>" + rateHtml(g) + "</div>";
+      h += "<div class='rate'>" + rateHtml(g) + "</div>" + rxHtml("gem", g.id);
       if (gold.admin) {
         h += "<div class='gact'><button type='button' data-act='edit'>Modifica</button>" +
           (gold.del === g.id ? "<button type='button' class='danger' data-act='delok'>Sicuro? Elimina</button>" : "<button type='button' data-act='del'>Elimina</button>") + "</div>";
@@ -1101,9 +1129,19 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       "<p class='gmeta' id='gHint'>Senza file viene salvata come frase. Con un file scelgo io il tipo dal formato.</p>" +
       "<button class='go' id='gGo' type='submit'>Aggiungi</button></form></details>" +
       (sc ? "" : "<div class='gbar gfilt'>" + [["all", "Tutti"], ["text", "Frasi"], ["audio", "Audio"], ["image", "Immagini"], ["video", "Video"]].map(function (x) { return "<button type='button' data-f='" + x[0] + "' aria-pressed='" + (gold.filter === x[0]) + "'>" + x[1] + "</button>"; }).join("") + "</div>") +
-      "<div class='gbar'><button type='button' data-sort='new' aria-pressed='" + (gold.sort === "new") + "'>Novit&agrave;</button><button type='button' data-sort='top' aria-pressed='" + (gold.sort === "top") + "'>Pi&ugrave; votate</button></div>" +
+      "<div id='podio'></div><div class='gbar'><button type='button' data-sort='new' aria-pressed='" + (gold.sort === "new") + "'>Novit&agrave;</button><button type='button' data-sort='top' aria-pressed='" + (gold.sort === "top") + "'>Pi&ugrave; votate</button></div>" +
       "<div id='gemList'></div>" + "";
-    $("goldPane").innerHTML = h; drawGemList();
+    $("goldPane").innerHTML = h; drawGemList(); drawPodio();
+  }
+  function drawPodio() {
+    var el = $("podio"); if (!el) return;
+    var top = gold.podTop || [];
+    var mesi = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
+    if (gold.sec !== "gold" || !top.length) { el.innerHTML = ""; return; }
+    el.innerHTML = "<div class='podio'><h4>&#127942; Podio di " + mesi[new Date().getMonth()] + "</h4>" + top.map(function (t, i) {
+      var g = findGem(t.id); if (!g) return "";
+      return "<button type='button' data-pod='" + g.id + "'><span>" + ["🥇", "🥈", "🥉"][i] + " " + esc(g.title) + "</span><b>" + Number(t.avg).toFixed(1) + " &middot; " + t.n + " voti</b></button>";
+    }).join("") + "</div>";
   }
   function drawPlayers() {
     var box = $("pList"); if (!box) return;
@@ -1122,9 +1160,10 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function renderGold() {
     if (!gold.gems) $("goldPane").innerHTML = "<p class='empty'>Apro il forziere&hellip;</p>";
     var a = { p_name: state.me.name, p_pin: state.me.pin };
-    Promise.all([rpc("ble_whoami", a), rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: gold.sec })]).then(function (r) {
-      gold.admin = !!r[0].is_admin; gold.gems = r[1];
-      if (!$("gemList") || gold.drawn !== gold.sec) { gold.drawn = gold.sec; drawGold(); } else drawGemList();
+    Promise.all([rpc("ble_whoami", a), rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: gold.sec }), rpc("ble_gem_podium", { p_name: a.p_name, p_pin: a.p_pin, p_section: gold.sec }).catch(function () { return { top: [] }; })]).then(function (r) {
+      gold.admin = !!r[0].is_admin; gold.gems = r[1]; gold.podTop = r[2].top || []; gold.pod = gold.podTop.map(function (t) { return t.id; });
+      if (!$("gemList") || gold.drawn !== gold.sec) { gold.drawn = gold.sec; drawGold(); } else { drawGemList(); drawPodio(); }
+      loadRx();
     }).catch(function (err) { $("goldPane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
   }
   function fnCall(body) {
@@ -1181,6 +1220,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var b = e.target.closest("button"); if (!b) return;
     if (b.hasAttribute("data-f")) { gold.filter = b.getAttribute("data-f"); play("chip"); Array.prototype.forEach.call(document.querySelectorAll(".gfilt button"), function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-f") === gold.filter); }); drawGemList(); return; }
     if (b.hasAttribute("data-sort")) { gold.sort = b.getAttribute("data-sort"); play("chip"); var bs = document.querySelectorAll(".gbar:not(.gfilt) button"); Array.prototype.forEach.call(bs, function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-sort") === gold.sort); }); drawGemList(); return; }
+    if (b.hasAttribute("data-pod")) { var pid2 = Number(b.getAttribute("data-pod")); gold.filter = "all"; gold.open[pid2] = true; drawGold(); var pe = document.querySelector("#gemList [data-g='" + pid2 + "']"); if (pe) pe.scrollIntoView({ block: "center" }); return; }
     var card = b.closest("[data-g]"); if (!card) return;
     var id = Number(card.getAttribute("data-g"));
     if (b.hasAttribute("data-vote")) {
@@ -1246,7 +1286,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (open) {
       h += "<a href='" + esc(trUrl(t)) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(trUrl(t)) + "' style='width:100%;border-radius:10px;display:block;max-height:420px;object-fit:contain;background:var(--surface-2)'></a>";
       if (done) h += "<div class='tr-gives'><div><b>" + esc(t.party_a) + " cede</b>" + esc(t.gives_a || "—") + "</div><div><b>" + esc(t.party_b) + " cede</b>" + esc(t.gives_b || "—") + "</div></div>";
-      h += "<div class='rate'>" + trRate(t) + "</div>";
+      h += "<div class='rate'>" + trRate(t) + "</div>" + rxHtml("trade", t.id);
       if (state.admin) h += "<div class='gact'><button type='button' data-tact='edit'>" + (done ? "Modifica" : "Compila") + "</button>" + (tr.del === t.id ? "<button type='button' class='danger' data-tact='delok'>Sicuro? Elimina</button>" : "<button type='button' data-tact='del'>Elimina</button>") + "</div>";
     }
     return h + "</article>";
@@ -1275,12 +1315,12 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var load = rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; });
     if (tr.kind === "comitato") { load.then(loadCommittee).catch(function (err) { $("tradePane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; }); return; }
     load.then(function () { return rpc("ble_list_trades", { p_name: state.me.name, p_pin: state.me.pin, p_kind: tr.kind }); })
-      .then(function (l) { tr.list = l; if (!$("trList")) drawTrades(); else drawTradeList(); })
+      .then(function (l) { tr.list = l; if (!$("trList")) drawTrades(); else drawTradeList(); loadRx(); })
       .catch(function (err) { $("tradePane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
   }
   /* ---------- il comitato delli scambi ---------- */
   var cm = { st: null, pick: null, tie: null };
-  var VERD = { regolare: "Regolare", irregolare: "Irregolare", pareggio: "Pareggio: decide il supremo" };
+  var VERD = { regolare: "Regolare", irregolare: "Pacco", pareggio: "Pareggio: decide il supremo" };
   function loadCommittee() {
     return rpc("ble_committee_state", { p_name: state.me.name, p_pin: state.me.pin }).then(function (st) {
       cm.st = st; if (cm.pick === null || !st.election) cm.pick = st.election ? (st.election.mine || []).slice() : [];
@@ -1299,9 +1339,9 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     } else {
       h += "<p class='gmeta'>Hanno votato " + c.voted + " giudici su " + c.needed + ".</p>";
       if (st.judge && c.conflict) h += "<p class='gmeta'>Sei coinvolto in questo scambio: ti astieni.</p>";
-      else if (st.judge) h += "<div class='rate-b' style='grid-template-columns:1fr 1fr'><button type='button' data-cv='regolare' aria-pressed='" + (c.my === "regolare") + "'>Regolare</button><button type='button' data-cv='irregolare' aria-pressed='" + (c.my === "irregolare") + "'>Irregolare</button></div>";
+      else if (st.judge) h += "<div class='rate-b' style='grid-template-columns:1fr 1fr'><button type='button' data-cv='regolare' aria-pressed='" + (c.my === "regolare") + "'>Regolare</button><button type='button' data-cv='irregolare' aria-pressed='" + (c.my === "irregolare") + "'>Pacco</button></div>";
     }
-    if (st.admin && !c.conflict && (!c.verdict || c.verdict === "pareggio")) h += "<div class='gact'><button type='button' data-cf='regolare'>Supremo: regolare</button><button type='button' data-cf='irregolare'>Supremo: irregolare</button></div>";
+    if (st.admin && !c.conflict && (!c.verdict || c.verdict === "pareggio")) h += "<div class='gact'><button type='button' data-cf='regolare'>Supremo: regolare</button><button type='button' data-cf='irregolare'>Supremo: pacco</button></div>";
     return h + "</article>";
   }
   function drawCommittee() {
