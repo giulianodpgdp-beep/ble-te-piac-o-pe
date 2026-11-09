@@ -298,6 +298,25 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .rate-b.r11 { grid-template-columns: repeat(11, 1fr); }
 .rate-b.r11 button { font-size: .66rem; padding: 8px 0; }
 .tr-sel { font: inherit; padding: 9px 10px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); }
+.who { flex-wrap: wrap; gap: 4px 12px !important; }
+.dov { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 60; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.dov.open { opacity: 1; pointer-events: auto; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(92vw, 400px); background: var(--bg); border-left: 3px solid var(--edge); z-index: 61; transform: translateX(105%); visibility: hidden; transition: transform .25s, visibility .25s; display: flex; flex-direction: column; }
+.drawer.open { transform: none; visibility: visible; }
+.dhead { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--head-bg); color: var(--head-ink); }
+.dhead h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.1rem; text-transform: uppercase; }
+.dclose { background: none; border: 0; color: inherit; font-size: 2rem; line-height: 1; padding: 0 6px; }
+.dbody { padding: 14px 16px 28px; overflow-y: auto; display: grid; gap: 14px; align-content: start; }
+.dbody h4 { margin: 6px 0 0; font-family: var(--font-display); font-weight: 400; }
+.sug { border: 2px solid var(--edge); border-radius: 12px; padding: 10px 12px; background: var(--surface); display: grid; gap: 6px; }
+.sug.accepted { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 22%, var(--surface)); }
+.sug.rejected { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 22%, var(--surface)); }
+.sug p { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.sug small { font-family: var(--font-label); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.sug .sact { display: flex; gap: 8px; }
+.sug .sact button { flex: 1; font-family: var(--font-label); font-weight: 600; font-size: .72rem; text-transform: uppercase; padding: 8px 4px; border: 2px solid var(--edge); border-radius: 10px; color: var(--ink); background: var(--surface); }
+.sug .sact .acc { background: var(--ok); color: #fff; border-color: var(--ok); }
+.sug .sact .rej { background: var(--bad); color: #fff; border-color: var(--bad); }
 </style>
 </head>
 <body>
@@ -345,7 +364,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     <svg class="hdr-logo" id="hdrLogo" viewBox="0 0 320 330" role="img" aria-label="Il ragazzo del gruppo che dice: non è equo" hidden><use href="#mascot"/></svg>
   </header>
 
-  <div class="who" id="who" hidden><span id="whoName"></span><button type="button" id="sndBtn" aria-pressed="true">Suoni: sì</button><button type="button" id="logout">Esci</button></div>
+  <div class="who" id="who" hidden><span id="whoName"></span><button type="button" id="admBtn" hidden>Admin</button><button type="button" id="sugBtn">Suggerimenti</button><button type="button" id="sndBtn" aria-pressed="true">Suoni: sì</button><button type="button" id="logout">Esci</button></div>
   <div class="stripe" aria-hidden="true"></div>
 
   <section id="loginView" hidden>
@@ -378,7 +397,6 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       <button type="button" role="tab" id="tabScambi" aria-selected="false">Scambi</button>
     </div>
     <div id="playPane"></div>
-    <div id="adminBox" hidden></div>
     <div id="rankPane" hidden></div>
     <div id="histPane" hidden></div>
     <div id="goldPane" hidden></div>
@@ -387,6 +405,11 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 
   <p class="empty" id="loading">Carico il gioco&hellip;</p>
 </div>
+<div class="dov" id="dov"></div>
+<aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
+  <div class="dbody"><div id="adminBox"></div><h4>Partecipanti</h4><div class="gform" style="padding:0" id="pList"></div><p class="gmeta">Gemme e scambi si modificano o eliminano direttamente dalla loro scheda.</p></div></aside>
+<aside class="drawer" id="sugDrawer" aria-label="Suggerimenti"><div class="dhead"><h3>Suggerimenti</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
+  <div class="dbody"><form class="gform" style="padding:0" id="sugForm"><label for="sugText">Un consiglio per migliorare il gioco<textarea id="sugText" maxlength="600" placeholder="Scrivi qui la tua idea"></textarea></label><button class="go" type="submit">Invia</button></form><div id="sugList"></div></div></aside>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -509,7 +532,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         state.md = pick;
         $("who").hidden = false; $("whoName").textContent = state.me.name; $("hdrLogo").removeAttribute("hidden");
         $("loading").hidden = true; $("appView").hidden = false;
-        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; loadAdmin(); }).catch(function () {});
+        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; $("admBtn").hidden = !state.admin; loadSug(); }).catch(function () {});
         return loadMd();
       });
     }).catch(function (err) { $("loading").hidden = false; $("loading").textContent = err.message; });
@@ -535,7 +558,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       state.revP = r[2]; state.revA = r[3];
       var first = state.matches[0];
       var sub = $("mdSub"); if (sub && first) sub.textContent = fmtWhen(first.kickoff).replace(/,.*$/, "") ;
-      renderPlay(); loadAdmin();
+      renderPlay();
       if (state.tab === "rank") renderRank();
     }).catch(function (err) {
       if (/Nome o PIN/.test(err.message)) { store("ble.me", null); showLogin(); return; }
@@ -551,9 +574,9 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     location.href = url;
   }
   function drawAdmin(rows) {
-    var box = $("adminBox"), open = $("admDet") && $("admDet").open;
+    var box = $("adminBox");
     var late = rows.filter(function (r) { return r.done < r.total; });
-    var h = "<details class='gadd' id='admDet'" + (open ? " open" : "") + "><summary>Admin: inviti e avanzamento" + (late.length ? " (" + late.length + " da finire)" : "") + "</summary><div class='gform'>" +
+    var h = "<div class='gform' style='padding:0'>" +
       "<label>Invita una persona<span class='adm-row'><input type='text' id='invLabel' maxlength='24' placeholder='Nome (se vuoi)'><button type='button' class='wa' id='invBtn'>Invita su WhatsApp</button></span></label>" +
       "<p class='gmeta'>Ogni invito vale per una sola persona e scade dopo 14 giorni. Chi entra col link non deve fare altro che scegliere un PIN.</p>" +
       "<h4 style='margin:6px 0 0;font-family:var(--font-display);font-weight:400'>Giornata " + state.md + "</h4>";
@@ -564,17 +587,16 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         (done ? "" : "<small>Manca: " + r.missing.map(esc).join(", ") + "</small>") + "</div>";
     });
     if (late.length) h += "<button type='button' class='wa' id='solBtn'>Sollecita su WhatsApp</button>";
-    box.innerHTML = h + "</div></details>";
+    box.innerHTML = h + "</div>";
     state.late = late.map(function (r) { return r.name; });
   }
   function loadAdmin() {
     var box = $("adminBox");
-    if (!state.admin || state.tab !== "play") { box.hidden = true; return; }
+    if (!state.admin || !box) return;
     rpc("ble_progress", { p_name: state.me.name, p_pin: state.me.pin, p_matchday: state.md })
-      .then(function (rows) { box.hidden = state.tab !== "play"; drawAdmin(rows); }).catch(function () {});
+      .then(function (rows) { drawAdmin(rows); }).catch(function () {});
   }
   $("adminBox").addEventListener("click", function (e) {
-    if (e.target.closest("summary")) { var d = $("admDet"); if (d && !d.open) setTimeout(loadAdmin, 0); return; }
     var b = e.target.closest("button"); if (!b) return;
     if (b.id === "invBtn") {
       var label = $("invLabel").value.trim(), w = null;
@@ -956,7 +978,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       "<button class='go' id='gGo' type='submit'>Aggiungi</button></form></details>" +
       (sc ? "" : "<div class='gbar gfilt'>" + [["all", "Tutti"], ["text", "Frasi"], ["audio", "Audio"], ["image", "Immagini"], ["video", "Video"]].map(function (x) { return "<button type='button' data-f='" + x[0] + "' aria-pressed='" + (gold.filter === x[0]) + "'>" + x[1] + "</button>"; }).join("") + "</div>") +
       "<div class='gbar'><button type='button' data-sort='new' aria-pressed='" + (gold.sort === "new") + "'>Novit&agrave;</button><button type='button' data-sort='top' aria-pressed='" + (gold.sort === "top") + "'>Pi&ugrave; votate</button></div>" +
-      "<div id='gemList'></div>" + (gold.admin && !sc ? "<details class='gadd' id='pAdmin'><summary>Admin: gestisci partecipanti</summary><div class='gform' id='pList'></div></details>" : "");
+      "<div id='gemList'></div>" + "";
     $("goldPane").innerHTML = h; drawGemList();
   }
   function drawPlayers() {
@@ -970,7 +992,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     }).join("") + "<p class='gmeta'>Eliminando un partecipante spariscono anche pronostici, voti e pietre che ha aggiunto.</p>";
   }
   function loadPlayers() {
-    if (!gold.admin || gold.sec !== "gold") return;
+    if (!state.admin) return;
     rpc("ble_list_players", { p_name: state.me.name, p_pin: state.me.pin }).then(function (l) { gold.players = l; drawPlayers(); }).catch(function () {});
   }
   function renderGold() {
@@ -978,8 +1000,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var a = { p_name: state.me.name, p_pin: state.me.pin };
     Promise.all([rpc("ble_whoami", a), rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: gold.sec })]).then(function (r) {
       gold.admin = !!r[0].is_admin; gold.gems = r[1];
-      if (!$("gemList") || gold.drawn !== gold.sec || (!!$("pAdmin") !== (gold.admin && gold.sec === "gold"))) { gold.drawn = gold.sec; drawGold(); } else drawGemList();
-      loadPlayers();
+      if (!$("gemList") || gold.drawn !== gold.sec) { gold.drawn = gold.sec; drawGold(); } else drawGemList();
     }).catch(function (err) { $("goldPane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
   }
   function fnCall(body) {
@@ -1033,17 +1054,6 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var b = e.target.closest("button"); if (!b) return;
     if (b.hasAttribute("data-f")) { gold.filter = b.getAttribute("data-f"); play("chip"); Array.prototype.forEach.call(document.querySelectorAll(".gfilt button"), function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-f") === gold.filter); }); drawGemList(); return; }
     if (b.hasAttribute("data-sort")) { gold.sort = b.getAttribute("data-sort"); play("chip"); var bs = document.querySelectorAll(".gbar:not(.gfilt) button"); Array.prototype.forEach.call(bs, function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-sort") === gold.sort); }); drawGemList(); return; }
-    if (b.hasAttribute("data-pact")) {
-      var pid = Number(b.closest("[data-p]").getAttribute("data-p"));
-      if (b.getAttribute("data-pact") === "fanta") {
-        rpc("ble_set_fanta", { p_name: state.me.name, p_pin: state.me.pin, p_player: pid, p_fanta: b.parentNode.querySelector("input").value })
-          .then(function () { toast("Salvato"); loadPlayers(); }).catch(function (err) { toast(err.message); });
-        return;
-      }
-      if (b.getAttribute("data-pact") === "del") { gold.pdel = pid; drawPlayers(); }
-      else fnCall({ action: "delete_player", player: pid }).then(function () { gold.pdel = null; state.rankRows = null; state.hist = null; toast("Azzerato"); renderGold(); }).catch(function (err) { toast(err.message); });
-      return;
-    }
     var card = b.closest("[data-g]"); if (!card) return;
     var id = Number(card.getAttribute("data-g"));
     if (b.hasAttribute("data-vote")) {
@@ -1174,13 +1184,60 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     else if (act === "delok") { fnCall({ action: "delete_trade", trade: id }).then(function () { tr.del = null; toast("Azzerato"); renderTrades(); }).catch(function (err) { toast(err.message); }); }
   });
 
+  /* ---------- pannelli laterali: admin e suggerimenti ---------- */
+  var sug = { list: [] };
+  function closeDrawers() { $("admDrawer").classList.remove("open"); $("sugDrawer").classList.remove("open"); $("dov").classList.remove("open"); }
+  function openDrawer(id) { closeDrawers(); $(id).classList.add("open"); $("dov").classList.add("open"); play("chip"); }
+  $("dov").addEventListener("click", closeDrawers);
+  Array.prototype.forEach.call(document.querySelectorAll("[data-close]"), function (b) { b.addEventListener("click", closeDrawers); });
+  $("admBtn").addEventListener("click", function () { openDrawer("admDrawer"); loadAdmin(); loadPlayers(); });
+  $("sugBtn").addEventListener("click", function () { openDrawer("sugDrawer"); loadSug(); });
+  $("logout").addEventListener("click", function () { closeDrawers(); $("admBtn").hidden = true; state.admin = false; });
+  var SUG_LBL = { pending: "In attesa", accepted: "Accettato", rejected: "Rifiutato" };
+  function drawSug() {
+    var pend = sug.list.filter(function (x) { return x.status === "pending"; }).length;
+    $("sugBtn").textContent = "Suggerimenti" + (state.admin && pend ? " (" + pend + ")" : "");
+    $("sugList").innerHTML = sug.list.length ? sug.list.map(function (x) {
+      var h = "<div class='sug " + x.status + "' data-s='" + x.id + "'><p>" + esc(x.body) + "</p><small>" + esc(x.author) + " &middot; " + SUG_LBL[x.status] + "</small>";
+      if (state.admin) h += "<div class='sact'>" + (x.status === "accepted" ? "" : "<button type='button' class='acc' data-sd='accepted'>Accetta</button>") + (x.status === "rejected" ? "" : "<button type='button' class='rej' data-sd='rejected'>Rifiuta</button>") + (x.status === "pending" ? "" : "<button type='button' data-sd='pending'>In attesa</button>") + "</div>";
+      return h + "</div>";
+    }).join("") : "<p class='gmeta'>Ancora nessun suggerimento.</p>";
+  }
+  function loadSug() {
+    if (!state.me) return;
+    rpc("ble_list_suggestions", { p_name: state.me.name, p_pin: state.me.pin }).then(function (l) { sug.list = l; drawSug(); }).catch(function () {});
+  }
+  $("sugForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var t = $("sugText").value.trim(); if (!t) return;
+    rpc("ble_add_suggestion", { p_name: state.me.name, p_pin: state.me.pin, p_body: t })
+      .then(function () { $("sugText").value = ""; play("done"); toast("Salvato"); loadSug(); }).catch(function (err) { toast(err.message); });
+  });
+  $("sugList").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-sd]"); if (!b) return;
+    var id = Number(b.closest("[data-s]").getAttribute("data-s"));
+    rpc("ble_decide_suggestion", { p_name: state.me.name, p_pin: state.me.pin, p_id: id, p_status: b.getAttribute("data-sd") })
+      .then(function () { loadSug(); }).catch(function (err) { toast(err.message); });
+  });
+  $("pList").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b || !b.hasAttribute("data-pact")) return;
+      var pid = Number(b.closest("[data-p]").getAttribute("data-p"));
+      if (b.getAttribute("data-pact") === "fanta") {
+        rpc("ble_set_fanta", { p_name: state.me.name, p_pin: state.me.pin, p_player: pid, p_fanta: b.parentNode.querySelector("input").value })
+          .then(function () { toast("Salvato"); loadPlayers(); }).catch(function (err) { toast(err.message); });
+        return;
+      }
+      if (b.getAttribute("data-pact") === "del") { gold.pdel = pid; drawPlayers(); }
+      else fnCall({ action: "delete_player", player: pid }).then(function () { gold.pdel = null; state.rankRows = null; state.hist = null; toast("Azzerato"); loadPlayers(); }).catch(function (err) { toast(err.message); });
+      return;
+  });
+
   function setTab(t) {
     if (state.tab !== t) stopAudio();
     if (state.tab !== t) play(t === "rank" ? "rank" : t === "hist" ? "hist" : "chip");
     state.tab = t;
     $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank"); $("tabHist").setAttribute("aria-selected", t === "hist"); $("tabGold").setAttribute("aria-selected", t === "gold"); $("tabScambi").setAttribute("aria-selected", t === "scambi");
     $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist"; $("goldPane").hidden = t !== "gold"; $("tradePane").hidden = t !== "scambi"; document.querySelector("nav.md").hidden = t === "gold" || t === "scambi";
-    if (t === "play") loadAdmin(); else $("adminBox").hidden = true;
     if (t === "rank") renderRank();
     if (t === "hist") renderHist();
     if (t === "gold") { if (gold.sec !== t) { gold.sec = t; gold.gems = null; gold.filter = "all"; gold.edit = null; gold.del = null; gold.sort = "new"; } renderGold(); }
