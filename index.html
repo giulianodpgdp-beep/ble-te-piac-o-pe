@@ -664,17 +664,23 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     box.innerHTML = h + "</div>";
     state.late = late.map(function (r) { return r.name; });
   }
-  function pingDev() {
+  function pingDev(beat) {
     if (!state.me) return;
+    if (beat === true && document.hidden) return;
     rpc("ble_ping", { p_name: state.me.name, p_pin: state.me.pin, p_installed: !!STANDALONE, p_perm: ("Notification" in window) ? Notification.permission : "none", p_in_app: !!IN_APP }).catch(function () {});
-    rpc("ble_cron", {}).catch(function () {});
+    if (beat !== true) rpc("ble_cron", {}).catch(function () {});
   }
+  setInterval(function () { pingDev(true); }, 60000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) pingDev(true); });
+  setInterval(function () { if (state.admin && $("admDrawer").classList.contains("open")) rpc("ble_device_list", { p_name: state.me.name, p_pin: state.me.pin }).then(drawDev).catch(function () {}); }, 30000);
   function drawDev(l) {
+    var isOn = function (d) { return d.seen && Date.now() - new Date(d.seen).getTime() < 150000; };
+    var onl = l.filter(isOn).map(function (d) { return d.name; });
     var ago = function (iso) { if (!iso) return "mai aperto"; var m = Math.round((Date.now() - new Date(iso).getTime()) / 60000); return m < 60 ? m + " min fa" : m < 2880 ? Math.round(m / 60) + " h fa" : Math.round(m / 1440) + " gg fa"; };
-    $("stBox").innerHTML = "<p class='gmeta'>Si aggiorna quando ognuno apre il gioco. App = aperta dall&apos;icona installata almeno una volta. Notifiche = il telefono le ha attivate e registrate.</p>" +
+    $("stBox").innerHTML = "<p class='gmeta'><b>&#128994; Online ora (" + onl.length + "):</b> " + (onl.length ? onl.map(esc).join(", ") : "nessuno") + "</p><p class='gmeta'>Si aggiorna quando ognuno apre il gioco. App = aperta dall&apos;icona installata almeno una volta. Notifiche = il telefono le ha attivate e registrate.</p>" +
       l.map(function (d) {
         var n = d.push > 0 ? "&#128276; notifiche attive" : d.perm === "denied" ? "&#128277; bloccate dal telefono" : d.perm === "default" ? "&#128277; non ancora attivate" : d.perm === "none" ? "&#128277; non supportate" : d.seen ? "&#128277; spente" : "&#128277; sconosciuto";
-        return "<div class='pg'><span>" + esc(d.name) + " &middot; " + (d.installed ? "&#128241; app installata" : d.seen ? "solo browser" : "app: sconosciuto") + "</span><small>" + n + " &middot; visto: " + ago(d.seen) + (d.in_app ? " &middot; dal browser di un'altra app" : "") + "</small></div>";
+        return "<div class='pg'><span>" + (isOn(d) ? "&#128994; " : "&#9898; ") + esc(d.name) + " &middot; " + (isOn(d) ? "online" : "offline") + " &middot; " + (d.installed ? "&#128241; app installata" : d.seen ? "solo browser" : "app: sconosciuto") + "</span><small>" + n + " &middot; visto: " + ago(d.seen) + (d.in_app ? " &middot; dal browser di un'altra app" : "") + "</small></div>";
       }).join("");
   }
   function loadAdmin() {
