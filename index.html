@@ -270,6 +270,9 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .gact { display: flex; gap: 6px; }
 .gact button.danger { background: var(--bad); color: #fff; }
 .gform.inl { padding: 0; }
+.prow { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; overflow-wrap: anywhere; }
+.prow button { font-family: var(--font-label); font-weight: 600; font-size: .72rem; text-transform: uppercase; padding: 8px 10px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 2px 2px 0 var(--shade); }
+.prow button.danger { background: var(--bad); color: #fff; }
 </style>
 </head>
 <body>
@@ -866,15 +869,29 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       "<label id='gFileL' hidden>File (max 40 MB)<input type='file' id='gFile'></label>" +
       "<button class='go' id='gGo' type='submit'>Aggiungi</button></form></details>" +
       "<div class='gbar'><button type='button' data-sort='new' aria-pressed='" + (gold.sort === "new") + "'>Novit&agrave;</button><button type='button' data-sort='top' aria-pressed='" + (gold.sort === "top") + "'>Pi&ugrave; votate</button></div>" +
-      "<div id='gemList'></div>";
+      "<div id='gemList'></div>" + (gold.admin ? "<details class='gadd' id='pAdmin'><summary>Admin: gestisci partecipanti</summary><div class='gform' id='pList'></div></details>" : "");
     $("goldPane").innerHTML = h; paintKinds(); drawGemList();
+  }
+  function drawPlayers() {
+    var box = $("pList"); if (!box) return;
+    var a = gold.players || [];
+    box.innerHTML = a.map(function (p) {
+      var me = p.name.toLowerCase() === state.me.name.toLowerCase();
+      return "<div class='prow' data-p='" + p.id + "'><span>" + esc(p.name) + (p.is_admin ? " (admin)" : "") + "</span>" +
+        (me ? "" : gold.pdel === p.id ? "<button type='button' class='danger' data-pact='ok'>Sicuro? Elimina</button>" : "<button type='button' data-pact='del'>Elimina</button>") + "</div>";
+    }).join("") + "<p class='gmeta'>Eliminando un partecipante spariscono anche pronostici, voti e pietre che ha aggiunto.</p>";
+  }
+  function loadPlayers() {
+    if (!gold.admin) return;
+    rpc("ble_list_players", { p_name: state.me.name, p_pin: state.me.pin }).then(function (l) { gold.players = l; drawPlayers(); }).catch(function () {});
   }
   function renderGold() {
     if (!gold.gems) $("goldPane").innerHTML = "<p class='empty'>Apro il forziere&hellip;</p>";
     var a = { p_name: state.me.name, p_pin: state.me.pin };
     Promise.all([rpc("ble_whoami", a), rpc("ble_list_gems", a)]).then(function (r) {
       gold.admin = !!r[0].is_admin; gold.gems = r[1];
-      if (!$("gemList")) drawGold(); else drawGemList();
+      if (!$("gemList") || !!$("pAdmin") !== gold.admin) drawGold(); else drawGemList();
+      loadPlayers();
     }).catch(function (err) { $("goldPane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
   }
   function fnCall(body) {
@@ -926,6 +943,12 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var b = e.target.closest("button"); if (!b) return;
     if (b.hasAttribute("data-k")) { gold.kind = b.getAttribute("data-k"); play("chip"); paintKinds(); return; }
     if (b.hasAttribute("data-sort")) { gold.sort = b.getAttribute("data-sort"); play("chip"); var bs = document.querySelectorAll(".gbar button"); Array.prototype.forEach.call(bs, function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-sort") === gold.sort); }); drawGemList(); return; }
+    if (b.hasAttribute("data-pact")) {
+      var pid = Number(b.closest("[data-p]").getAttribute("data-p"));
+      if (b.getAttribute("data-pact") === "del") { gold.pdel = pid; drawPlayers(); }
+      else fnCall({ action: "delete_player", player: pid }).then(function () { gold.pdel = null; state.rankRows = null; state.hist = null; toast("Azzerato"); renderGold(); }).catch(function (err) { toast(err.message); });
+      return;
+    }
     var card = b.closest("[data-g]"); if (!card) return;
     var id = Number(card.getAttribute("data-g"));
     if (b.hasAttribute("data-vote")) {
