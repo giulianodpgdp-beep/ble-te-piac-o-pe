@@ -45,6 +45,7 @@
   --ok: #17895a;
   --bad: #d23b3b;
   --chip-ok-bg: #17895a; --chip-ok-ink: #ffffff; --chip-ko-bg: #d23b3b; --chip-ko-ink: #ffffff;
+  --grass-a: #62c24f; --grass-b: #57b845; --road: #3b4455;
   --font-display: "Bungee", Impact, "Arial Black", sans-serif;
   --font-label: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -55,7 +56,7 @@
     --bg: #07111e; --dot: rgba(120, 190, 245, .08); --surface: #10243a; --surface-2: #183250; --ink: #eef6fd; --muted: #98b0c8;
     --line: #2d4e72; --edge: #5fb4f2; --shade: #020810; --head-bg: #1b4a75; --head-ink: #ffffff;
     --azzurro: #38a9f2; --azzurro-ink: #06182a; --giallo: #ffd23f; --giallo-ink: #1a1400; --ok: #3ccf8e; --bad: #f07272;
-    --chip-ok-bg: #3ccf8e; --chip-ok-ink: #05281a; --chip-ko-bg: #f07272; --chip-ko-ink: #2a0707;
+    --chip-ok-bg: #3ccf8e; --chip-ok-ink: #05281a; --chip-ko-bg: #f07272; --chip-ko-ink: #2a0707; --grass-a: #2f7d3b; --grass-b: #297035; --road: #232b3a;
     color-scheme: dark;
   }
 }
@@ -63,7 +64,7 @@
   --bg: #07111e; --dot: rgba(120, 190, 245, .08); --surface: #10243a; --surface-2: #183250; --ink: #eef6fd; --muted: #98b0c8;
   --line: #2d4e72; --edge: #5fb4f2; --shade: #020810; --head-bg: #1b4a75; --head-ink: #ffffff;
   --azzurro: #38a9f2; --azzurro-ink: #06182a; --giallo: #ffd23f; --giallo-ink: #1a1400; --ok: #3ccf8e; --bad: #f07272;
-  --chip-ok-bg: #3ccf8e; --chip-ok-ink: #05281a; --chip-ko-bg: #f07272; --chip-ko-ink: #2a0707;
+  --chip-ok-bg: #3ccf8e; --chip-ok-ink: #05281a; --chip-ko-bg: #f07272; --chip-ko-ink: #2a0707; --grass-a: #2f7d3b; --grass-b: #297035; --road: #232b3a;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -192,23 +193,14 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
 /* classifica a corsa */
 .scope.view { margin-top: -4px; }
 .scope.view button { font-size: .7rem; padding: 8px; }
-.race-legend { display: flex; justify-content: space-between; margin: 0 5px 8px 2px; font-family: var(--font-label); font-weight: 600; font-size: .66rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 14px; }
-.lane { background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); padding: 10px 12px; display: grid; gap: 8px; min-width: 0; }
-.lane.me { outline: 3px solid var(--giallo); outline-offset: 2px; }
-.lane-h { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.lane-h .pos { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--edge); background: var(--surface-2); font-family: var(--font-display); font-size: .85rem; }
-.lane:first-child .lane-h .pos { background: var(--giallo); color: var(--giallo-ink); }
-.lane-h .nm { flex: 1; min-width: 0; font-family: var(--font-display); font-size: .92rem; text-transform: uppercase; overflow-wrap: anywhere; line-height: 1.15; }
-.lane-h .pts { flex: none; font-family: var(--font-display); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
-.road { position: relative; height: 42px; border: 2px solid var(--edge); border-radius: 10px; overflow: hidden; background-color: #2b3445; background-image: linear-gradient(90deg, rgba(255,255,255,.6) 50%, transparent 50%); background-size: 22px 3px; background-repeat: repeat-x; background-position: 0 50%; }
-.road::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 20px; background: repeating-conic-gradient(#ffffff 0 25%, #111111 0 50%) 0 0 / 10px 10px; border-left: 2px solid #111111; }
-.car { position: absolute; bottom: 5px; left: calc(4px + (100% - 94px) * var(--p, 0)); width: 64px; height: 28px; animation: drive .95s cubic-bezier(.2, .75, .2, 1) both; animation-delay: var(--d, 0s); }
-.car svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.car::before { content: ""; position: absolute; right: 100%; top: 7px; width: calc(34px * var(--p, 0)); height: 11px; background: repeating-linear-gradient(0deg, rgba(255,255,255,.6) 0 2px, transparent 2px 5px); }
-@keyframes drive { from { left: 4px; } }
-.lane .det { font-family: var(--font-label); font-weight: 500; font-size: .68rem; letter-spacing: .02em; color: var(--muted); }
-@media (prefers-reduced-motion: reduce) { .car { animation: none; } }
+.track-wrap { border: 2px solid var(--edge); border-radius: 14px; box-shadow: 6px 6px 0 var(--shade); overflow: hidden; margin-right: 6px; background: var(--grass-a); }
+.track { display: block; width: 100%; height: auto; }
+.track .gA { fill: var(--grass-a); }
+.track .gB { fill: var(--grass-b); }
+.track .rd { fill: var(--road); }
+.kg { animation: kdrive 1.15s cubic-bezier(.2, .75, .2, 1) both; animation-delay: var(--d, 0s); }
+@keyframes kdrive { from { transform: translateY(var(--dy, 0px)); } }
+@media (prefers-reduced-motion: reduce) { .kg { animation: none; } }
 
 .rules { margin: 18px 4px 0 0; font-family: var(--font-label); font-size: .72rem; letter-spacing: .02em; color: var(--muted); line-height: 1.5; }
 .rules b { color: var(--ink); text-transform: uppercase; letter-spacing: .08em; }
@@ -317,7 +309,7 @@ ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 1
 
   /* ---------- suoni ---------- */
   // Per usare i tuoi file: metti qui il percorso, per esempio chip: "sounds/pop.mp3". Se resta vuoto suona il suono di base.
-  var SOUND_FILES = { up: "", down: "", pick: "", chip: "", done: "sounds/completo.mp3", join: "sounds/ingresso.mp3", err: "" };
+  var SOUND_FILES = { up: "", down: "", pick: "", chip: "", done: "sounds/completo.mp3", join: "sounds/ingresso.mp3", rank: "sounds/classifica.mp3", err: "" };
   var snd = { on: store("ble.snd") !== "0", ctx: null };
   function audioCtx() {
     try {
@@ -339,6 +331,7 @@ ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 1
     pick: function (c) { tone(c, 180, 0, .14, "triangle", .25, 55); tone(c, 900, 0, .03, "square", .04); },
     chip: function (c) { tone(c, 440, 0, .06, "sine", .15, 660); },
     done: function (c) { [523, 659, 784, 1047].forEach(function (f, i) { tone(c, f, i * .085, .14, "square", .06); }); },
+    rank: function (c) { [330, 392, 494, 659].forEach(function (f, i) { tone(c, f, i * .09, .16, "square", .06); }); },
     join: function (c) { [392, 523, 659, 784].forEach(function (f, i) { tone(c, f, i * .11, .22, "triangle", .16); }); },
     err: function (c) { tone(c, 170, 0, .28, "sawtooth", .07, 105); }
   };
@@ -622,16 +615,6 @@ ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 1
   /* ---------- classifica ---------- */
   var CAR_COLORS = ["#e63946", "#ff9f1c", "#18b3a4", "#9b5de5", "#f15bb5", "#3a86ff", "#7cc22a", "#ff6b35"];
   function colorFor(n) { var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0; return CAR_COLORS[h % CAR_COLORS.length]; }
-  function carSvg(letter) {
-    return "<svg viewBox='0 0 64 28' aria-hidden='true'>" +
-      "<path d='M2 20Q2 13 10 12L20 11L26 4Q27 3 29 3L44 3Q46 3 47.5 4.5L53 11L58 12.5Q62 13.5 62 18L62 21Q62 22 61 22L3 22Q2 22 2 21Z' fill='currentColor' stroke='#0b1a2e' stroke-width='1.6' stroke-linejoin='round'/>" +
-      "<path d='M27.5 5.6L43.5 5.6L48.5 11L22.5 11Z' fill='#c8ebff' stroke='#0b1a2e' stroke-width='1.2' stroke-linejoin='round'/>" +
-      "<path d='M35.5 5.6L35.5 11' stroke='#0b1a2e' stroke-width='1.2'/>" +
-      "<rect x='58' y='14' width='4' height='3' rx='1' fill='#ffe27a'/><rect x='2' y='14' width='3' height='3' rx='1' fill='#ff3b3b'/>" +
-      "<text x='34' y='19.6' text-anchor='middle' font-size='7.5' fill='#ffffff' stroke='#0b1a2e' stroke-width='1.6' paint-order='stroke' style='font-family: Bungee, Impact, sans-serif'>" + esc(letter) + "</text>" +
-      "<circle cx='16' cy='22' r='5.5' fill='#16181d' stroke='#0b1a2e' stroke-width='1'/><circle cx='16' cy='22' r='2' fill='#c9d3dd'/>" +
-      "<circle cx='48' cy='22' r='5.5' fill='#16181d' stroke='#0b1a2e' stroke-width='1'/><circle cx='48' cy='22' r='2' fill='#c9d3dd'/></svg>";
-  }
   function classicHtml(rows) {
     return "<ol class='rank'>" + rows.map(function (r, i) {
       return "<li class='" + (r.pname.toLowerCase() === state.me.name.toLowerCase() ? "me" : "") + "'><span class='pos'>" + (i + 1) + "</span>" +
@@ -639,21 +622,71 @@ ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 1
         "<span class='pts'>" + r.pts + "</span></li>";
     }).join("") + "</ol>";
   }
-  function raceHtml(rows) {
-    var max = rows.reduce(function (m, r) { return Math.max(m, r.pts); }, 0);
-    return "<div class='race-legend'><span>Via</span><span>Traguardo</span></div><ol class='race'>" + rows.map(function (r, i) {
-      var p = max && r.pts ? Math.max(.05, r.pts / max) : 0;
-      var gap = i && rows[0].pts > r.pts ? " &middot; −" + (rows[0].pts - r.pts) + " dal primo" : "";
+  function trackHtml(rows) {
+    var n = rows.length, max = rows.reduce(function (m, r) { return Math.max(m, r.pts); }, 0);
+    var LANES = [1, 2, 0, 3], SEP = 80, TOP = 118, LEN = 250, W = 340;
+    var ys = rows.map(function (r) { return TOP + (max ? (max - r.pts) / max : 1) * LEN; });
+    for (var i = 0; i < n; i++) { if (i > 0 && ys[i] < ys[i - 1]) ys[i] = ys[i - 1]; if (i >= 4) ys[i] = Math.max(ys[i], ys[i - 4] + SEP); }
+    var START = Math.max.apply(null, ys) + 96, H = Math.round(START + 56);
+    var XL0 = 58, XR0 = 282, XL1 = 8, XR1 = 332;
+    function xl(y) { return XL0 + (XL1 - XL0) * (y / H); }
+    function xr(y) { return XR0 + (XR1 - XR0) * (y / H); }
+    function px(c, y) { return (xl(y) + (xr(y) - xl(y)) * c / 12).toFixed(1); }
+    var o = "<svg class='track' viewBox='0 0 " + W + " " + H + "' role='img' aria-label='Classifica a corsa: " +
+      esc(rows.map(function (r, i) { return (i + 1) + ". " + r.pname + " " + r.pts + " punti"; }).join(", ")) + "'>";
+    for (var y = 0; y < H; y += 36) o += "<rect class='" + ((y / 36) % 2 ? "gB" : "gA") + "' x='0' y='" + y + "' width='" + W + "' height='36'/>";
+    for (var ty = 92, k = 0; ty < H - 40; ty += 74, k++) {
+      [[xl(ty) - 30], [xr(ty) + 30]].forEach(function (a) {
+        var tx = a[0]; if (tx < 14 || tx > W - 14) return;
+        o += "<rect x='" + (tx - 3) + "' y='" + (ty + 6) + "' width='6' height='12' fill='#7a5230'/><circle cx='" + tx + "' cy='" + ty + "' r='13' fill='#1f7a34' stroke='#0b1a2e' stroke-width='1.6'/><circle cx='" + (tx - 4) + "' cy='" + (ty - 4) + "' r='4' fill='#3ea352'/>";
+      });
+    }
+    o += "<polygon class='rd' points='" + xl(0).toFixed(1) + ",0 " + xr(0).toFixed(1) + ",0 " + xr(H).toFixed(1) + "," + H + " " + xl(H).toFixed(1) + "," + H + "'/>";
+    [["L", xl(0), xl(H)], ["R", xr(0), xr(H)]].forEach(function (e) {
+      o += "<line x1='" + e[1].toFixed(1) + "' y1='0' x2='" + e[2].toFixed(1) + "' y2='" + H + "' stroke='#ffffff' stroke-width='7'/><line x1='" + e[1].toFixed(1) + "' y1='0' x2='" + e[2].toFixed(1) + "' y2='" + H + "' stroke='#e63946' stroke-width='7' stroke-dasharray='12 12'/>";
+    });
+    for (var l = 1; l < 4; l++) o += "<line x1='" + (XL0 + (XR0 - XL0) * l / 4).toFixed(1) + "' y1='0' x2='" + (XL1 + (XR1 - XL1) * l / 4).toFixed(1) + "' y2='" + H + "' stroke='#ffffff' stroke-opacity='.55' stroke-width='2' stroke-dasharray='14 14'/>";
+    // traguardo
+    for (var r2 = 0; r2 < 2; r2++) for (var c = 0; c < 12; c++) {
+      var y0 = 66 + r2 * 10, y1 = y0 + 10;
+      o += "<polygon fill='" + ((c + r2) % 2 ? "#111111" : "#ffffff") + "' points='" + px(c, y0) + "," + y0 + " " + px(c + 1, y0) + "," + y0 + " " + px(c + 1, y1) + "," + y1 + " " + px(c, y1) + "," + y1 + "'/>";
+    }
+    var gl = xl(40) - 10, gr = xr(40) + 10;
+    o += "<rect x='" + gl.toFixed(1) + "' y='14' width='8' height='52' fill='#1b2a41' stroke='#0b1a2e' stroke-width='1.6'/><rect x='" + (gr - 8).toFixed(1) + "' y='14' width='8' height='52' fill='#1b2a41' stroke='#0b1a2e' stroke-width='1.6'/>" +
+      "<rect x='" + gl.toFixed(1) + "' y='10' width='" + (gr - gl).toFixed(1) + "' height='28' rx='6' fill='#ffd23f' stroke='#0b1a2e' stroke-width='2.4'/>" +
+      "<text x='" + ((gl + gr) / 2).toFixed(1) + "' y='30' text-anchor='middle' font-size='14' fill='#0b1a2e' style='font-family: var(--font-display)'>TRAGUARDO</text>";
+    // via
+    for (var c2 = 0; c2 < 12; c2++) o += "<polygon fill='" + (c2 % 2 ? "#111111" : "#ffffff") + "' points='" + px(c2, START) + "," + START + " " + px(c2 + 1, START) + "," + START + " " + px(c2 + 1, START + 9) + "," + (START + 9) + " " + px(c2, START + 9) + "," + (START + 9) + "'/>";
+    o += "<text x='" + (W / 2) + "' y='" + (START + 30) + "' text-anchor='middle' font-size='12' fill='#ffffff' style='font-family: var(--font-display); letter-spacing: .1em'>VIA</text>";
+    // kart (dal fondo, cosi' i primi stanno sopra)
+    for (var i2 = n - 1; i2 >= 0; i2--) {
+      var r = rows[i2], yy = ys[i2], lane = LANES[i2 % 4], cx = xl(yy) + (xr(yy) - xl(yy)) * (lane + .5) / 4, sc = .86 + .14 * (yy / H);
+      var ci = 0; for (var q = 0; q < r.pname.length; q++) ci = (ci * 31 + r.pname.charCodeAt(q)) >>> 0; ci = ci % CAR_COLORS.length;
+      var col = CAR_COLORS[ci], hel = CAR_COLORS[(ci + 3) % CAR_COLORS.length];
       var me = r.pname.toLowerCase() === state.me.name.toLowerCase();
-      return "<li class='lane" + (me ? " me" : "") + "'><div class='lane-h'><span class='pos'>" + (i + 1) + "</span><span class='nm'>" + esc(r.pname) + (me ? " (tu)" : "") + "</span><span class='pts'>" + r.pts + "</span></div>" +
-        "<div class='road'><div class='car' style='--p:" + p.toFixed(3) + ";--d:" + (i * 0.07).toFixed(2) + "s;color:" + colorFor(r.pname) + "'>" + carSvg(r.pname.charAt(0).toUpperCase()) + "</div></div>" +
-        "<div class='det'>" + r.n_outcomes + " esiti &middot; " + r.n_exact + " esatti &middot; " + r.n_bonus + " extra" + gap + "</div></li>";
-    }).join("") + "</ol>";
+      var nm = r.pname.length > 7 ? r.pname.slice(0, 6) + "…" : r.pname;
+      var lab = (i2 + 1) + " " + nm.toUpperCase() + (me ? " •" : ""), lw = Math.round(lab.length * 5.4 + 12);
+      o += "<g transform='translate(" + cx.toFixed(1) + " " + yy.toFixed(1) + ") scale(" + sc.toFixed(3) + ")'><g class='kg' style='--dy:" + Math.round(START + 24 - yy) + "px;--d:" + (i2 * 0.06).toFixed(2) + "s'>" +
+        "<ellipse cx='0' cy='30' rx='27' ry='8' fill='#000000' fill-opacity='.3'/>" +
+        (me ? "<ellipse cx='0' cy='28' rx='32' ry='11' fill='none' stroke='#ffd23f' stroke-width='3.5'/>" : "") +
+        "<rect x='-25' y='6' width='12' height='22' rx='4' fill='#15171c'/><rect x='13' y='6' width='12' height='22' rx='4' fill='#15171c'/>" +
+        "<rect x='-22' y='-25' width='9' height='16' rx='3' fill='#15171c'/><rect x='13' y='-25' width='9' height='16' rx='3' fill='#15171c'/>" +
+        "<rect x='-17' y='-33' width='34' height='7' rx='3' fill='#22262e' stroke='#0b1a2e' stroke-width='1.4'/>" +
+        "<path d='M-14 -24Q0 -33 14 -24L19 10Q19 28 0 28Q-19 28 -19 10Z' fill='" + col + "' stroke='#0b1a2e' stroke-width='2' stroke-linejoin='round'/>" +
+        "<circle cx='-8' cy='28' r='3.2' fill='#5b6270'/><circle cx='8' cy='28' r='3.2' fill='#5b6270'/>" +
+        "<circle cx='0' cy='3' r='11.5' fill='" + hel + "' stroke='#0b1a2e' stroke-width='2'/><path d='M-3 -8L3 -8L3 14L-3 14Z' fill='#ffffff' fill-opacity='.4'/>" +
+        "<text x='0' y='7.2' text-anchor='middle' font-size='12' fill='#ffffff' stroke='#0b1a2e' stroke-width='2.2' paint-order='stroke' style='font-family: var(--font-display)'>" + esc(r.pname.charAt(0).toUpperCase()) + "</text>" +
+        "<circle cx='24' cy='-26' r='11' fill='#ffd23f' stroke='#0b1a2e' stroke-width='2'/><text x='24' y='-22' text-anchor='middle' font-size='" + (String(r.pts).length > 2 ? 9 : 11) + "' fill='#0b1a2e' style='font-family: var(--font-display)'>" + r.pts + "</text>" +
+        "<rect x='" + (-lw / 2) + "' y='36' width='" + lw + "' height='15' rx='7.5' fill='" + (me ? "#ffd23f" : "#ffffff") + "' stroke='#0b1a2e' stroke-width='1.6'/>" +
+        "<text x='0' y='46.8' text-anchor='middle' font-size='9' fill='#0b1a2e' style='font-family: var(--font-label); font-weight: 600'>" + esc(lab) + "</text>" +
+        "</g></g>";
+    }
+    return "<div class='track-wrap'>" + o + "</svg></div>";
   }
   function drawRank() {
     var list = $("rankList"); if (!list || !state.rankRows) return;
     if (!state.rankRows.length) { list.innerHTML = "<p class='empty'>Ancora nessun giocatore.</p>"; return; }
-    list.innerHTML = state.view === "race" ? raceHtml(state.rankRows) : classicHtml(state.rankRows);
+    list.innerHTML = state.view === "race" ? trackHtml(state.rankRows) : classicHtml(state.rankRows);
   }
   function renderRank(noFetch) {
     var box = $("rankPane");
@@ -672,7 +705,7 @@ ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 1
   });
 
   function setTab(t) {
-    if (state.tab !== t) play("chip");
+    if (state.tab !== t) play(t === "rank" ? "rank" : "chip");
     state.tab = t;
     $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank");
     $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank";
