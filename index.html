@@ -354,6 +354,9 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .dlgcard ol { padding-left: 20px; margin: 8px 0 14px; display: grid; gap: 6px; }
 .dlgcard .go { width: 100%; font-family: var(--font-label); font-weight: 600; text-transform: uppercase; padding: 12px; border: 2px solid var(--edge); border-radius: 10px; background: var(--azzurro); color: var(--azzurro-ink); }
 .tabs button[data-n]:not([data-n="0"])::after { content: attr(data-n); background: var(--bad); color: #fff; border-radius: 8px; font-family: var(--font-label); font-size: .55rem; padding: 1px 5px; margin-left: 3px; vertical-align: middle; }
+.wabtn, .wa { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.wabtn { font-family: var(--font-label); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; border-radius: 12px; padding: 12px; background: #25D366 !important; color: #fff !important; border-color: #128C7E !important; }
+.waic { flex: none; }
 .pfchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 5px 0 0; }
 .pfchips button { font-family: var(--font-label); font-weight: 600; font-size: .7rem; text-transform: uppercase; padding: 7px 10px; border: 2px solid var(--edge); border-radius: 999px; background: var(--surface); color: var(--ink); }
 .pfrow { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px dashed var(--edge); }
@@ -629,6 +632,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 
 
   /* ---------- admin: inviti e avanzamento ---------- */
+  var WAI = '<svg class="waic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>';
   function siteUrl() { return location.origin + location.pathname.replace(/index\.html$/, ""); }
   function shareWa(text) { waOpen(text + "\n" + siteUrl()); }
   function shareGem(g) {
@@ -656,7 +660,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var late = rows.filter(function (r) { return r.done < r.total; });
     var h = "<div class='gform' style='padding:0'>" +
       "<label>Avviso a tutti (arriva come notifica)<span class='adm-row'><input type='text' id='bcText' maxlength='200' placeholder='Es. Nuova versione, riaprite l&apos;app'><button type='button' class='wa' id='bcBtn'>Invia</button></span></label>" +
-      "<label>Invita una persona<span class='adm-row'><input type='text' id='invLabel' maxlength='24' placeholder='Nome (se vuoi)'><button type='button' class='wa' id='invBtn'>Invita su WhatsApp</button></span></label>" +
+      "<label>Invita una persona<span class='adm-row'><input type='text' id='invLabel' maxlength='24' placeholder='Nome (se vuoi)'><button type='button' class='wa' id='invBtn'>" + WAI + "Invita su WhatsApp</button></span></label>" +
       "<p class='gmeta'>Ogni invito vale per una sola persona e scade dopo 14 giorni. Chi entra col link non deve fare altro che scegliere un PIN.</p>" +
       "<h4 style='margin:6px 0 0;font-family:var(--font-display);font-weight:400'>Giornata " + state.md + "</h4>";
     if (!rows.length) h += "<p class='gmeta'>Nessun partecipante.</p>";
@@ -665,7 +669,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       h += "<div class='pg'><span class='" + (done ? "ok" : "") + "'>" + (done ? "&#10003; " : "") + esc(r.name) + " &middot; " + r.done + "/" + r.total + "</span>" +
         (done ? "" : "<small>Manca: " + r.missing.map(esc).join(", ") + "</small>") + "</div>";
     });
-    if (late.length) h += "<button type='button' class='wa' id='solBtn'>Sollecita su WhatsApp</button>";
+    if (late.length) h += "<button type='button' class='wa' id='solBtn'>" + WAI + "Sollecita su WhatsApp</button>";
     box.innerHTML = h + "</div>";
     state.late = late.map(function (r) { return r.name; });
   }
@@ -995,7 +999,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var box = $("rankPane");
     box.innerHTML = "<div class='scope'><button type='button' data-s='md' aria-pressed='" + (state.scope === "md") + "'>Giornata " + state.md + "</button><button type='button' data-s='all' aria-pressed='" + (state.scope === "all") + "'>Generale</button></div>" +
       "<div class='scope view'><button type='button' data-v='race' aria-pressed='" + (state.view === "race") + "'>Corsa</button><button type='button' data-v='classic' aria-pressed='" + (state.view === "classic") + "'>Classica</button></div>" +
-      "<div id='rankList'><p class='empty'>Carico la classifica…</p></div><h4 style='margin:16px 0 0;font-family:var(--font-display);font-weight:400'>Profili</h4><div class='pfchips' id='pfChips'></div><button type='button' class='go' data-share='rank' style='margin:12px 5px 0 0;width:calc(100% - 5px)'>Condividi su WhatsApp</button>";
+      "<div id='rankList'><p class='empty'>Carico la classifica…</p></div><h4 style='margin:16px 0 0;font-family:var(--font-display);font-weight:400'>Profili</h4><div class='pfchips' id='pfChips'></div><button type='button' class='go wabtn' data-share='rank' style='margin:12px 5px 0 0;width:calc(100% - 5px)'>" + WAI + "Condividi su WhatsApp</button>";
     loadExtra();
     if (noFetch && state.rankRows) { drawRank(); return; }
     rpc("ble_leaderboard", { p_matchday: state.scope === "md" ? state.md : null }).then(function (rows) {
@@ -1165,7 +1169,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (open) {
       h += mediaHtml(g);
       if (g.kind !== "text" && g.body) h += "<p class='gcap'>" + esc(g.body) + "</p>";
-      h += "<div class='rate'>" + rateHtml(g) + "</div>" + rxHtml("gem", g.id) + "<div class='gact'><button type='button' data-sg='1'>Condividi su WhatsApp</button></div>";
+      h += "<div class='rate'>" + rateHtml(g) + "</div>" + rxHtml("gem", g.id) + "<div class='gact'><button type='button' class='wabtn' data-sg='1'>" + WAI + "Condividi su WhatsApp</button></div>";
       if (gold.admin) {
         h += "<div class='gact'><button type='button' data-act='edit'>Modifica</button>" +
           (gold.del === g.id ? "<button type='button' class='danger' data-act='delok'>Sicuro? Elimina</button>" : "<button type='button' data-act='del'>Elimina</button>") + "</div>";
@@ -1406,7 +1410,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     h += "<a href='" + esc(trUrl(c)) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(trUrl(c)) + "' style='width:100%;border-radius:10px;display:block;max-height:320px;object-fit:contain;background:var(--surface-2)'></a>";
     h += "<div class='tr-gives'><div><b>" + a + " cede</b>" + esc(c.gives_a || "—") + "</div><div><b>" + b + " cede</b>" + esc(c.gives_b || "—") + "</div></div>";
     if (c.verdict) {
-      h += "<p class='tr-pend'><b>Sentenza: " + VERD[c.verdict] + "</b></p><div class='gact'><button type='button' data-cs='1'>Condividi su WhatsApp</button></div>";
+      h += "<p class='tr-pend'><b>Sentenza: " + VERD[c.verdict] + "</b></p><div class='gact'><button type='button' class='wabtn' data-cs='1'>" + WAI + "Condividi su WhatsApp</button></div>";
       if (c.jv.length) h += "<p class='gmeta'>" + c.jv.map(function (j) { return esc(j.name) + ": " + VERD[j.verdict]; }).join(" &middot; ") + "</p>";
     } else {
       h += "<p class='gmeta'>Hanno votato " + c.voted + " giudici su " + c.needed + ".</p>";
