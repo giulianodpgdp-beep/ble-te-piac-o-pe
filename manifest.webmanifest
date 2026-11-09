@@ -1,0 +1,10 @@
+{
+  "name": "Ble te piac o' Pe",
+  "short_name": "Ble te piac",
+  "description": "Pronostici Serie A tra amici",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0b1522",
+  "theme_color": "#0b1522",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

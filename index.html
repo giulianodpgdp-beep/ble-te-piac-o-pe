@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1522">
+<title>Ble te piac o' Pe</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: una colonna stretta da telefono, come un foglio pronostici da bar. Giornata in alto, schede partita impilate. */
+:root {
+  --bg: #eef3f8;
+  --surface: #ffffff;
+  --surface-2: #e3ebf4;
+  --ink: #0e1b2c;
+  --muted: #566679;
+  --line: #cfdae6;
+  --azzurro: #1673c4;
+  --azzurro-ink: #ffffff;
+  --giallo: #e6a800;
+  --ok: #17895a;
+  --bad: #c93d3d;
+  --font-display: "Alfa Slab One", Georgia, "Times New Roman", serif;
+  --font-label: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1522; --surface: #122134; --surface-2: #1a2d45; --ink: #eaf1f8; --muted: #8fa3b8;
+    --line: #223650; --azzurro: #4aa3f0; --azzurro-ink: #07131f; --giallo: #f5c431; --ok: #3ccf8e; --bad: #f07272;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1522; --surface: #122134; --surface-2: #1a2d45; --ink: #eaf1f8; --muted: #8fa3b8;
+  --line: #223650; --azzurro: #4aa3f0; --azzurro-ink: #07131f; --giallo: #f5c431; --ok: #3ccf8e; --bad: #f07272;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.4;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
+}
+.wrap { max-width: 560px; margin: 0 auto; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--azzurro); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+header.top { padding: 20px 0 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.7rem; line-height: 1.05; text-wrap: balance; color: var(--azzurro); }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: .9rem; }
+.who { font-family: var(--font-label); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: .85rem; color: var(--muted); text-align: right; min-width: 0; }
+.who button { display: block; margin-left: auto; background: none; border: 0; padding: 4px 0; color: var(--azzurro); text-decoration: underline; font-family: var(--font-label); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.who span { display: block; overflow-wrap: anywhere; }
+
+/* login */
+.login { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 14px; margin-top: 8px; }
+.login h2 { margin: 0; font-family: var(--font-label); font-weight: 700; font-size: 1.4rem; text-transform: uppercase; letter-spacing: .03em; }
+.login p { margin: 0; color: var(--muted); font-size: .95rem; }
+label { display: grid; gap: 6px; font-family: var(--font-label); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: .85rem; color: var(--muted); }
+input[type=text], input[type=password], input[type=tel] {
+  font: inherit; font-size: 1.05rem; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--ink); width: 100%; text-transform: none; letter-spacing: normal;
+}
+.btn { background: var(--azzurro); color: var(--azzurro-ink); border: 0; border-radius: 8px; padding: 13px 16px; font-family: var(--font-label); font-weight: 700; font-size: 1.1rem; text-transform: uppercase; letter-spacing: .06em; }
+.btn:disabled { opacity: .6; cursor: default; }
+.err { color: var(--bad); font-size: .92rem; min-height: 1.2em; margin: 0; }
+
+/* navigation */
+nav.md { display: flex; align-items: center; gap: 8px; margin: 4px 0 12px; }
+nav.md .step { width: 44px; height: 44px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: 1.3rem; line-height: 1; }
+nav.md .step:disabled { opacity: .35; cursor: default; }
+nav.md .title { flex: 1; text-align: center; font-family: var(--font-label); font-weight: 700; font-size: 1.35rem; text-transform: uppercase; letter-spacing: .05em; }
+nav.md .title small { display: block; font-weight: 500; font-size: .8rem; color: var(--muted); letter-spacing: .06em; }
+.tabs { display: grid; grid-template-columns: repeat(2, 1fr); background: var(--surface-2); border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 14px; }
+.tabs button { background: none; border: 0; padding: 10px; border-radius: 7px; font-family: var(--font-label); font-weight: 700; font-size: 1.05rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.tabs button[aria-selected=true] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+
+/* match card */
+.matches { display: grid; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.when { display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-label); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: .82rem; color: var(--muted); }
+.pill { border-radius: 999px; padding: 1px 9px; background: var(--surface-2); }
+.pill.live { background: var(--giallo); color: #1a1400; }
+.pill.done { background: var(--ok); color: #fff; }
+.score { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
+.team { font-family: var(--font-label); font-weight: 700; font-size: 1.3rem; text-transform: uppercase; letter-spacing: .02em; line-height: 1.05; overflow-wrap: anywhere; min-width: 0; }
+.team.away { text-align: right; }
+.goals { display: flex; align-items: center; gap: 6px; }
+.stepper { display: grid; grid-template-columns: 38px 34px 38px; align-items: center; justify-items: center; }
+.stepper button { width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); font-size: 1.2rem; line-height: 1; }
+.stepper button:disabled { opacity: .35; cursor: default; }
+.stepper output { font-family: var(--font-label); font-weight: 700; font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.dash { font-family: var(--font-label); font-size: 1.4rem; color: var(--muted); }
+.final { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--surface-2); border-radius: 8px; padding: 8px 12px; font-family: var(--font-label); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: .95rem; }
+.final b { font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.q { display: grid; gap: 8px; border-top: 1px dashed var(--line); padding-top: 10px; }
+.q p { margin: 0; font-weight: 600; font-size: .98rem; display: flex; justify-content: space-between; gap: 8px; }
+.q p em { font-style: normal; font-family: var(--font-label); color: var(--muted); font-weight: 600; letter-spacing: .05em; white-space: nowrap; }
+.opts { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
+.opts button { padding: 10px 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); font-weight: 600; font-size: .92rem; overflow-wrap: anywhere; min-width: 0; }
+.opts button[aria-pressed=true] { background: var(--azzurro); border-color: var(--azzurro); color: var(--azzurro-ink); }
+.opts button.right { outline: 3px solid var(--ok); outline-offset: -1px; }
+.opts button:disabled { cursor: default; }
+.lock { font-size: .85rem; color: var(--muted); margin: 0; }
+.got { font-family: var(--font-label); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ok); font-size: .95rem; }
+.got.zero { color: var(--muted); }
+details.others { border-top: 1px dashed var(--line); padding-top: 8px; }
+details.others summary { cursor: pointer; font-family: var(--font-label); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: .9rem; color: var(--azzurro); }
+.others ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; font-size: .92rem; }
+.others li { display: flex; justify-content: space-between; gap: 8px; }
+.others li span:last-child { color: var(--muted); text-align: right; }
+
+/* leaderboard */
+.scope { display: flex; gap: 8px; margin-bottom: 12px; }
+.scope button { flex: 1; padding: 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.scope button[aria-pressed=true] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+ol.rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ol.rank li { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; }
+ol.rank li.me { border-color: var(--azzurro); box-shadow: inset 0 0 0 1px var(--azzurro); }
+ol.rank .pos { font-family: var(--font-display); font-size: 1.3rem; color: var(--muted); }
+ol.rank li:nth-child(1) .pos { color: var(--giallo); }
+ol.rank .nm { font-family: var(--font-label); font-weight: 700; font-size: 1.2rem; text-transform: uppercase; overflow-wrap: anywhere; }
+ol.rank .det { display: block; font-family: var(--font-body); font-weight: 400; text-transform: none; font-size: .82rem; color: var(--muted); }
+ol.rank .pts { font-family: var(--font-display); font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.rules { margin-top: 18px; font-size: .88rem; color: var(--muted); }
+.rules b { color: var(--ink); }
+.empty { text-align: center; padding: 32px 12px; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 10px; }
+.toast { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 999px; font-family: var(--font-label); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; font-size: .9rem; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+@media (max-width: 380px) { .team { font-size: 1.1rem; } h1 { font-size: 1.45rem; } .stepper { grid-template-columns: 34px 28px 34px; } .stepper button { width: 34px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Ble te piac o' Pe</h1>
+      <p class="sub">Pronostici Serie A del gruppo</p>
+    </div>
+    <div class="who" id="who" hidden><span id="whoName"></span><button type="button" id="logout">Esci</button></div>
+  </header>
+
+  <section id="loginView" hidden>
+    <form class="login" id="loginForm" autocomplete="off">
+      <h2>Entra in gioco</h2>
+      <p>Scrivi il tuo nome e scegli un PIN di 4 cifre. La prima volta crei il tuo profilo, poi rientri con gli stessi dati.</p>
+      <label for="nameIn">Nome
+        <input id="nameIn" type="text" maxlength="24" required autocapitalize="words" placeholder="Es. Giuliano">
+      </label>
+      <label for="pinIn">PIN (4 cifre)
+        <input id="pinIn" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="••••">
+      </label>
+      <p class="err" id="loginErr" role="alert"></p>
+      <button class="btn" id="loginBtn" type="submit">Entra</button>
+    </form>
+  </section>
+
+  <section id="appView" hidden>
+    <nav class="md" aria-label="Giornata">
+      <button class="step" id="prevMd" type="button" aria-label="Giornata precedente">&#8249;</button>
+      <div class="title" id="mdTitle">Giornata</div>
+      <button class="step" id="nextMd" type="button" aria-label="Giornata successiva">&#8250;</button>
+    </nav>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tabPlay" aria-selected="true">Pronostici</button>
+      <button type="button" role="tab" id="tabRank" aria-selected="false">Classifica</button>
+    </div>
+    <div id="playPane"></div>
+    <div id="rankPane" hidden></div>
+  </section>
+
+  <p class="empty" id="loading">Carico il gioco&hellip;</p>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  "use strict";
+  var SB = "https://rjvuhvrjibeutjmfccnz.supabase.co";
+  var KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqdnVodnJqaWJldXRqbWZjY256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMzU3NDksImV4cCI6MjEwODYxMTc0OX0.UdQUYnghDiuih8sNaWbdkJipM4dkFWIIAhg0ZeL-C-M";
+  var HEAD = { apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json" };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { me: null, mds: [], md: null, matches: [], preds: {}, ans: {}, revP: [], revA: [], scope: "md", tab: "play" };
+
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return null; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+  function api(path, opts) {
+    return fetch(SB + "/rest/v1/" + path, opts).then(function (r) {
+      return r.text().then(function (t) {
+        var j = null; try { j = t ? JSON.parse(t) : null; } catch (e) {}
+        if (!r.ok) throw new Error((j && (j.message || j.hint)) || "Errore di rete, riprova");
+        return j;
+      });
+    });
+  }
+  function rpc(fn, args) { return api("rpc/" + fn, { method: "POST", headers: HEAD, body: JSON.stringify(args || {}) }); }
+  function get(path) { return api(path, { headers: HEAD }); }
+
+  var toastT;
+  function toast(msg) { var t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("on"); }, 1600); }
+
+  function fmtWhen(iso) {
+    return new Date(iso).toLocaleString("it-IT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" });
+  }
+  function outcome(h, a) { return h > a ? 1 : h < a ? -1 : 0; }
+
+  /* ---------- login ---------- */
+  function showLogin() {
+    $("loading").hidden = true; $("appView").hidden = true; $("who").hidden = true; $("loginView").hidden = false;
+  }
+  $("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = $("nameIn").value.trim(), pin = $("pinIn").value.trim();
+    $("loginErr").textContent = ""; $("loginBtn").disabled = true;
+    rpc("ble_join_game", { p_name: name, p_pin: pin }).then(function (r) {
+      state.me = { name: r.name, pin: pin };
+      store("ble.me", JSON.stringify(state.me));
+      if (r.created) toast("Profilo creato");
+      boot();
+    }).catch(function (err) { $("loginErr").textContent = err.message; })
+      .then(function () { $("loginBtn").disabled = false; });
+  });
+  $("logout").addEventListener("click", function () { store("ble.me", null); state.me = null; $("pinIn").value = ""; showLogin(); });
+
+  /* ---------- boot ---------- */
+  function boot() {
+    $("loginView").hidden = true; $("loading").hidden = false; $("loading").textContent = "Carico il gioco…";
+    get("ble_matchdays?select=n&order=n.asc").then(function (rows) {
+      state.mds = rows.map(function (r) { return r.n; });
+      if (!state.mds.length) { $("loading").textContent = "Nessuna giornata disponibile per ora. Torna presto."; return; }
+      return get("ble_matches?select=matchday,kickoff,status&order=kickoff.asc").then(function (all) {
+        var now = Date.now(), pick = state.mds[state.mds.length - 1];
+        for (var i = 0; i < state.mds.length; i++) {
+          var n = state.mds[i];
+          var ms = all.filter(function (m) { return m.matchday === n; });
+          if (ms.some(function (m) { return m.status !== "finished" && new Date(m.kickoff).getTime() > now - 3 * 3600e3; })) { pick = n; break; }
+        }
+        state.md = pick;
+        $("who").hidden = false; $("whoName").textContent = state.me.name;
+        $("loading").hidden = true; $("appView").hidden = false;
+        return loadMd();
+      });
+    }).catch(function (err) { $("loading").hidden = false; $("loading").textContent = err.message; });
+  }
+
+  function loadMd() {
+    var n = state.md;
+    $("mdTitle").innerHTML = "Giornata " + n + "<small id='mdSub'></small>";
+    var i = state.mds.indexOf(n);
+    $("prevMd").disabled = i <= 0; $("nextMd").disabled = i >= state.mds.length - 1;
+    $("playPane").innerHTML = "<p class='empty'>Carico le partite…</p>";
+    return Promise.all([
+      get("ble_matches?select=*,questions:ble_questions(*)&matchday=eq." + n + "&order=kickoff.asc,id.asc"),
+      rpc("ble_my_picks", { p_name: state.me.name, p_pin: state.me.pin, p_matchday: n }),
+      rpc("ble_rev_pred", { p_matchday: n }),
+      rpc("ble_rev_ans", { p_matchday: n })
+    ]).then(function (r) {
+      if (n !== state.md) return;
+      state.matches = r[0];
+      state.preds = {}; state.ans = {};
+      r[1].predictions.forEach(function (p) { state.preds[p.match_id] = { h: p.home_goals, a: p.away_goals }; });
+      r[1].answers.forEach(function (a) { state.ans[a.question_id] = a.answer; });
+      state.revP = r[2]; state.revA = r[3];
+      var first = state.matches[0];
+      var sub = $("mdSub"); if (sub && first) sub.textContent = fmtWhen(first.kickoff).replace(/,.*$/, "") ;
+      renderPlay();
+      if (state.tab === "rank") renderRank();
+    }).catch(function (err) {
+      if (/Nome o PIN/.test(err.message)) { store("ble.me", null); showLogin(); return; }
+      $("playPane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>";
+    });
+  }
+
+  /* ---------- play ---------- */
+  function stepperHtml(side, val, locked) {
+    return "<div class='stepper' data-side='" + side + "'>" +
+      "<button type='button' data-d='-1' aria-label='Meno gol'" + (locked ? " disabled" : "") + ">&minus;</button>" +
+      "<output>" + (val === null || val === undefined ? "–" : val) + "</output>" +
+      "<button type='button' data-d='1' aria-label='Più gol'" + (locked ? " disabled" : "") + ">+</button></div>";
+  }
+
+  function matchPoints(m) {
+    var got = 0, p = state.preds[m.id];
+    if (m.status === "finished" && p) {
+      if (outcome(p.h, p.a) === outcome(m.home_goals, m.away_goals)) got += 3;
+      if (p.h === m.home_goals && p.a === m.away_goals) got += 2;
+    }
+    (m.questions || []).forEach(function (q) {
+      if (q.correct && q.correct !== "void" && state.ans[q.id] === q.correct) got += q.points;
+    });
+    return got;
+  }
+
+  function renderPlay() {
+    var box = $("playPane");
+    if (!state.matches.length) { box.innerHTML = "<p class='empty'>Questa giornata non ha ancora partite.</p>"; return; }
+    var now = Date.now();
+    box.innerHTML = "<div class='matches'>" + state.matches.map(function (m) {
+      var started = new Date(m.kickoff).getTime() <= now, fin = m.status === "finished";
+      var p = state.preds[m.id] || { h: null, a: null };
+      var badge = fin ? "<span class='pill done'>Finita</span>" : started ? "<span class='pill live'>In corso</span>" : "<span class='pill'>Aperta</span>";
+      var qs = (m.questions || []).slice().sort(function (a, b) { return a.id - b.id; });
+      var html = "<article class='card' data-m='" + m.id + "'>" +
+        "<div class='when'><span>" + esc(fmtWhen(m.kickoff)) + "</span>" + badge + "</div>" +
+        "<div class='score'><div class='team'>" + esc(m.home) + "</div>" +
+        "<div class='goals'>" + stepperHtml("h", p.h, started) + "<span class='dash'>:</span>" + stepperHtml("a", p.a, started) + "</div>" +
+        "<div class='team away'>" + esc(m.away) + "</div></div>";
+      if (fin) html += "<div class='final'><span>Risultato</span><b>" + m.home_goals + " &ndash; " + m.away_goals + "</b>" + pointsBadge(matchPoints(m)) + "</div>";
+      html += qs.map(function (q) {
+        var done = q.correct !== null && q.correct !== undefined;
+        return "<div class='q' data-q='" + q.id + "'><p><span>" + esc(q.prompt) + "</span><em>" + (q.correct === "void" ? "annullata" : "+" + q.points) + "</em></p><div class='opts'>" +
+          q.options.map(function (o) {
+            var on = state.ans[q.id] === o.k;
+            var right = done && q.correct === o.k;
+            return "<button type='button' data-k='" + esc(o.k) + "' aria-pressed='" + on + "' class='" + (right ? "right" : "") + "'" + (started ? " disabled" : "") + ">" + esc(o.label) + "</button>";
+          }).join("") + "</div></div>";
+      }).join("");
+      if (started) html += others(m, qs);
+      else html += "<p class='lock'>Puoi cambiare fino al calcio d'inizio.</p>";
+      return html + "</article>";
+    }).join("") + "</div>" +
+    "<p class='rules'><b>Punteggio</b> &ndash; esito 1X2 giusto: 3 punti. Risultato esatto: altri 2. Ogni domanda extra: i punti indicati.</p>";
+  }
+
+  function pointsBadge(n) { return "<span class='got" + (n ? "" : " zero") + "'>" + (n ? "+" + n + " punti" : "0 punti") + "</span>"; }
+
+  function others(m, qs) {
+    var rows = state.revP.filter(function (r) { return r.match_id === m.id; });
+    if (!rows.length) return "<p class='lock'>Nessun pronostico inserito prima del via.</p>";
+    var byName = {};
+    rows.forEach(function (r) { byName[r.pname] = { s: r.hg + "–" + r.ag, x: [] }; });
+    qs.forEach(function (q) {
+      state.revA.filter(function (r) { return r.question_id === q.id; }).forEach(function (r) {
+        if (!byName[r.pname]) byName[r.pname] = { s: "–", x: [] };
+        var opt = q.options.filter(function (o) { return o.k === r.ans; })[0];
+        byName[r.pname].x.push(opt ? opt.label : r.ans);
+      });
+    });
+    return "<details class='others'><summary>Cosa hanno detto gli altri</summary><ul>" +
+      Object.keys(byName).map(function (nm) {
+        return "<li><span>" + esc(nm) + " <b>" + esc(byName[nm].s) + "</b></span><span>" + esc(byName[nm].x.join(" · ")) + "</span></li>";
+      }).join("") + "</ul></details>";
+  }
+
+  var saving = {};
+  $("playPane").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b || b.disabled) return;
+    var card = b.closest("article.card"); if (!card) return;
+    var mid = +card.getAttribute("data-m");
+    if (b.hasAttribute("data-d")) {
+      var side = b.parentNode.getAttribute("data-side");
+      var p = state.preds[mid] || { h: null, a: null };
+      var cur = { h: p.h === null ? 0 : p.h, a: p.a === null ? 0 : p.a };
+      cur[side] = Math.max(0, Math.min(20, cur[side] + (+b.getAttribute("data-d"))));
+      state.preds[mid] = cur;
+      var outs = card.querySelectorAll(".stepper output");
+      outs[0].textContent = cur.h; outs[1].textContent = cur.a;
+      clearTimeout(saving[mid]);
+      saving[mid] = setTimeout(function () {
+        rpc("ble_save_prediction", { p_name: state.me.name, p_pin: state.me.pin, p_match: mid, p_home: cur.h, p_away: cur.a })
+          .then(function () { toast("Salvato"); }).catch(function (err) { toast(err.message); loadMd(); });
+      }, 350);
+    } else if (b.hasAttribute("data-k")) {
+      var qEl = b.closest(".q"), qid = +qEl.getAttribute("data-q"), k = b.getAttribute("data-k");
+      state.ans[qid] = k;
+      qEl.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      rpc("ble_save_answer", { p_name: state.me.name, p_pin: state.me.pin, p_question: qid, p_answer: k })
+        .then(function () { toast("Salvato"); }).catch(function (err) { toast(err.message); loadMd(); });
+    }
+  });
+
+  /* ---------- classifica ---------- */
+  function renderRank() {
+    var box = $("rankPane");
+    box.innerHTML = "<div class='scope'><button type='button' data-s='md' aria-pressed='" + (state.scope === "md") + "'>Giornata " + state.md + "</button><button type='button' data-s='all' aria-pressed='" + (state.scope === "all") + "'>Generale</button></div><div id='rankList'><p class='empty'>Carico la classifica…</p></div>";
+    rpc("ble_leaderboard", { p_matchday: state.scope === "md" ? state.md : null }).then(function (rows) {
+      var list = $("rankList"); if (!list) return;
+      if (!rows.length) { list.innerHTML = "<p class='empty'>Ancora nessun giocatore.</p>"; return; }
+      list.innerHTML = "<ol class='rank'>" + rows.map(function (r, i) {
+        return "<li class='" + (r.pname.toLowerCase() === state.me.name.toLowerCase() ? "me" : "") + "'><span class='pos'>" + (i + 1) + "</span>" +
+          "<span class='nm'>" + esc(r.pname) + "<span class='det'>" + r.n_outcomes + " esiti &middot; " + r.n_exact + " esatti &middot; " + r.n_bonus + " extra</span></span>" +
+          "<span class='pts'>" + r.pts + "</span></li>";
+      }).join("") + "</ol>";
+    }).catch(function (err) { var l = $("rankList"); if (l) l.innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
+  }
+  $("rankPane").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-s]"); if (!b) return;
+    state.scope = b.getAttribute("data-s"); renderRank();
+  });
+
+  function setTab(t) {
+    state.tab = t;
+    $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank");
+    $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank";
+    if (t === "rank") renderRank();
+  }
+  $("tabPlay").addEventListener("click", function () { setTab("play"); });
+  $("tabRank").addEventListener("click", function () { setTab("rank"); });
+  $("prevMd").addEventListener("click", function () { var i = state.mds.indexOf(state.md); if (i > 0) { state.md = state.mds[i - 1]; loadMd(); } });
+  $("nextMd").addEventListener("click", function () { var i = state.mds.indexOf(state.md); if (i < state.mds.length - 1) { state.md = state.mds[i + 1]; loadMd(); } });
+
+  /* ---------- start ---------- */
+  var saved = null;
+  try { saved = JSON.parse(store("ble.me") || "null"); } catch (e) {}
+  if (saved && saved.name && saved.pin) { state.me = saved; boot(); } else { showLogin(); }
+})();
+</script>
+</body>
+</html>
