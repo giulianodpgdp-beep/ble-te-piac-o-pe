@@ -89,7 +89,8 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1
 .stripe { height: 10px; margin: 0 0 18px; border: 2px solid var(--edge); border-radius: 6px; background: repeating-linear-gradient(-45deg, var(--azzurro) 0 9px, var(--surface) 9px 18px); }
 .who { font-family: var(--font-label); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .75rem; color: var(--muted); min-width: 0; }
 .who button { display: inline-block; margin-left: 0; background: none; border: 0; padding: 4px 0; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; font-family: var(--font-label); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .75rem; }
-#whoName { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+#whoName { cursor: pointer; font-family: var(--font-display); font-weight: 400; font-size: 1.25rem; letter-spacing: .04em; text-transform: none; color: #ffcb05 !important; -webkit-text-stroke: 5px #2a4aa8; paint-order: stroke fill; text-shadow: 0 3px 0 #1b2f78, 0 5px 0 rgba(0,0,0,.25); transform: rotate(-2deg); transform-origin: left center; display: inline-block; }
+#whoName:active { transform: rotate(-2deg) scale(.96); }
 .who span { margin-right: auto; overflow-wrap: anywhere; color: var(--ink); }
 .who { display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin: -6px 0 10px; }
 
