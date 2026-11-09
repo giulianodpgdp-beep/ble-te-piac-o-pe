@@ -251,7 +251,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .kinds button[aria-pressed=true], .gbar button[aria-pressed=true] { background: var(--giallo); color: var(--giallo-ink); }
 .gform .go { background: var(--azzurro); color: var(--azzurro-ink); font-size: .85rem; padding: 12px; }
 .gform .go:disabled { opacity: .6; }
-.gbar { display: flex; gap: 6px; margin: 0 4px 12px 0; }
+.gbar { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 4px 12px 0; }
 .gfilt button { font-size: .64rem; padding: 8px 2px; }
 .gbar button { flex: 1; }
 .gem { background: var(--surface); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); margin: 0 4px 14px 0; padding: 12px; display: grid; gap: 8px; }
@@ -1123,7 +1123,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   /* ---------- old but gold ---------- */
   var KIND_L = { text: "Frase", audio: "Audio", image: "Immagine", video: "Video" };
   var ACCEPT = { audio: "audio/*,.opus,.m4a,.mp3", image: "image/*", video: "video/*" };
-  var gold = { filter: "all", sec: "gold", drawn: null, gems: null, admin: false, sort: "new", kind: "text", edit: null, del: null, busy: false, open: {} };
+  var gold = { filter: "tovote", sec: "gold", drawn: null, gems: null, admin: false, sort: "new", kind: "text", edit: null, del: null, busy: false, open: {} };
   function gemUrl(g) { return g.path ? SB + "/storage/v1/object/public/ble-gems/" + g.path : g.url; }
   function fmtDT(iso) { return new Date(iso).toLocaleString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" }); }
   function fmtDay(iso) { return new Date(iso).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Rome" }); }
@@ -1186,13 +1186,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function sortedGems() {
     var a = (gold.gems || []).slice();
-    if (gold.sec === "gold" && gold.filter !== "all") a = a.filter(function (g) { return g.kind === gold.filter; });
+    if (gold.sec === "gold" && gold.filter === "tovote") a = a.filter(function (g) { return g.mine === null || g.mine === undefined; });
+    else if (gold.sec === "gold" && gold.filter !== "all") a = a.filter(function (g) { return g.kind === gold.filter; });
     if (gold.sort === "top") a.sort(function (x, y) { return (y.votes ? Number(y.avg) : -1) - (x.votes ? Number(x.avg) : -1) || y.votes - x.votes; });
     return a;
   }
   function drawGemList() {
     var a = sortedGems();
-    $("gemList").innerHTML = a.length ? a.map(gemHtml).join("") : "<p class='empty'>" + (gold.sec === "gold" && gold.filter !== "all" && (gold.gems || []).length ? "Nessun contenuto di questo tipo." : gold.sec === "scambi" ? "Ancora nessuno scambio memorabile. Aggiungi il primo!" : "Ancora nessuna pietra preziosa. Aggiungi la prima!") + "</p>";
+    $("gemList").innerHTML = a.length ? a.map(gemHtml).join("") : "<p class='empty'>" + (gold.sec === "gold" && gold.filter === "tovote" && (gold.gems || []).length ? "Hai votato tutto! Tocca &laquo;Tutti&raquo; per rivedere le pietre." : gold.sec === "gold" && gold.filter !== "all" && (gold.gems || []).length ? "Nessun contenuto di questo tipo." : gold.sec === "scambi" ? "Ancora nessuno scambio memorabile. Aggiungi il primo!" : "Ancora nessuna pietra preziosa. Aggiungi la prima!") + "</p>";
   }
   var EXT_KIND = { mp3: "audio", m4a: "audio", aac: "audio", ogg: "audio", opus: "audio", wav: "audio", oga: "audio", jpg: "image", jpeg: "image", png: "image", webp: "image", gif: "image", mp4: "video", mov: "video", webm: "video", m4v: "video" };
   var EXT_MIME = { mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac", ogg: "audio/ogg", opus: "audio/ogg", oga: "audio/ogg", wav: "audio/wav", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", webm: "video/webm" };
@@ -1210,7 +1211,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       "<label id='gFileL'>" + (sc ? "Immagine (facoltativa, max 40 MB)" : "File (facoltativo: audio, immagine o video, max 40 MB)") + "<input type='file' id='gFile' accept='" + (sc ? "image/*" : "audio/*,image/*,video/*,.opus,.m4a") + "'></label>" +
       "<p class='gmeta' id='gHint'>Senza file viene salvata come frase. Con un file scelgo io il tipo dal formato.</p>" +
       "<button class='go' id='gGo' type='submit'>Aggiungi</button></form></details>" +
-      (sc ? "" : "<div class='gbar gfilt'>" + [["all", "Tutti"], ["text", "Frasi"], ["audio", "Audio"], ["image", "Immagini"], ["video", "Video"]].map(function (x) { return "<button type='button' data-f='" + x[0] + "' aria-pressed='" + (gold.filter === x[0]) + "'>" + x[1] + "</button>"; }).join("") + "</div>") +
+      (sc ? "" : "<div class='gbar gfilt'>" + [["tovote", "Da votare" + (gold.gems ? " (" + gold.gems.filter(function (g) { return g.mine === null || g.mine === undefined; }).length + ")" : "")], ["all", "Tutti"], ["text", "Frasi"], ["audio", "Audio"], ["image", "Immagini"], ["video", "Video"]].map(function (x) { return "<button type='button' data-f='" + x[0] + "' aria-pressed='" + (gold.filter === x[0]) + "'>" + x[1] + "</button>"; }).join("") + "</div>") +
       "<div id='podio'></div><div class='gbar'><button type='button' data-sort='new' aria-pressed='" + (gold.sort === "new") + "'>Novit&agrave;</button><button type='button' data-sort='top' aria-pressed='" + (gold.sort === "top") + "'>Pi&ugrave; votate</button></div>" +
       "<div id='gemList'></div>" + "";
     $("goldPane").innerHTML = h; drawGemList(); drawPodio();
@@ -1282,6 +1283,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function refreshRates() {
     return rpc("ble_list_gems", { p_name: state.me.name, p_pin: state.me.pin, p_section: gold.sec }).then(function (list) {
       gold.gems = list;
+      var tb = document.querySelector(".gfilt [data-f='tovote']"); if (tb) tb.textContent = "Da votare (" + list.filter(function (g) { return g.mine === null || g.mine === undefined; }).length + ")";
       list.forEach(function (g) {
         var el = document.querySelector("#gemList [data-g='" + g.id + "'] .rate"); if (el) el.innerHTML = rateHtml(g);
         var sc = document.querySelector("#gemList [data-g='" + g.id + "'] .gscore"); if (sc) sc.innerHTML = g.votes ? Number(g.avg).toFixed(1) : "&ndash;";
@@ -1328,7 +1330,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 
 
   /* ---------- scambi ufficiali / proposte oscene ---------- */
-  var tr = { kind: "ufficiale", list: null, edit: null, del: null, busy: false, open: {} };
+  var tr = { f: "tovote", kind: "ufficiale", list: null, edit: null, del: null, busy: false, open: {} };
   var TR_L = { ufficiale: "Scambi ufficiali", oscena: "Proposte oscene", comitato: "&#9878; Comitato" };
   function kindsBar() { return "<div class='tkinds'>" + ["ufficiale", "oscena", "comitato"].map(function (k) { return "<button type='button' data-tk='" + k + "' aria-pressed='" + (tr.kind === k) + "'>" + TR_L[k] + "</button>"; }).join("") + "</div>"; }
   function trUrl(t) { var m = /^u\/\d+\/(static-[a-z0-9-]+\.[a-z0-9]+)$/.exec(t.path); return m ? "trades/" + m[1] : SB + "/storage/v1/object/public/ble-gems/" + t.path; }
@@ -1381,7 +1383,10 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function drawTradeList() {
     var a = tr.list || [];
-    $("trList").innerHTML = a.length ? a.map(trHtml).join("") : "<p class='empty'>" + (tr.kind === "oscena" ? "Nessuna proposta oscena. Per ora il gruppo si comporta bene." : "Nessuno scambio ufficiale caricato.") + "</p>";
+    if (tr.f === "tovote") a = a.filter(function (t) { return t.status === "done" && !t.blocked && (t.mine === null || t.mine === undefined); });
+    var nv = (tr.list || []).filter(function (t) { return t.status === "done" && !t.blocked && (t.mine === null || t.mine === undefined); }).length;
+    var fb = $("trFilt"); if (fb) fb.innerHTML = "<button type='button' data-tf='tovote' aria-pressed='" + (tr.f === "tovote") + "'>Da votare (" + nv + ")</button><button type='button' data-tf='all' aria-pressed='" + (tr.f === "all") + "'>Tutti</button>";
+    $("trList").innerHTML = a.length ? a.map(trHtml).join("") : "<p class='empty'>" + (tr.f === "tovote" && (tr.list || []).length ? "Hai votato tutto! Tocca &laquo;Tutti&raquo; per rivedere gli scambi." : tr.kind === "oscena" ? "Nessuna proposta oscena. Per ora il gruppo si comporta bene." : "Nessuno scambio ufficiale caricato.") + "</p>";
   }
   function drawTrades() {
     var h = "<h2 class='gold-h'>Scambi</h2><p class='gold-sub'>Il mercato del gruppo: carica lo screenshot, poi si vota quanto conviene a uno o all'altro.</p>" +
@@ -1390,7 +1395,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       "<details class='gadd' id='trAdd'><summary>+ Carica uno screenshot</summary><form class='gform' id='trForm'>" +
       "<label>Screenshot<input type='file' id='trFile' accept='image/*' required></label>" +
       "<p class='gmeta'>Verr&agrave; salvato in &laquo;" + TR_L[tr.kind] + "&raquo;. Partecipanti e giocatori li trascrivo io ogni sera, poi si apre il voto.</p>" +
-      "<button class='go' id='trGo' type='submit'>Carica</button></form></details><div id='trList'></div>";
+      "<button class='go' id='trGo' type='submit'>Carica</button></form></details><div class='gbar' id='trFilt'></div><div id='trList'></div>";
     $("tradePane").innerHTML = h; drawTradeList();
   }
   function renderTrades() {
@@ -1518,6 +1523,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       return;
     }
     if (b.hasAttribute("data-tk")) { tr.kind = b.getAttribute("data-tk"); tr.list = null; tr.edit = null; tr.del = null; play("chip"); $("tradePane").innerHTML = ""; renderTrades(); return; }
+    if (b.hasAttribute("data-tf")) { tr.f = b.getAttribute("data-tf"); play("chip"); drawTradeList(); return; }
     if (tr.kind === "comitato") { cmClick(b); return; }
     var card = b.closest("[data-t]"); if (!card) return;
     var id = Number(card.getAttribute("data-t"));
