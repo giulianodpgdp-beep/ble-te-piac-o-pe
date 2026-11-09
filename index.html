@@ -1021,13 +1021,17 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     duel.pag.forEach(function (x) { if (!by[x.title]) { by[x.title] = []; order.push(x.title); } by[x.title].push(x.pname); });
     return "<div class='sug' style='margin-bottom:12px'><b>Pagella &middot; Giornata " + duel.pag[0].md + "</b>" + order.map(function (t) { return "<p><strong>" + esc(t) + "</strong>: " + by[t].map(esc).join(", ") + "</p>"; }).join("") + "</div>";
   }
+  function oppOptions(md) {
+    var f = duel.names.filter(function (n) { return n.toLowerCase() !== duel.me && !duel.mdBusy(md, n); });
+    return f.length ? f.map(function (n) { return "<option>" + esc(n) + "</option>"; }).join("") : "<option value=''>Nessuno libero in questa giornata</option>";
+  }
   function drawExtra() {
     var box = $("duelPane"); if (!box || !duel.list) return;
     var me = state.me.name.toLowerCase(), h = "";
     h += "<h3 class='xh'>Sfide a due</h3>";
     var open = duel.list.filter(function (d) { return d.status !== "done"; });
     var mine = function (d) { return d.a_name.toLowerCase() === me || d.b_name.toLowerCase() === me; };
-    duel.list.forEach(function (d) {
+    duel.list.filter(function (d) { return d.status !== "declined"; }).forEach(function (d) {
       var iA = d.a_name.toLowerCase() === me, iB = d.b_name.toLowerCase() === me;
       h += "<div class='sug' data-d='" + d.id + "'><p><strong>" + esc(d.a_name) + "</strong> vs <strong>" + esc(d.b_name) + "</strong> &middot; Giornata " + d.matchday + "</p>";
       if (d.status === "proposed") {
@@ -1043,15 +1047,18 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       h += "</div>";
     });
     if (!duel.list.length) h += "<p class='gmeta'>Nessuna sfida. Lancia la prima!</p>";
-    var busy = open.some(mine);
-    if (!busy) {
-      var mds = state.mds.filter(function (m) { return m >= state.md; });
-      h += "<form class='sug' id='duelForm'><b>Lancia una sfida</b><select id='dOpp' class='tr-sel'>" + duel.names.filter(function (n) { return n.toLowerCase() !== me; }).map(function (n) { return "<option>" + esc(n) + "</option>"; }).join("") + "</select>" +
-        "<select id='dMd' class='tr-sel'>" + mds.map(function (m) { return "<option value='" + m + "'>Giornata " + m + "</option>"; }).join("") + "</select>" +
+    var mdBusy = function (md, nm) { return open.some(function (d) { return d.matchday === md && (d.status === "proposed" || d.status === "active") && (d.a_name.toLowerCase() === nm.toLowerCase() || d.b_name.toLowerCase() === nm.toLowerCase()); }); };
+    var mds = state.mds.filter(function (m) { return m >= state.md && !mdBusy(m, me); });
+    if (!mds.length) h += "<p class='gmeta'>Hai gi&agrave; una sfida in ogni giornata disponibile: una a giornata.</p>";
+    else {
+      duel.mdBusy = mdBusy; duel.me = me;
+      h += "<form class='sug' id='duelForm'><b>Lancia una sfida</b><p class='gmeta'>Una sola sfida a giornata per ciascuno.</p><select id='dMd' class='tr-sel'>" + mds.map(function (m) { return "<option value='" + m + "'>Giornata " + m + "</option>"; }).join("") + "</select>" +
+        "<select id='dOpp' class='tr-sel'>" + oppOptions(mds[0]) + "</select>" +
         "<input type='text' id='dNick' maxlength='30' placeholder='Soprannome che avr&agrave; se perde' required><button class='go' type='submit' style='font-family:var(--font-label);font-weight:600;text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--azzurro);color:var(--azzurro-ink)'>Sfida</button></form>";
     }
     box.innerHTML = h;
   }
+  $("duelPane").addEventListener("change", function (e) { if (e.target.id === "dMd") $("dOpp").innerHTML = oppOptions(Number(e.target.value)); });
   $("duelPane").addEventListener("submit", function (e) {
     if (e.target.id !== "duelForm") return;
     e.preventDefault();
