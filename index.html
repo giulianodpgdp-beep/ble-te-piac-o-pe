@@ -271,6 +271,12 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .gact { display: flex; gap: 6px; }
 .gact button.danger { background: var(--bad); color: #fff; }
 .gform.inl { padding: 0; }
+.adm-row { display: flex; gap: 8px; }
+.adm-row input { flex: 1; min-width: 0; font: inherit; font-size: 1rem; padding: 9px 10px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); }
+.wa { font-family: var(--font-label); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; padding: 10px 12px; border: 2px solid var(--edge); border-radius: 10px; background: #25d366; color: #06230f; box-shadow: 2px 2px 0 var(--shade); }
+.pg { font-weight: 600; }
+.pg small { display: block; font-weight: 500; color: var(--muted); font-size: .78rem; }
+.pg .ok { color: var(--ok); }
 .prow { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; overflow-wrap: anywhere; }
 .prow button { font-family: var(--font-label); font-weight: 600; font-size: .72rem; text-transform: uppercase; padding: 8px 10px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 2px 2px 0 var(--shade); }
 .prow button.danger { background: var(--bad); color: #fff; }
@@ -328,7 +334,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     <svg class="logo" viewBox="0 0 320 330" role="img" aria-label="Il ragazzo del gruppo con occhiali, maglioncino e borsello a tracolla che dice: non è equo"><use href="#mascot"/></svg>
     <form class="login" id="loginForm" autocomplete="off">
       <h2>Entra in gioco</h2>
-      <p>Scrivi il tuo nome e scegli un PIN di 4 cifre. La prima volta crei il tuo profilo, poi rientri con gli stessi dati.</p>
+      <p id="loginP">Scrivi il tuo nome e scegli un PIN di 4 cifre. La prima volta crei il tuo profilo, poi rientri con gli stessi dati.</p>
       <label for="nameIn">Nome
         <input id="nameIn" type="text" maxlength="24" required autocapitalize="words" placeholder="Es. Giuliano">
       </label>
@@ -354,6 +360,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       <button type="button" role="tab" id="tabScambi" aria-selected="false">Scambi</button>
     </div>
     <div id="playPane"></div>
+    <div id="adminBox" hidden></div>
     <div id="rankPane" hidden></div>
     <div id="histPane" hidden></div>
     <div id="goldPane" hidden></div>
@@ -448,11 +455,15 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function showLogin() {
     $("loading").hidden = true; $("appView").hidden = true; $("who").hidden = true; $("hdrLogo").setAttribute("hidden", ""); $("loginView").hidden = false;
   }
+  var invite = null;
+  try { invite = new URLSearchParams(location.search).get("invito"); } catch (e) {}
+  function stripInvite() { try { history.replaceState(null, "", location.pathname); } catch (e) {} invite = null; }
   $("loginForm").addEventListener("submit", function (e) {
     e.preventDefault();
     var name = $("nameIn").value.trim(), pin = $("pinIn").value.trim();
     $("loginErr").textContent = ""; $("loginBtn").disabled = true;
-    rpc("ble_join_game", { p_name: name, p_pin: pin }).then(function (r) {
+    rpc("ble_join_game", { p_name: name, p_pin: pin, p_invite: invite }).then(function (r) {
+      if (invite) stripInvite();
       state.me = { name: r.name, pin: pin };
       store("ble.me", JSON.stringify(state.me));
       play("join");
@@ -479,6 +490,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         state.md = pick;
         $("who").hidden = false; $("whoName").textContent = state.me.name; $("hdrLogo").removeAttribute("hidden");
         $("loading").hidden = true; $("appView").hidden = false;
+        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; loadAdmin(); }).catch(function () {});
         return loadMd();
       });
     }).catch(function (err) { $("loading").hidden = false; $("loading").textContent = err.message; });
@@ -504,13 +516,60 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       state.revP = r[2]; state.revA = r[3];
       var first = state.matches[0];
       var sub = $("mdSub"); if (sub && first) sub.textContent = fmtWhen(first.kickoff).replace(/,.*$/, "") ;
-      renderPlay();
+      renderPlay(); loadAdmin();
       if (state.tab === "rank") renderRank();
     }).catch(function (err) {
       if (/Nome o PIN/.test(err.message)) { store("ble.me", null); showLogin(); return; }
       $("playPane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>";
     });
   }
+
+
+  /* ---------- admin: inviti e avanzamento ---------- */
+  function waOpen(text, w) {
+    var url = "https://wa.me/?text=" + encodeURIComponent(text);
+    if (w) { try { w.location.href = url; return; } catch (e) {} }
+    location.href = url;
+  }
+  function drawAdmin(rows) {
+    var box = $("adminBox"), open = $("admDet") && $("admDet").open;
+    var late = rows.filter(function (r) { return r.done < r.total; });
+    var h = "<details class='gadd' id='admDet'" + (open ? " open" : "") + "><summary>Admin: inviti e avanzamento" + (late.length ? " (" + late.length + " da finire)" : "") + "</summary><div class='gform'>" +
+      "<label>Invita una persona<span class='adm-row'><input type='text' id='invLabel' maxlength='24' placeholder='Nome (se vuoi)'><button type='button' class='wa' id='invBtn'>Invita su WhatsApp</button></span></label>" +
+      "<p class='gmeta'>Ogni invito vale per una sola persona e scade dopo 14 giorni. Chi entra col link non deve fare altro che scegliere un PIN.</p>" +
+      "<h4 style='margin:6px 0 0;font-family:var(--font-display);font-weight:400'>Giornata " + state.md + "</h4>";
+    if (!rows.length) h += "<p class='gmeta'>Nessun partecipante.</p>";
+    rows.forEach(function (r) {
+      var done = r.done >= r.total;
+      h += "<div class='pg'><span class='" + (done ? "ok" : "") + "'>" + (done ? "&#10003; " : "") + esc(r.name) + " &middot; " + r.done + "/" + r.total + "</span>" +
+        (done ? "" : "<small>Manca: " + r.missing.map(esc).join(", ") + "</small>") + "</div>";
+    });
+    if (late.length) h += "<button type='button' class='wa' id='solBtn'>Sollecita su WhatsApp</button>";
+    box.innerHTML = h + "</div></details>";
+    state.late = late.map(function (r) { return r.name; });
+  }
+  function loadAdmin() {
+    var box = $("adminBox");
+    if (!state.admin || state.tab !== "play") { box.hidden = true; return; }
+    rpc("ble_progress", { p_name: state.me.name, p_pin: state.me.pin, p_matchday: state.md })
+      .then(function (rows) { box.hidden = state.tab !== "play"; drawAdmin(rows); }).catch(function () {});
+  }
+  $("adminBox").addEventListener("click", function (e) {
+    if (e.target.closest("summary")) { var d = $("admDet"); if (d && !d.open) setTimeout(loadAdmin, 0); return; }
+    var b = e.target.closest("button"); if (!b) return;
+    if (b.id === "invBtn") {
+      var label = $("invLabel").value.trim(), w = null;
+      try { w = window.open("about:blank", "_blank"); } catch (x) {}
+      b.disabled = true;
+      rpc("ble_create_invite", { p_name: state.me.name, p_pin: state.me.pin, p_label: label || null }).then(function (tok) {
+        var link = location.origin + location.pathname + "?invito=" + tok;
+        $("invLabel").value = "";
+        waOpen("Ciao" + (label ? " " + label : "") + "! Ti invito a giocare a \"Ble te piac o' Pe\", il gioco dei pronostici di Serie A del gruppo. Entra da qui (il link vale solo per te):\n" + link, w);
+      }).catch(function (err) { if (w) try { w.close(); } catch (x) {} toast(err.message); }).then(function () { b.disabled = false; });
+    } else if (b.id === "solBtn") {
+      waOpen("Mancano ancora i pronostici della giornata " + state.md + " a: " + state.late.join(", ") + ". Completateli prima del calcio d'inizio!");
+    }
+  });
 
   /* ---------- play ---------- */
   function stepperHtml(side, val, locked) {
@@ -983,6 +1042,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     state.tab = t;
     $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank"); $("tabHist").setAttribute("aria-selected", t === "hist"); $("tabGold").setAttribute("aria-selected", t === "gold"); $("tabScambi").setAttribute("aria-selected", t === "scambi");
     $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist"; $("goldPane").hidden = t !== "gold" && t !== "scambi"; document.querySelector("nav.md").hidden = t === "gold" || t === "scambi";
+    if (t === "play") loadAdmin(); else $("adminBox").hidden = true;
     if (t === "rank") renderRank();
     if (t === "hist") renderHist();
     if (t === "gold" || t === "scambi") { if (gold.sec !== t) { gold.sec = t; gold.gems = null; gold.filter = "all"; gold.edit = null; gold.del = null; gold.sort = "new"; } renderGold(); }
@@ -998,7 +1058,18 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   /* ---------- start ---------- */
   var saved = null;
   try { saved = JSON.parse(store("ble.me") || "null"); } catch (e) {}
-  if (saved && saved.name && saved.pin) { state.me = saved; boot(); } else { showLogin(); }
+  if (saved && saved.name && saved.pin) { stripInvite(); state.me = saved; boot(); }
+  else {
+    showLogin();
+    if (invite) {
+      rpc("ble_check_invite", { p_token: invite }).then(function (c) {
+        if (c && c.valid) {
+          $("loginP").textContent = c.inviter + " ti ha invitato a giocare. Scegli un PIN di 4 cifre e sei dentro: ti servirà per rientrare.";
+          if (c.label) $("nameIn").value = c.label;
+        } else { stripInvite(); $("loginErr").textContent = "Questo invito è scaduto o è già stato usato. Chiedi all'admin di mandartene uno nuovo."; }
+      }).catch(function () {});
+    }
+  }
 })();
 </script>
 </body>
