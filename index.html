@@ -332,6 +332,16 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 #duelPane { display: grid; gap: 10px; margin-top: 16px; }
 .xh { margin: 8px 0 0; font-family: var(--font-display); font-weight: 400; text-transform: uppercase; }
 .sug input[type=text], .sug select { font: inherit; padding: 9px 10px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); width: 100%; }
+.chatbody { display: flex; flex-direction: column; height: 100%; padding-bottom: 14px; }
+.chatlist { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 2px 0; }
+.msg { max-width: 82%; border: 2px solid var(--edge); border-radius: 14px; padding: 7px 11px; background: var(--surface); overflow-wrap: anywhere; align-self: flex-start; }
+.msg.mine { align-self: flex-end; background: var(--azzurro); color: var(--azzurro-ink); }
+.msg small { display: block; font-family: var(--font-label); font-size: .65rem; text-transform: uppercase; letter-spacing: .05em; opacity: .75; }
+.msg p { margin: 2px 0 0; white-space: pre-wrap; }
+.msg .cdel { background: none; border: 0; color: inherit; opacity: .6; padding: 0 0 0 6px; font-size: .9rem; }
+.chatform { display: flex; gap: 8px; margin-top: 10px; }
+.chatform input { flex: 1; font: inherit; padding: 10px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); min-width: 0; }
+.chatform .go { font-family: var(--font-label); font-weight: 600; text-transform: uppercase; padding: 0 14px; border: 2px solid var(--edge); border-radius: 10px; background: var(--azzurro); color: var(--azzurro-ink); }
 </style>
 </head>
 <body>
@@ -379,7 +389,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     <svg class="hdr-logo" id="hdrLogo" viewBox="0 0 320 330" role="img" aria-label="Il ragazzo del gruppo che dice: non è equo" hidden><use href="#mascot"/></svg>
   </header>
 
-  <div class="who" id="who" hidden><span id="whoName"></span><button type="button" id="admBtn" hidden>Admin</button><button type="button" id="sugBtn">Suggerimenti</button><button type="button" id="sndBtn" aria-pressed="true">Suoni: sì</button><button type="button" id="logout">Esci</button></div>
+  <div class="who" id="who" hidden><span id="whoName"></span><button type="button" id="admBtn" hidden>Admin</button><button type="button" id="chatBtn">Chat</button><button type="button" id="sugBtn">Suggerimenti</button><button type="button" id="sndBtn" aria-pressed="true">Suoni: sì</button><button type="button" id="ntfBtn">Notifiche: no</button><button type="button" id="logout">Esci</button></div>
   <div class="stripe" aria-hidden="true"></div>
 
   <section id="loginView" hidden>
@@ -424,6 +434,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 <div class="dov" id="dov"></div>
 <aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><div id="adminBox"></div><h4>Partecipanti</h4><div class="gform" style="padding:0" id="pList"></div><p class="gmeta">Gemme e scambi si modificano o eliminano direttamente dalla loro scheda.</p></div></aside>
+<aside class="drawer" id="chatDrawer" aria-label="Chat"><div class="dhead"><h3>Chat</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
+  <div class="dbody chatbody"><div id="chatList" class="chatlist"></div><form id="chatForm" class="chatform"><input type="text" id="chatText" maxlength="500" placeholder="Scrivi un messaggio" autocomplete="off"><button class="go" type="submit">Invia</button></form></div></aside>
 <aside class="drawer" id="sugDrawer" aria-label="Suggerimenti"><div class="dhead"><h3>Suggerimenti</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><form class="gform" style="padding:0" id="sugForm"><label for="sugText">Un consiglio per migliorare il gioco<textarea id="sugText" maxlength="600" placeholder="Scrivi qui la tua idea"></textarea></label><button class="go" type="submit">Invia</button></form><div id="sugList"></div></div></aside>
 <div class="toast" id="toast" role="status"></div>
@@ -531,7 +543,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     }).catch(function (err) { $("loginErr").textContent = err.message; })
       .then(function () { $("loginBtn").disabled = false; });
   });
-  $("logout").addEventListener("click", function () { play("exit"); store("ble.me", null); state.me = null; $("pinIn").value = ""; showLogin(); });
+  $("logout").addEventListener("click", function () { play("exit"); ntfDetach(); store("ble.me", null); state.me = null; $("pinIn").value = ""; showLogin(); });
 
   /* ---------- boot ---------- */
   function boot() {
@@ -549,7 +561,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         state.md = pick;
         $("who").hidden = false; $("whoName").textContent = state.me.name; $("hdrLogo").removeAttribute("hidden");
         $("loading").hidden = true; $("appView").hidden = false;
-        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); }).catch(function () {});
+        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); }).catch(function () {});
         return loadMd();
       });
     }).catch(function (err) { $("loading").hidden = false; $("loading").textContent = err.message; });
@@ -594,6 +606,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var box = $("adminBox");
     var late = rows.filter(function (r) { return r.done < r.total; });
     var h = "<div class='gform' style='padding:0'>" +
+      "<label>Avviso a tutti (arriva come notifica)<span class='adm-row'><input type='text' id='bcText' maxlength='200' placeholder='Es. Nuova versione, riaprite l&apos;app'><button type='button' class='wa' id='bcBtn'>Invia</button></span></label>" +
       "<label>Invita una persona<span class='adm-row'><input type='text' id='invLabel' maxlength='24' placeholder='Nome (se vuoi)'><button type='button' class='wa' id='invBtn'>Invita su WhatsApp</button></span></label>" +
       "<p class='gmeta'>Ogni invito vale per una sola persona e scade dopo 14 giorni. Chi entra col link non deve fare altro che scegliere un PIN.</p>" +
       "<h4 style='margin:6px 0 0;font-family:var(--font-display);font-weight:400'>Giornata " + state.md + "</h4>";
@@ -615,7 +628,11 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   $("adminBox").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
-    if (b.id === "invBtn") {
+    if (b.id === "bcBtn") {
+      var bt = $("bcText").value.trim(); if (!bt) return;
+      b.disabled = true;
+      rpc("ble_broadcast", { p_name: state.me.name, p_pin: state.me.pin, p_body: bt }).then(function () { $("bcText").value = ""; toast("Salvato"); }).catch(function (err) { toast(err.message); }).then(function () { b.disabled = false; });
+    } else if (b.id === "invBtn") {
       var label = $("invLabel").value.trim(), w = null;
       try { w = window.open("about:blank", "_blank"); } catch (x) {}
       b.disabled = true;
@@ -1300,13 +1317,98 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 
   /* ---------- pannelli laterali: admin e suggerimenti ---------- */
   var sug = { list: [] };
-  function closeDrawers() { $("admDrawer").classList.remove("open"); $("sugDrawer").classList.remove("open"); $("dov").classList.remove("open"); }
+  function closeDrawers() { $("admDrawer").classList.remove("open"); $("sugDrawer").classList.remove("open"); $("chatDrawer").classList.remove("open"); $("dov").classList.remove("open"); chat.open = false; }
   function openDrawer(id) { closeDrawers(); $(id).classList.add("open"); $("dov").classList.add("open"); play("chip"); }
   $("dov").addEventListener("click", closeDrawers);
   Array.prototype.forEach.call(document.querySelectorAll("[data-close]"), function (b) { b.addEventListener("click", closeDrawers); });
   $("admBtn").addEventListener("click", function () { openDrawer("admDrawer"); loadAdmin(); loadPlayers(); });
   $("sugBtn").addEventListener("click", function () { openDrawer("sugDrawer"); loadSug(); });
-  $("logout").addEventListener("click", function () { closeDrawers(); $("admBtn").hidden = true; state.admin = false; });
+  $("logout").addEventListener("click", function () { resetChat(); closeDrawers(); $("admBtn").hidden = true; state.admin = false; });
+  /* ---------- chat ---------- */
+  var chat = { last: 0, msgs: [], unread: 0, open: false, timer: null, seen: Number(store("ble.chatSeen") || 0) };
+  function hhmm(iso) { var d = new Date(iso); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
+  function drawChat() {
+    var box = $("chatList"); if (!box) return;
+    var atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
+    box.innerHTML = chat.msgs.length ? chat.msgs.map(function (m) {
+      return "<div class='msg" + (m.mine ? " mine" : "") + "'><small>" + (m.mine ? "Tu" : esc(m.author)) + " &middot; " + hhmm(m.created_at) + (state.admin ? "<button type='button' class='cdel' data-cd='" + m.id + "' aria-label='Elimina'>&times;</button>" : "") + "</small><p>" + esc(m.body) + "</p></div>";
+    }).join("") : "<p class='gmeta'>Nessun messaggio. Rompi il ghiaccio!</p>";
+    if (atEnd || chat.justOpened) { box.scrollTop = box.scrollHeight; chat.justOpened = false; }
+  }
+  function drawChatBadge() { $("chatBtn").textContent = "Chat" + (chat.unread ? " (" + chat.unread + ")" : ""); }
+  function pollChat(force) {
+    if (!state.me || (document.hidden && !force)) return;
+    rpc("ble_list_chat", { p_name: state.me.name, p_pin: state.me.pin, p_after: chat.last }).then(function (rows) {
+      if (!rows.length) { if (chat.open) drawChat(); return; }
+      var first = chat.last === 0 && !chat.msgs.length;
+      rows.forEach(function (m) { chat.msgs.push(m); if (m.id > chat.last) chat.last = m.id; });
+      if (chat.msgs.length > 200) chat.msgs = chat.msgs.slice(-200);
+      if (chat.open) { chat.seen = chat.last; store("ble.chatSeen", String(chat.seen)); chat.unread = 0; }
+      else chat.unread = chat.msgs.filter(function (m) { return m.id > chat.seen && !m.mine; }).length;
+      drawChatBadge(); if (chat.open) drawChat();
+    }).catch(function () {});
+  }
+  function resetChat() { chat.last = 0; chat.msgs = []; chat.unread = 0; chat.seen = Number(store("ble.chatSeen") || 0); drawChatBadge(); }
+  $("chatBtn").addEventListener("click", function () {
+    openDrawer("chatDrawer"); chat.open = true; chat.justOpened = true; chat.seen = chat.last; store("ble.chatSeen", String(chat.seen)); chat.unread = 0; drawChatBadge(); drawChat(); pollChat(true);
+    clearInterval(chat.timer); chat.timer = setInterval(function () { if (chat.open) pollChat(); else clearInterval(chat.timer); }, 4000);
+  });
+  setInterval(function () { if (!chat.open) pollChat(); }, 25000);
+  $("chatForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var t = $("chatText").value.trim(); if (!t) return;
+    $("chatText").value = "";
+    rpc("ble_send_chat", { p_name: state.me.name, p_pin: state.me.pin, p_body: t }).then(function () { chat.justOpened = true; pollChat(true); }).catch(function (err) { toast(err.message); $("chatText").value = t; });
+  });
+  $("chatList").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-cd]"); if (!b) return;
+    var id = Number(b.getAttribute("data-cd"));
+    rpc("ble_delete_chat", { p_name: state.me.name, p_pin: state.me.pin, p_id: id }).then(function () { chat.msgs = chat.msgs.filter(function (m) { return m.id !== id; }); drawChat(); }).catch(function (err) { toast(err.message); });
+  });
+
+  /* ---------- notifiche push ---------- */
+  var VAPID = "BLthw13Zc1acRANtrpTedbEOnRs3gbNRnLVDCbRIXIWomtOGAz2ZsUvLAivCMPjxxUk7WcRPaj9IWMxmw6_2zrA";
+  function pushOk() { return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window; }
+  function keyBytes(b64) { var p = "=".repeat((4 - b64.length % 4) % 4), r = atob((b64 + p).replace(/-/g, "+").replace(/_/g, "/")), o = new Uint8Array(r.length); for (var i = 0; i < r.length; i++) o[i] = r.charCodeAt(i); return o; }
+  function ntfLabel(on) { $("ntfBtn").textContent = "Notifiche: " + (on ? "sì" : "no"); $("ntfBtn").setAttribute("data-on", on ? "1" : "0"); }
+  function ntfSave(sub) {
+    var j = sub.toJSON();
+    return rpc("ble_save_push", { p_name: state.me.name, p_pin: state.me.pin, p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
+  }
+  function ntfInit() {
+    if (!pushOk()) { ntfLabel(false); return; }
+    navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; }).then(function (reg) {
+      return reg.pushManager.getSubscription().then(function (sub) {
+        if (sub && Notification.permission === "granted") { ntfLabel(true); return ntfSave(sub); }
+        ntfLabel(false);
+      });
+    }).catch(function () { ntfLabel(false); });
+  }
+  function ntfEnable() {
+    if (!pushOk()) { toast("Per le notifiche installa l'app dalla schermata Home"); return; }
+    Notification.requestPermission().then(function (perm) {
+      if (perm !== "granted") { toast("Permesso negato dal telefono"); return; }
+      return navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; }).then(function (reg) {
+        return reg.pushManager.getSubscription().then(function (sub) { return sub || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID) }); });
+      }).then(function (sub) { return ntfSave(sub); }).then(function () { ntfLabel(true); toast("Salvato"); });
+    }).catch(function (err) { toast(err && err.message ? err.message : "Notifiche non attivate"); });
+  }
+  function ntfDisable() {
+    if (!pushOk()) return;
+    navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+      if (!sub) { ntfLabel(false); return; }
+      var ep = sub.endpoint;
+      return rpc("ble_delete_push", { p_name: state.me.name, p_pin: state.me.pin, p_endpoint: ep }).then(function () { return sub.unsubscribe(); }).then(function () { ntfLabel(false); toast("Salvato"); });
+    }).catch(function () {});
+  }
+  $("ntfBtn").addEventListener("click", function () { if ($("ntfBtn").getAttribute("data-on") === "1") ntfDisable(); else ntfEnable(); });
+  function ntfDetach() {
+    if (!pushOk() || !state.me) return;
+    navigator.serviceWorker.getRegistration().then(function (reg) { return reg && reg.pushManager.getSubscription(); }).then(function (sub) {
+      if (sub) rpc("ble_delete_push", { p_name: state.me.name, p_pin: state.me.pin, p_endpoint: sub.endpoint }).catch(function () {});
+    }).catch(function () {});
+  }
+
   var SUG_LBL = { pending: "In attesa", accepted: "Accettato", rejected: "Rifiutato" };
   function drawSug() {
     var pend = sug.list.filter(function (x) { return x.status === "pending"; }).length;
