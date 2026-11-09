@@ -1,0 +1,13 @@
+name: Promemoria e riepilogo
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chiama ble_cron
+        run: |
+          curl -sS -X POST "https://rjvuhvrjibeutjmfccnz.supabase.co/rest/v1/rpc/ble_cron" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqdnVodnJqaWJldXRqbWZjY256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMzU3NDksImV4cCI6MjEwODYxMTc0OX0.UdQUYnghDiuih8sNaWbdkJipM4dkFWIIAhg0ZeL-C-M" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqdnVodnJqaWJldXRqbWZjY256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMzU3NDksImV4cCI6MjEwODYxMTc0OX0.UdQUYnghDiuih8sNaWbdkJipM4dkFWIIAhg0ZeL-C-M" -H "Content-Type: application/json" -d '{}'

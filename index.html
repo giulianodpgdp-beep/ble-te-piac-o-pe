@@ -624,6 +624,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 
 
   /* ---------- admin: inviti e avanzamento ---------- */
+  function siteUrl() { return location.origin + location.pathname.replace(/index\.html$/, ""); }
+  function shareWa(text) { waOpen(text + "\n" + siteUrl()); }
   function waOpen(text, w) {
     var url = "https://wa.me/?text=" + encodeURIComponent(text);
     if (w) { try { w.location.href = url; return; } catch (e) {} }
@@ -650,6 +652,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function pingDev() {
     if (!state.me) return;
     rpc("ble_ping", { p_name: state.me.name, p_pin: state.me.pin, p_installed: !!STANDALONE, p_perm: ("Notification" in window) ? Notification.permission : "none", p_in_app: !!IN_APP }).catch(function () {});
+    rpc("ble_cron", {}).catch(function () {});
   }
   function drawDev(l) {
     var ago = function (iso) { if (!iso) return "mai aperto"; var m = Math.round((Date.now() - new Date(iso).getTime()) / 60000); return m < 60 ? m + " min fa" : m < 2880 ? Math.round(m / 60) + " h fa" : Math.round(m / 1440) + " gg fa"; };
@@ -753,7 +756,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (fin) html += "<div class='final'><span>Risultato</span><b>" + m.home_goals + " &ndash; " + m.away_goals + "</b>" + pointsBadge(matchPoints(m)) + "</div>";
     html += qs.map(function (q) {
       var done = q.correct !== null && q.correct !== undefined;
-      return "<div class='q' data-q='" + q.id + "'><p><span>" + esc(q.prompt) + "</span><em>" + (q.correct === "void" ? "annullata" : "+" + q.points) + "</em></p><div class='opts'>" +
+      return "<div class='q' data-q='" + q.id + "'><p><span>" + esc(q.prompt) + "</span><em>" + (q.correct === "void" ? "annullata" : !done && fin ? "in attesa del dato" : "+" + q.points) + "</em></p><div class='opts'>" +
         q.options.map(function (o) {
           var on = state.ans[q.id] === o.k;
           var right = done && q.correct === o.k;
@@ -944,7 +947,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var box = $("rankPane");
     box.innerHTML = "<div class='scope'><button type='button' data-s='md' aria-pressed='" + (state.scope === "md") + "'>Giornata " + state.md + "</button><button type='button' data-s='all' aria-pressed='" + (state.scope === "all") + "'>Generale</button></div>" +
       "<div class='scope view'><button type='button' data-v='race' aria-pressed='" + (state.view === "race") + "'>Corsa</button><button type='button' data-v='classic' aria-pressed='" + (state.view === "classic") + "'>Classica</button></div>" +
-      "<div id='rankList'><p class='empty'>Carico la classifica…</p></div>";
+      "<div id='rankList'><p class='empty'>Carico la classifica…</p></div><button type='button' class='go' data-share='rank' style='margin:12px 5px 0 0;width:calc(100% - 5px)'>Condividi su WhatsApp</button>";
     loadExtra();
     if (noFetch && state.rankRows) { drawRank(); return; }
     rpc("ble_leaderboard", { p_matchday: state.scope === "md" ? state.md : null }).then(function (rows) {
@@ -1014,6 +1017,11 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   });
   $("rankPane").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
+    if (b.hasAttribute("data-share")) {
+      var rows = (state.rankRows || []).filter(function (r) { return r.pts > 0 || state.scope === "all"; });
+      shareWa("🏆 Ble te piac o' Pe — Classifica " + (state.scope === "md" ? "giornata " + state.md : "generale") + "\n" + rows.map(function (r, i) { return (["🥇", "🥈", "🥉"][i] || (i + 1) + ".") + " " + r.pname + " " + r.pts; }).join("\n"));
+      return;
+    }
     if (b.hasAttribute("data-s")) { state.scope = b.getAttribute("data-s"); renderRank(); }
     else if (b.hasAttribute("data-v")) { state.view = b.getAttribute("data-v"); store("ble.view", state.view); play("chip"); renderRank(true); }
   });
@@ -1108,7 +1116,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (open) {
       h += mediaHtml(g);
       if (g.kind !== "text" && g.body) h += "<p class='gcap'>" + esc(g.body) + "</p>";
-      h += "<div class='rate'>" + rateHtml(g) + "</div>" + rxHtml("gem", g.id);
+      h += "<div class='rate'>" + rateHtml(g) + "</div>" + rxHtml("gem", g.id) + "<div class='gact'><button type='button' data-sg='1'>Condividi su WhatsApp</button></div>";
       if (gold.admin) {
         h += "<div class='gact'><button type='button' data-act='edit'>Modifica</button>" +
           (gold.del === g.id ? "<button type='button' class='danger' data-act='delok'>Sicuro? Elimina</button>" : "<button type='button' data-act='del'>Elimina</button>") + "</div>";
@@ -1234,6 +1242,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var b = e.target.closest("button"); if (!b) return;
     if (b.hasAttribute("data-f")) { gold.filter = b.getAttribute("data-f"); play("chip"); Array.prototype.forEach.call(document.querySelectorAll(".gfilt button"), function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-f") === gold.filter); }); drawGemList(); return; }
     if (b.hasAttribute("data-sort")) { gold.sort = b.getAttribute("data-sort"); play("chip"); var bs = document.querySelectorAll(".gbar:not(.gfilt) button"); Array.prototype.forEach.call(bs, function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-sort") === gold.sort); }); drawGemList(); return; }
+    if (b.hasAttribute("data-sg")) { var sgm = findGem(Number(b.closest("[data-g]").getAttribute("data-g"))); if (sgm) shareWa("🤌 " + sgm.title + (sgm.votes ? " (voto " + Number(sgm.avg).toFixed(1) + ")" : "") + " — di " + sgm.author + (sgm.kind === "text" && sgm.body ? "\n«" + sgm.body + "»" : "")); return; }
     if (b.hasAttribute("data-pod")) { var pid2 = Number(b.getAttribute("data-pod")); gold.filter = "all"; gold.open[pid2] = true; drawGold(); var pe = document.querySelector("#gemList [data-g='" + pid2 + "']"); if (pe) pe.scrollIntoView({ block: "center" }); return; }
     var card = b.closest("[data-g]"); if (!card) return;
     var id = Number(card.getAttribute("data-g"));
@@ -1348,7 +1357,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     h += "<a href='" + esc(trUrl(c)) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(trUrl(c)) + "' style='width:100%;border-radius:10px;display:block;max-height:320px;object-fit:contain;background:var(--surface-2)'></a>";
     h += "<div class='tr-gives'><div><b>" + a + " cede</b>" + esc(c.gives_a || "—") + "</div><div><b>" + b + " cede</b>" + esc(c.gives_b || "—") + "</div></div>";
     if (c.verdict) {
-      h += "<p class='tr-pend'><b>Sentenza: " + VERD[c.verdict] + "</b></p>";
+      h += "<p class='tr-pend'><b>Sentenza: " + VERD[c.verdict] + "</b></p><div class='gact'><button type='button' data-cs='1'>Condividi su WhatsApp</button></div>";
       if (c.jv.length) h += "<p class='gmeta'>" + c.jv.map(function (j) { return esc(j.name) + ": " + VERD[j.verdict]; }).join(" &middot; ") + "</p>";
     } else {
       h += "<p class='gmeta'>Hanno votato " + c.voted + " giudici su " + c.needed + ".</p>";
@@ -1374,6 +1383,13 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       }
       h += "</div>";
     } else if (st.admin) h += "<div class='gact' style='margin:0 4px 12px 0'><button type='button' data-cm='open'>Indici le elezioni dei giudici</button></div>";
+    var dec = st.cases.filter(function (c) { return c.verdict === "regolare" || c.verdict === "irregolare"; });
+    if (dec.length) {
+      var tl = {};
+      dec.forEach(function (c) { [c.party_a, c.party_b].forEach(function (n) { var t = tl[n] = tl[n] || { p: 0, r: 0 }; if (c.verdict === "irregolare") t.p++; else t.r++; }); });
+      var names = Object.keys(tl).sort(function (a, b) { return tl[b].p - tl[a].p || tl[b].r - tl[a].r || (a < b ? -1 : 1); });
+      h += "<div class='gform' style='padding:0;margin:0 4px 12px 0'><h4>Storico del Comitato</h4><p class='gmeta'>" + dec.length + (dec.length === 1 ? " caso deciso" : " casi decisi") + "</p>" + names.map(function (n) { return "<div class='pg'><span>" + esc(n) + "</span><small>" + tl[n].p + " Pacco &middot; " + tl[n].r + " regolari</small></div>"; }).join("") + "</div>";
+    }
     h += st.cases.length ? st.cases.map(cmCase).join("") : "<p class='empty'>Nessun caso al Comitato. Ci arrivano gli scambi votati da tutti al massimo.</p>";
     $("tradePane").innerHTML = h;
   }
@@ -1397,6 +1413,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     }
     var card = b.closest("[data-c]"); if (!card) return false;
     var id = Number(card.getAttribute("data-c"));
+    if (b.hasAttribute("data-cs")) { var cc = cm.st.cases.filter(function (z) { return z.trade_id === id; })[0]; if (cc) shareWa("⚖️ Il Comitato degli scambi ha deciso: " + cc.party_a + " ⇄ " + cc.party_b + " → " + VERD[cc.verdict]); return true; }
     if ((x = b.getAttribute("data-cv"))) { cmDo("ble_committee_vote", { p_trade: id, p_verdict: x }, "Voto salvato"); return true; }
     if ((x = b.getAttribute("data-cf"))) { cmDo("ble_committee_force", { p_trade: id, p_verdict: x }, "Sentenza emessa"); return true; }
     return false;
