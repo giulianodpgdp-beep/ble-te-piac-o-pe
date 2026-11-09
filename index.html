@@ -287,7 +287,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
 
   /* ---------- suoni ---------- */
   // Per usare i tuoi file: metti qui il percorso, per esempio chip: "sounds/pop.mp3". Se resta vuoto suona il suono di base.
-  var SOUND_FILES = { up: "", down: "", pick: "", chip: "", done: "", join: "", err: "" };
+  var SOUND_FILES = { up: "", down: "", pick: "", chip: "", done: "", join: "sounds/ingresso.mp3", err: "" };
   var snd = { on: store("ble.snd") !== "0", ctx: null };
   function audioCtx() {
     try {
