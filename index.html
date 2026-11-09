@@ -515,7 +515,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function get(path) { return api(path, { headers: HEAD }); }
 
   var toastT;
-  function toast(msg) { if (msg !== "Salvato" && msg !== "Profilo creato" && msg !== "Azzerato") play("err"); var t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("on"); }, 1600); }
+  function toast(msg) { if (msg !== "Salvato" && msg !== "Profilo creato" && msg !== "Azzerato") play("err"); var t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("on"); }, msg.length > 50 ? 6000 : 1600); }
 
   function fmtWhen(iso) {
     return new Date(iso).toLocaleString("it-IT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" });
@@ -1387,7 +1387,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function ntfEnable() {
     if (!pushOk()) { toast("Per le notifiche installa l'app dalla schermata Home"); return; }
     Notification.requestPermission().then(function (perm) {
-      if (perm !== "granted") { toast("Permesso negato dal telefono"); return; }
+      if (perm !== "granted") { toast(perm === "denied" ? "Notifiche bloccate: sblocca il sito dalle impostazioni del browser (lucchetto accanto all'indirizzo > Notifiche > Consenti)" : "Hai chiuso la richiesta senza consentire: riprova e premi Consenti"); return; }
       return navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; }).then(function (reg) {
         return reg.pushManager.getSubscription().then(function (sub) { return sub || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID) }); });
       }).then(function (sub) { return ntfSave(sub); }).then(function () { ntfLabel(true); toast("Salvato"); });
