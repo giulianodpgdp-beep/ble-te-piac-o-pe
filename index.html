@@ -298,6 +298,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .tr-who { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: var(--font-display); font-size: 1rem; }
 .tr-who i { font-style: normal; color: var(--muted); }
 .tr-pend { font-family: var(--font-label); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; background: var(--surface-2); border: 2px dashed var(--edge); border-radius: 10px; padding: 8px 10px; }
+.gem-head .tr-who { justify-content: flex-start; flex-wrap: wrap; overflow-wrap: anywhere; }
+.gem-head .tr-pend { justify-self: start; padding: 4px 8px; }
 .tr-gives { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: .88rem; }
 .tr-gives div { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; overflow-wrap: anywhere; }
 .tr-gives b { display: block; font-family: var(--font-label); font-size: .66rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -1097,7 +1099,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 
 
   /* ---------- scambi ufficiali / proposte oscene ---------- */
-  var tr = { kind: "ufficiale", list: null, edit: null, del: null, busy: false };
+  var tr = { kind: "ufficiale", list: null, edit: null, del: null, busy: false, open: {} };
   var TR_L = { ufficiale: "Scambi ufficiali", oscena: "Proposte oscene" };
   function trUrl(t) { return SB + "/storage/v1/object/public/ble-gems/" + t.path; }
   function trRate(t) {
@@ -1127,14 +1129,25 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         "<label>Partecipante B<input type='text' name='b' maxlength='40' value='" + esc(t.party_b || "") + "'></label><label>Cede (B)<textarea name='gb' maxlength='300'>" + esc(t.gives_b || "") + "</textarea></label>" +
         "<div class='gact'><button type='submit'>Salva</button><button type='button' data-tact='cancel'>Annulla</button></div></form></article>";
     }
-    if (t.status === "done") h += "<div class='tr-who'><span>" + esc(t.party_a) + "</span><i>&#8646;</i><span>" + esc(t.party_b) + "</span></div>";
-    else h += "<div class='tr-pend'>In attesa di trascrizione</div>";
-    h += "<div class='gmeta'>caricato da " + esc(t.author) + " &middot; " + fmtDay(t.created_at) + "</div>";
-    h += "<a href='" + esc(trUrl(t)) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(trUrl(t)) + "' style='width:100%;border-radius:10px;display:block;max-height:420px;object-fit:contain;background:var(--surface-2)'></a>";
-    if (t.status === "done") h += "<div class='tr-gives'><div><b>" + esc(t.party_a) + " cede</b>" + esc(t.gives_a || "—") + "</div><div><b>" + esc(t.party_b) + " cede</b>" + esc(t.gives_b || "—") + "</div></div>";
-    h += "<div class='rate'>" + trRate(t) + "</div>";
-    if (state.admin) h += "<div class='gact'><button type='button' data-tact='edit'>" + (t.status === "done" ? "Modifica" : "Compila") + "</button>" + (tr.del === t.id ? "<button type='button' class='danger' data-tact='delok'>Sicuro? Elimina</button>" : "<button type='button' data-tact='del'>Elimina</button>") + "</div>";
+    var open = !!tr.open[t.id], done = t.status === "done";
+    h = h.replace("class='gem'", "class='gem" + (open ? " open" : "") + "'");
+    h += "<button type='button' class='gem-head' data-tact='toggle' aria-expanded='" + open + "'><span class='gh-main'>" +
+      (done ? "<span class='tr-who'><span>" + esc(t.party_a) + "</span><i>&#8646;</i><span>" + esc(t.party_b) + "</span></span>" : "<span class='tr-pend'>In attesa di trascrizione</span>") +
+      (done && !open ? "<span class='gdesc'>" + esc(t.party_a) + " cede " + esc(t.gives_a || "—") + " &middot; " + esc(t.party_b) + " cede " + esc(t.gives_b || "—") + "</span>" : "") +
+      "<span class='gmeta'>caricato da " + esc(t.author) + " &middot; " + fmtDay(t.created_at) + "</span></span>" +
+      "<span class='gscore'>" + trScore(t) + "</span><span class='gchev' aria-hidden='true'></span></button>";
+    if (open) {
+      h += "<a href='" + esc(trUrl(t)) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(trUrl(t)) + "' style='width:100%;border-radius:10px;display:block;max-height:420px;object-fit:contain;background:var(--surface-2)'></a>";
+      if (done) h += "<div class='tr-gives'><div><b>" + esc(t.party_a) + " cede</b>" + esc(t.gives_a || "—") + "</div><div><b>" + esc(t.party_b) + " cede</b>" + esc(t.gives_b || "—") + "</div></div>";
+      h += "<div class='rate'>" + trRate(t) + "</div>";
+      if (state.admin) h += "<div class='gact'><button type='button' data-tact='edit'>" + (done ? "Modifica" : "Compila") + "</button>" + (tr.del === t.id ? "<button type='button' class='danger' data-tact='delok'>Sicuro? Elimina</button>" : "<button type='button' data-tact='del'>Elimina</button>") + "</div>";
+    }
     return h + "</article>";
+  }
+  function trScore(t) {
+    if (t.status !== "done" || !t.votes) return "&ndash;";
+    var v = Number(t.avg);
+    return t.kind === "ufficiale" ? (v > 0 ? "+" : v < 0 ? "&minus;" : "") + Math.abs(v).toFixed(1) : v.toFixed(1);
   }
   function drawTradeList() {
     var a = tr.list || [];
@@ -1160,7 +1173,10 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function refreshTrades() {
     return rpc("ble_list_trades", { p_name: state.me.name, p_pin: state.me.pin, p_kind: tr.kind }).then(function (l) {
       tr.list = l;
-      l.forEach(function (t) { var el = document.querySelector("#trList [data-t='" + t.id + "'] .rate"); if (el) el.innerHTML = trRate(t); });
+      l.forEach(function (t) {
+        var el = document.querySelector("#trList [data-t='" + t.id + "'] .rate"); if (el) el.innerHTML = trRate(t);
+        var sc = document.querySelector("#trList [data-t='" + t.id + "'] .gscore"); if (sc) sc.innerHTML = trScore(t);
+      });
     });
   }
   $("tradePane").addEventListener("submit", function (e) {
@@ -1202,7 +1218,12 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       return;
     }
     var act = b.getAttribute("data-tact");
-    if (act === "edit") { tr.edit = id; drawTradeList(); }
+    if (act === "toggle") {
+      var tt = (tr.list || []).filter(function (x) { return x.id === id; })[0]; if (!tt) return;
+      tr.open[id] = !tr.open[id]; play("chip");
+      card.outerHTML = trHtml(tt);
+    }
+    else if (act === "edit") { tr.edit = id; tr.open[id] = true; drawTradeList(); }
     else if (act === "cancel") { tr.edit = null; drawTradeList(); }
     else if (act === "del") { tr.del = id; drawTradeList(); }
     else if (act === "delok") { fnCall({ action: "delete_trade", trade: id }).then(function () { tr.del = null; toast("Azzerato"); renderTrades(); }).catch(function (err) { toast(err.message); }); }
