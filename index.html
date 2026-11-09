@@ -310,7 +310,7 @@ ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 1
 
   /* ---------- suoni ---------- */
   // Per usare i tuoi file: metti qui il percorso, per esempio chip: "sounds/pop.mp3". Se resta vuoto suona il suono di base.
-  var SOUND_FILES = { up: "", down: "", pick: "", chip: "", done: "", join: "sounds/ingresso.mp3", err: "" };
+  var SOUND_FILES = { up: "", down: "", pick: "", chip: "", done: "sounds/completo.mp3", join: "sounds/ingresso.mp3", err: "" };
   var snd = { on: store("ble.snd") !== "0", ctx: null };
   function audioCtx() {
     try {
