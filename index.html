@@ -182,6 +182,13 @@ ol.rank .nm { font-family: var(--font-display); font-weight: 400; font-size: 1re
 ol.rank .det { display: block; margin-top: 3px; font-family: var(--font-label); font-weight: 500; text-transform: none; font-size: .7rem; letter-spacing: .02em; color: var(--muted); }
 ol.rank li.me .det { color: rgba(26, 20, 0, .72); }
 ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant-numeric: tabular-nums; line-height: 1; }
+/* azzera */
+.foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.reset { background: var(--surface); color: var(--ink); border: 2px solid var(--edge); border-radius: 10px; box-shadow: 2px 2px 0 var(--shade); padding: 8px 12px; font-family: var(--font-label); font-weight: 600; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; transition: transform .08s, box-shadow .08s; }
+.reset:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--shade); }
+.reset.armed { background: var(--chip-ko-bg); color: var(--chip-ko-ink); }
+.reset.wide { display: block; width: calc(100% - 6px); margin-top: 18px; padding: 11px 12px; }
+
 /* classifica a corsa */
 .scope.view { margin-top: -4px; }
 .scope.view button { font-size: .7rem; padding: 8px; }
@@ -359,7 +366,7 @@ ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 1
   function get(path) { return api(path, { headers: HEAD }); }
 
   var toastT;
-  function toast(msg) { if (msg !== "Salvato" && msg !== "Profilo creato") play("err"); var t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("on"); }, 1600); }
+  function toast(msg) { if (msg !== "Salvato" && msg !== "Profilo creato" && msg !== "Azzerato") play("err"); var t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("on"); }, 1600); }
 
   function fmtWhen(iso) {
     return new Date(iso).toLocaleString("it-IT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" });
@@ -509,7 +516,7 @@ ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 1
         }).join("") + "</div></div>";
     }).join("");
     if (started) html += others(m, qs);
-    else html += "<p class='lock'>Puoi cambiare fino al calcio d'inizio.</p>";
+    else html += "<div class='foot'><p class='lock'>Puoi cambiare fino al calcio d'inizio.</p><button type='button' class='reset' data-reset='match'>Azzera partita</button></div>";
     return html + "</article>";
   }
 
@@ -524,6 +531,7 @@ ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 1
     }
     box.innerHTML = "<p class='progress' id='progress'></p>" + chipsHtml() +
       "<div id='cardBox'>" + cardHtml(cur) + "</div>" +
+      (state.matches.some(function (m) { return new Date(m.kickoff).getTime() > Date.now(); }) ? "<button type='button' class='reset wide' data-reset='all'>Azzera tutti i pronostici della giornata</button>" : "") +
       "<p class='rules'><b>Punteggio</b> &ndash; esito 1X2 giusto: 3 punti. Risultato esatto: altri 2. Ogni domanda extra: i punti indicati.</p>";
     refreshChips(true);
   }
@@ -549,6 +557,17 @@ ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 1
   }
 
   var saving = {};
+  function doReset(mid) {
+    var now = Date.now();
+    var targets = state.matches.filter(function (m) { return (mid === null || m.id === mid) && new Date(m.kickoff).getTime() > now; });
+    if (!targets.length) return;
+    targets.forEach(function (m) { clearTimeout(saving[m.id]); });
+    rpc("ble_reset_picks", { p_name: state.me.name, p_pin: state.me.pin, p_matchday: state.md, p_match: mid })
+      .then(function () {
+        targets.forEach(function (m) { delete state.preds[m.id]; (m.questions || []).forEach(function (q) { delete state.ans[q.id]; }); });
+        play("down"); renderPlay(); toast("Azzerato");
+      }).catch(function (err) { toast(err.message); });
+  }
   $("playPane").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b || b.disabled) return;
     if (b.hasAttribute("data-sel")) {
@@ -557,6 +576,19 @@ ol.race { list-style: none; margin: 0 5px 0 0; padding: 0; display: grid; gap: 1
       renderPlay();
       var cb = $("cardBox");
       if (cb && cb.scrollIntoView) cb.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      return;
+    }
+    if (b.hasAttribute("data-reset")) {
+      if (!b.getAttribute("data-armed")) {
+        b.setAttribute("data-armed", "1"); b.setAttribute("data-label", b.textContent);
+        b.textContent = "Sicuro? Tocca di nuovo"; b.classList.add("armed");
+        setTimeout(function () {
+          if (b.isConnected && b.getAttribute("data-armed")) { b.removeAttribute("data-armed"); b.textContent = b.getAttribute("data-label"); b.classList.remove("armed"); }
+        }, 4000);
+        return;
+      }
+      var rc = b.closest("article.card");
+      doReset(b.getAttribute("data-reset") === "all" || !rc ? null : +rc.getAttribute("data-m"));
       return;
     }
     var card = b.closest("article.card"); if (!card) return;
