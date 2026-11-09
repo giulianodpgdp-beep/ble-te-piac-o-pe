@@ -277,6 +277,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .pg { font-weight: 600; }
 .pg small { display: block; font-weight: 500; color: var(--muted); font-size: .78rem; }
 .pg .ok { color: var(--ok); }
+.pbox { display: grid; gap: 6px; padding-bottom: 8px; border-bottom: 2px dotted var(--line); }
 .prow { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; overflow-wrap: anywhere; }
 .prow button { font-family: var(--font-label); font-weight: 600; font-size: .72rem; text-transform: uppercase; padding: 8px 10px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 2px 2px 0 var(--shade); }
 .prow button.danger { background: var(--bad); color: #fff; }
@@ -963,8 +964,9 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var a = gold.players || [];
     box.innerHTML = a.map(function (p) {
       var me = p.name.toLowerCase() === state.me.name.toLowerCase();
-      return "<div class='prow' data-p='" + p.id + "'><span>" + esc(p.name) + (p.is_admin ? " (admin)" : "") + "</span>" +
-        (me ? "" : gold.pdel === p.id ? "<button type='button' class='danger' data-pact='ok'>Sicuro? Elimina</button>" : "<button type='button' data-pact='del'>Elimina</button>") + "</div>";
+      return "<div class='pbox' data-p='" + p.id + "'><div class='prow'><span>" + esc(p.name) + (p.is_admin ? " (admin)" : "") + "</span>" +
+        (me ? "" : gold.pdel === p.id ? "<button type='button' class='danger' data-pact='ok'>Sicuro? Elimina</button>" : "<button type='button' data-pact='del'>Elimina</button>") + "</div>" +
+        "<div class='adm-row'><input type='text' maxlength='40' placeholder='Nickname fantacalcio' value='" + esc(p.fanta_name || "") + "'><button type='button' class='wa' style='background:var(--giallo);color:var(--giallo-ink)' data-pact='fanta'>Salva</button></div></div>";
     }).join("") + "<p class='gmeta'>Eliminando un partecipante spariscono anche pronostici, voti e pietre che ha aggiunto.</p>";
   }
   function loadPlayers() {
@@ -1033,6 +1035,11 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (b.hasAttribute("data-sort")) { gold.sort = b.getAttribute("data-sort"); play("chip"); var bs = document.querySelectorAll(".gbar:not(.gfilt) button"); Array.prototype.forEach.call(bs, function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-sort") === gold.sort); }); drawGemList(); return; }
     if (b.hasAttribute("data-pact")) {
       var pid = Number(b.closest("[data-p]").getAttribute("data-p"));
+      if (b.getAttribute("data-pact") === "fanta") {
+        rpc("ble_set_fanta", { p_name: state.me.name, p_pin: state.me.pin, p_player: pid, p_fanta: b.parentNode.querySelector("input").value })
+          .then(function () { toast("Salvato"); loadPlayers(); }).catch(function (err) { toast(err.message); });
+        return;
+      }
       if (b.getAttribute("data-pact") === "del") { gold.pdel = pid; drawPlayers(); }
       else fnCall({ action: "delete_player", player: pid }).then(function () { gold.pdel = null; state.rankRows = null; state.hist = null; toast("Azzerato"); renderGold(); }).catch(function (err) { toast(err.message); });
       return;
@@ -1101,6 +1108,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function drawTrades() {
     var h = "<h2 class='gold-h'>Scambi</h2><p class='gold-sub'>Il mercato del gruppo: carica lo screenshot, poi si vota quanto conviene a uno o all'altro.</p>" +
+      "<label class='gform' style='padding:0;margin:0 4px 12px 0'>Il tuo nickname al fantacalcio<span class='adm-row'><input type='text' id='myFanta' maxlength='40' placeholder='Es. Stolto Ceruleo' value='" + esc(state.fanta || "") + "'><button type='button' class='wa' id='myFantaBtn' style='background:var(--giallo);color:var(--giallo-ink)'>Salva</button></span></label>" +
       "<div class='tkinds'>" + ["ufficiale", "oscena"].map(function (k) { return "<button type='button' data-tk='" + k + "' aria-pressed='" + (tr.kind === k) + "'>" + TR_L[k] + "</button>"; }).join("") + "</div>" +
       "<details class='gadd' id='trAdd'><summary>+ Carica uno screenshot</summary><form class='gform' id='trForm'>" +
       "<label>Screenshot<input type='file' id='trFile' accept='image/*' required></label>" +
@@ -1110,7 +1118,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function renderTrades() {
     if (!tr.list) $("tradePane").innerHTML = "<p class='empty'>Carico il mercato&hellip;</p>";
-    var load = state.admin === undefined ? rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; }) : Promise.resolve();
+    var load = rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; });
     load.then(function () { return rpc("ble_list_trades", { p_name: state.me.name, p_pin: state.me.pin, p_kind: tr.kind }); })
       .then(function (l) { tr.list = l; if (!$("trList")) drawTrades(); else drawTradeList(); })
       .catch(function (err) { $("tradePane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
@@ -1147,6 +1155,10 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   });
   $("tradePane").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
+    if (b.id === "myFantaBtn") {
+      rpc("ble_set_my_fanta", { p_name: state.me.name, p_pin: state.me.pin, p_fanta: $("myFanta").value }).then(function () { state.fanta = $("myFanta").value.trim(); toast("Salvato"); renderTrades(); }).catch(function (err) { toast(err.message); });
+      return;
+    }
     if (b.hasAttribute("data-tk")) { tr.kind = b.getAttribute("data-tk"); tr.list = null; tr.edit = null; tr.del = null; play("chip"); $("tradePane").innerHTML = ""; renderTrades(); return; }
     var card = b.closest("[data-t]"); if (!card) return;
     var id = Number(card.getAttribute("data-t"));
