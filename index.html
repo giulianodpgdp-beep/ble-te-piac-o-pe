@@ -405,10 +405,18 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     join: function (c) { [392, 523, 659, 784].forEach(function (f, i) { tone(c, f, i * .11, .22, "triangle", .16); }); },
     err: function (c) { tone(c, 170, 0, .28, "sawtooth", .07, 105); }
   };
+  var curSnd = null;
+  function stopAudio(except) {
+    try { if (curSnd) { curSnd.pause(); curSnd = null; } } catch (e) {}
+    Array.prototype.forEach.call(document.querySelectorAll("audio,video"), function (m) { if (m !== except && !m.paused) m.pause(); });
+  }
+  document.addEventListener("play", function (e) {
+    if (e.target && (e.target.tagName === "AUDIO" || e.target.tagName === "VIDEO")) stopAudio(e.target);
+  }, true);
   function play(name) {
     if (!snd.on) return;
     try {
-      if (SOUND_FILES[name]) { var a = new Audio(SOUND_FILES[name]); a.volume = .85; a.play().catch(function () {}); return; }
+      if (SOUND_FILES[name]) { stopAudio(); var a = new Audio(SOUND_FILES[name]); a.volume = .85; curSnd = a; a.play().catch(function () {}); return; }
       var c = audioCtx(); if (c && SYNTH[name]) SYNTH[name](c);
     } catch (e) {}
   }
@@ -970,6 +978,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   });
 
   function setTab(t) {
+    if (state.tab !== t) stopAudio();
     if (state.tab !== t) play(t === "rank" ? "rank" : t === "hist" ? "hist" : "chip");
     state.tab = t;
     $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank"); $("tabHist").setAttribute("aria-selected", t === "hist"); $("tabGold").setAttribute("aria-selected", t === "gold"); $("tabScambi").setAttribute("aria-selected", t === "scambi");
