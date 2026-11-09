@@ -197,7 +197,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
       <h1>Ble te piac o' Pe</h1>
       <p class="sub">Pronostici Serie A del gruppo</p>
     </div>
-    <div class="who" id="who" hidden><span id="whoName"></span><button type="button" id="logout">Esci</button></div>
+    <div class="who" id="who" hidden><span id="whoName"></span><button type="button" id="sndBtn" aria-pressed="true">Suoni: sì</button><button type="button" id="logout">Esci</button></div>
   </header>
   <div class="stripe" aria-hidden="true"></div>
 
@@ -285,6 +285,44 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return null; }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
 
+  /* ---------- suoni ---------- */
+  // Per usare i tuoi file: metti qui il percorso, per esempio chip: "sounds/pop.mp3". Se resta vuoto suona il suono di base.
+  var SOUND_FILES = { up: "", down: "", pick: "", chip: "", done: "", join: "", err: "" };
+  var snd = { on: store("ble.snd") !== "0", ctx: null };
+  function audioCtx() {
+    try {
+      if (!snd.ctx) { var C = window.AudioContext || window.webkitAudioContext; if (C) snd.ctx = new C(); }
+      if (snd.ctx && snd.ctx.state === "suspended") snd.ctx.resume();
+    } catch (e) {}
+    return snd.ctx;
+  }
+  function tone(c, f, at, dur, type, vol, f2) {
+    var o = c.createOscillator(), g = c.createGain(), t = c.currentTime + at;
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  var SYNTH = {
+    up: function (c) { tone(c, 620, 0, .07, "square", .06, 900); },
+    down: function (c) { tone(c, 520, 0, .07, "square", .06, 360); },
+    pick: function (c) { tone(c, 180, 0, .14, "triangle", .25, 55); tone(c, 900, 0, .03, "square", .04); },
+    chip: function (c) { tone(c, 440, 0, .06, "sine", .15, 660); },
+    done: function (c) { [523, 659, 784, 1047].forEach(function (f, i) { tone(c, f, i * .085, .14, "square", .06); }); },
+    join: function (c) { [392, 523, 659, 784].forEach(function (f, i) { tone(c, f, i * .11, .22, "triangle", .16); }); },
+    err: function (c) { tone(c, 170, 0, .28, "sawtooth", .07, 105); }
+  };
+  function play(name) {
+    if (!snd.on) return;
+    try {
+      if (SOUND_FILES[name]) { var a = new Audio(SOUND_FILES[name]); a.volume = .85; a.play().catch(function () {}); return; }
+      var c = audioCtx(); if (c && SYNTH[name]) SYNTH[name](c);
+    } catch (e) {}
+  }
+  function paintSnd() { var b = $("sndBtn"); b.textContent = "Suoni: " + (snd.on ? "sì" : "no"); b.setAttribute("aria-pressed", snd.on ? "true" : "false"); }
+  $("sndBtn").addEventListener("click", function () { snd.on = !snd.on; store("ble.snd", snd.on ? "1" : "0"); paintSnd(); if (snd.on) play("chip"); });
+  paintSnd();
+
   function api(path, opts) {
     return fetch(SB + "/rest/v1/" + path, opts).then(function (r) {
       return r.text().then(function (t) {
@@ -298,7 +336,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
   function get(path) { return api(path, { headers: HEAD }); }
 
   var toastT;
-  function toast(msg) { var t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("on"); }, 1600); }
+  function toast(msg) { if (msg !== "Salvato" && msg !== "Profilo creato") play("err"); var t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("on"); }, 1600); }
 
   function fmtWhen(iso) {
     return new Date(iso).toLocaleString("it-IT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" });
@@ -316,6 +354,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
     rpc("ble_join_game", { p_name: name, p_pin: pin }).then(function (r) {
       state.me = { name: r.name, pin: pin };
       store("ble.me", JSON.stringify(state.me));
+      play("join");
       if (r.created) toast("Profilo creato");
       boot();
     }).catch(function (err) { $("loginErr").textContent = err.message; })
@@ -409,10 +448,13 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
     }).join("") + "</div>";
   }
 
-  function refreshChips() {
+  var wasDone = {};
+  function refreshChips(quiet) {
     var done = 0;
     state.matches.forEach(function (m) {
       var ok = isComplete(m); if (ok) done++;
+      if (ok && !wasDone[m.id] && !quiet) play("done");
+      wasDone[m.id] = ok;
       var el = document.querySelector(".mchip[data-sel='" + m.id + "']");
       if (!el) return;
       el.classList.toggle("ok", ok); el.classList.toggle("ko", !ok);
@@ -460,7 +502,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
     box.innerHTML = "<p class='progress' id='progress'></p>" + chipsHtml() +
       "<div id='cardBox'>" + cardHtml(cur) + "</div>" +
       "<p class='rules'><b>Punteggio</b> &ndash; esito 1X2 giusto: 3 punti. Risultato esatto: altri 2. Ogni domanda extra: i punti indicati.</p>";
-    refreshChips();
+    refreshChips(true);
   }
 
   function pointsBadge(n) { return "<span class='got" + (n ? "" : " zero") + "'>" + (n ? "+" + n + " punti" : "0 punti") + "</span>"; }
@@ -488,6 +530,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
     var b = e.target.closest("button"); if (!b || b.disabled) return;
     if (b.hasAttribute("data-sel")) {
       state.sel = +b.getAttribute("data-sel");
+      play("chip");
       renderPlay();
       var cb = $("cardBox");
       if (cb && cb.scrollIntoView) cb.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
@@ -500,6 +543,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
       var p = state.preds[mid] || { h: null, a: null };
       var cur = { h: p.h === null ? 0 : p.h, a: p.a === null ? 0 : p.a };
       cur[side] = Math.max(0, Math.min(20, cur[side] + (+b.getAttribute("data-d"))));
+      play(+b.getAttribute("data-d") > 0 ? "up" : "down");
       state.preds[mid] = cur;
       refreshChips();
       var outs = card.querySelectorAll(".stepper output");
@@ -512,6 +556,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
     } else if (b.hasAttribute("data-k")) {
       var qEl = b.closest(".q"), qid = +qEl.getAttribute("data-q"), k = b.getAttribute("data-k");
       state.ans[qid] = k;
+      play("pick");
       refreshChips();
       qEl.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
       rpc("ble_save_answer", { p_name: state.me.name, p_pin: state.me.pin, p_question: qid, p_answer: k })
@@ -539,6 +584,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.9rem; font-variant
   });
 
   function setTab(t) {
+    if (state.tab !== t) play("chip");
     state.tab = t;
     $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank");
     $("playPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank";
