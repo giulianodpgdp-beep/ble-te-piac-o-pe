@@ -336,7 +336,7 @@ details.hday[open] summary::after { content: "\2212"; }
 
   /* ---------- suoni ---------- */
   // Per usare i tuoi file: metti qui il percorso, per esempio chip: "sounds/pop.mp3". Se resta vuoto suona il suono di base.
-  var SOUND_FILES = { up: "", down: "", pick: "", chip: "", done: "sounds/completo.mp3", join: "sounds/ingresso.mp3", rank: "sounds/classifica.mp3", hist: "sounds/storico.mp3", err: "" };
+  var SOUND_FILES = { up: "", down: "", pick: "", chip: "", done: "sounds/completo.mp3", join: "sounds/ingresso.mp3", rank: "sounds/classifica.mp3", hist: "sounds/storico.mp3", exit: "sounds/ingresso.mp3", err: "" };
   var snd = { on: store("ble.snd") !== "0", ctx: null };
   function audioCtx() {
     try {
@@ -411,7 +411,7 @@ details.hday[open] summary::after { content: "\2212"; }
     }).catch(function (err) { $("loginErr").textContent = err.message; })
       .then(function () { $("loginBtn").disabled = false; });
   });
-  $("logout").addEventListener("click", function () { store("ble.me", null); state.me = null; $("pinIn").value = ""; showLogin(); });
+  $("logout").addEventListener("click", function () { play("exit"); store("ble.me", null); state.me = null; $("pinIn").value = ""; showLogin(); });
 
   /* ---------- boot ---------- */
   function boot() {
