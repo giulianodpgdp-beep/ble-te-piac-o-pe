@@ -1262,7 +1262,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   var tr = { kind: "ufficiale", list: null, edit: null, del: null, busy: false, open: {} };
   var TR_L = { ufficiale: "Scambi ufficiali", oscena: "Proposte oscene", comitato: "&#9878; Comitato" };
   function kindsBar() { return "<div class='tkinds'>" + ["ufficiale", "oscena", "comitato"].map(function (k) { return "<button type='button' data-tk='" + k + "' aria-pressed='" + (tr.kind === k) + "'>" + TR_L[k] + "</button>"; }).join("") + "</div>"; }
-  function trUrl(t) { return t.path.indexOf("trades/") === 0 ? t.path : SB + "/storage/v1/object/public/ble-gems/" + t.path; }
+  function trUrl(t) { var m = /^u\/\d+\/(static-[a-z0-9-]+\.[a-z0-9]+)$/.exec(t.path); return m ? "trades/" + m[1] : SB + "/storage/v1/object/public/ble-gems/" + t.path; }
   function trRate(t) {
     if (t.status !== "done") return "<p class='tr-pend'>Il voto si apre dopo la trascrizione (ogni sera).</p>";
     var h = "";
