@@ -812,9 +812,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function gemUrl(g) { return g.path ? SB + "/storage/v1/object/public/ble-gems/" + g.path : g.url; }
   function fmtDay(iso) { return new Date(iso).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Rome" }); }
   function rateHtml(g) {
-    var own = g.author.toLowerCase() === state.me.name.toLowerCase();
     var h = "<div class='rate-h'><span>" + (g.votes ? g.votes + (g.votes === 1 ? " voto" : " voti") : "Nessun voto") + "</span><b>" + (g.votes ? Number(g.avg).toFixed(1) : "&ndash;") + "</b></div>";
-    if (own) return h + "<p class='gmeta'>Non puoi votare la tua pietra.</p>";
     h += "<div class='rate-b' role='group' aria-label='Voto da 1 a 10'>";
     for (var i = 1; i <= 10; i++) h += "<button type='button' data-vote='" + i + "' aria-pressed='" + (g.mine === i) + "'>" + i + "</button>";
     return h + "</div><p class='gmeta'>Memorabilit&agrave; e importanza, da 1 a 10.</p>";
