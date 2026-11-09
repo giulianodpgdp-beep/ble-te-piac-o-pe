@@ -25,6 +25,7 @@
   --giallo: #e6a800;
   --ok: #17895a;
   --bad: #c93d3d;
+  --chip-ok-bg: #17895a; --chip-ok-ink: #ffffff; --chip-ko-bg: #c93d3d; --chip-ko-ink: #ffffff;
   --font-display: "Alfa Slab One", Georgia, "Times New Roman", serif;
   --font-label: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -33,13 +34,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0b1522; --surface: #122134; --surface-2: #1a2d45; --ink: #eaf1f8; --muted: #8fa3b8;
-    --line: #223650; --azzurro: #4aa3f0; --azzurro-ink: #07131f; --giallo: #f5c431; --ok: #3ccf8e; --bad: #f07272;
+    --line: #223650; --azzurro: #4aa3f0; --azzurro-ink: #07131f; --giallo: #f5c431; --ok: #3ccf8e; --bad: #f07272; --chip-ok-bg: #3ccf8e; --chip-ok-ink: #05281a; --chip-ko-bg: #f07272; --chip-ko-ink: #2a0707;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0b1522; --surface: #122134; --surface-2: #1a2d45; --ink: #eaf1f8; --muted: #8fa3b8;
-  --line: #223650; --azzurro: #4aa3f0; --azzurro-ink: #07131f; --giallo: #f5c431; --ok: #3ccf8e; --bad: #f07272;
+  --line: #223650; --azzurro: #4aa3f0; --azzurro-ink: #07131f; --giallo: #f5c431; --ok: #3ccf8e; --bad: #f07272; --chip-ok-bg: #3ccf8e; --chip-ok-ink: #05281a; --chip-ko-bg: #f07272; --chip-ko-ink: #2a0707;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -87,6 +88,18 @@ nav.md .title small { display: block; font-weight: 500; font-size: .8rem; color:
 .tabs button { background: none; border: 0; padding: 10px; border-radius: 7px; font-family: var(--font-label); font-weight: 700; font-size: 1.05rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .tabs button[aria-selected=true] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
 
+/* logo */
+.logo { display: block; width: 100%; max-width: 280px; height: auto; margin: 4px auto 0; }
+
+/* selezione partite */
+.progress { margin: 0 0 8px; font-family: var(--font-label); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; font-size: .9rem; color: var(--muted); }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 4px 16px; }
+.mchip { border: 0; border-radius: 10px; padding: 9px 10px; text-align: left; display: grid; gap: 2px; min-width: 0; background: var(--chip-ko-bg); color: var(--chip-ko-ink); }
+.mchip.ok { background: var(--chip-ok-bg); color: var(--chip-ok-ink); }
+.mchip b { font-family: var(--font-label); font-weight: 700; font-size: 1.05rem; text-transform: uppercase; letter-spacing: .02em; line-height: 1.1; overflow-wrap: anywhere; }
+.mchip small { font-size: .78rem; }
+.mchip[aria-pressed=true] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); }
+
 /* match card */
 .matches { display: grid; gap: 12px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
@@ -94,10 +107,13 @@ nav.md .title small { display: block; font-weight: 500; font-size: .8rem; color:
 .pill { border-radius: 999px; padding: 1px 9px; background: var(--surface-2); }
 .pill.live { background: var(--giallo); color: #1a1400; }
 .pill.done { background: var(--ok); color: #fff; }
-.score { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
+.score { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 8px; align-items: center; }
+.score > .team:first-child { grid-area: 1 / 1; }
+.score > .team.away { grid-area: 1 / 2; }
+.score > .goals { grid-area: 2 / 1 / 3 / 3; justify-content: center; }
 .team { font-family: var(--font-label); font-weight: 700; font-size: 1.3rem; text-transform: uppercase; letter-spacing: .02em; line-height: 1.05; overflow-wrap: anywhere; min-width: 0; }
 .team.away { text-align: right; }
-.goals { display: flex; align-items: center; gap: 6px; }
+.goals { display: flex; align-items: center; gap: 10px; }
 .stepper { display: grid; grid-template-columns: 38px 34px 38px; align-items: center; justify-items: center; }
 .stepper button { width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); font-size: 1.2rem; line-height: 1; }
 .stepper button:disabled { opacity: .35; cursor: default; }
@@ -154,6 +170,44 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.6rem; font-variant
   </header>
 
   <section id="loginView" hidden>
+    <svg class="logo" viewBox="0 0 320 330" role="img" aria-label="Il ragazzo del gruppo con occhiali, maglioncino e borsello a tracolla che dice: non è equo">
+      <path d="M40 10H280Q296 10 296 26V56Q296 72 280 72H196L172 100L170 72H40Q24 72 24 56V26Q24 10 40 10Z" fill="var(--surface)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+      <text x="160" y="51" text-anchor="middle" font-size="26" style="font-family: var(--font-display); fill: var(--ink)">non è equo</text>
+      <rect x="128" y="262" width="28" height="46" rx="8" fill="#2b3a55"/>
+      <rect x="164" y="262" width="28" height="46" rx="8" fill="#2b3a55"/>
+      <ellipse cx="138" cy="312" rx="21" ry="9" fill="#1d1d1f"/>
+      <ellipse cx="182" cy="312" rx="21" ry="9" fill="#1d1d1f"/>
+      <ellipse cx="86" cy="222" rx="19" ry="44" fill="#3b86d1" transform="rotate(8 86 222)"/>
+      <ellipse cx="234" cy="222" rx="19" ry="44" fill="#3b86d1" transform="rotate(-8 234 222)"/>
+      <circle cx="80" cy="268" r="12" fill="#f1c7a2"/>
+      <circle cx="240" cy="268" r="12" fill="#f1c7a2"/>
+      <ellipse cx="160" cy="222" rx="76" ry="56" fill="#3b86d1"/>
+      <path d="M92 258Q160 286 228 258L226 268Q160 296 94 268Z" fill="#2f74bb"/>
+      <path d="M120 214Q160 230 200 214M118 230Q160 246 202 230" fill="none" stroke="#2f74bb" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+      <rect x="148" y="164" width="24" height="16" fill="#f1c7a2"/>
+      <path d="M136 172L160 200L184 172L174 166L160 184L146 166Z" fill="#f4f4f1" stroke="#2f74bb" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M112 178L214 262" stroke="#4d3019" stroke-width="12" stroke-linecap="round"/>
+      <path d="M112 178L214 262" stroke="#8b5a2f" stroke-width="8" stroke-linecap="round"/>
+      <path d="M114 176L212 258" stroke="#c99a62" stroke-width="1.5" stroke-dasharray="4 4" stroke-linecap="round" fill="none"/>
+      <g transform="translate(192 256)">
+        <rect width="58" height="42" rx="9" fill="#8b5a2f" stroke="#4d3019" stroke-width="3"/>
+        <path d="M2 16H56" stroke="#4d3019" stroke-width="3"/>
+        <rect x="24" y="11" width="10" height="12" rx="2" fill="#d9b44a" stroke="#4d3019" stroke-width="2"/>
+      </g>
+      <circle cx="126" cy="143" r="7" fill="#f1c7a2"/>
+      <circle cx="194" cy="143" r="7" fill="#f1c7a2"/>
+      <ellipse cx="160" cy="140" rx="34" ry="33" fill="#f1c7a2"/>
+      <path d="M125 134Q122 103 160 103Q198 103 195 134Q184 119 160 119Q136 119 125 134Z" fill="#3a2a20"/>
+      <circle cx="147" cy="142" r="12" fill="#ffffff" fill-opacity=".45" stroke="#1b1b1b" stroke-width="3.5"/>
+      <circle cx="173" cy="142" r="12" fill="#ffffff" fill-opacity=".45" stroke="#1b1b1b" stroke-width="3.5"/>
+      <path d="M159 141Q160 138 161 141M135 141L126 139M185 141L194 139" stroke="#1b1b1b" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <circle cx="147" cy="143" r="2.6" fill="#1b1b1b"/>
+      <circle cx="173" cy="143" r="2.6" fill="#1b1b1b"/>
+      <path d="M160 149Q156 156 162 157" stroke="#c9976f" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <path d="M146 162Q160 172 174 162" stroke="#7a3b2e" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <circle cx="139" cy="158" r="5" fill="#e88f86" opacity=".35"/>
+      <circle cx="181" cy="158" r="5" fill="#e88f86" opacity=".35"/>
+    </svg>
     <form class="login" id="loginForm" autocomplete="off">
       <h2>Entra in gioco</h2>
       <p>Scrivi il tuo nome e scegli un PIN di 4 cifre. La prima volta crei il tuo profilo, poi rientri con gli stessi dati.</p>
@@ -194,7 +248,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.6rem; font-variant
   var HEAD = { apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json" };
 
   var $ = function (id) { return document.getElementById(id); };
-  var state = { me: null, mds: [], md: null, matches: [], preds: {}, ans: {}, revP: [], revA: [], scope: "md", tab: "play" };
+  var state = { sel: null, me: null, mds: [], md: null, matches: [], preds: {}, ans: {}, revP: [], revA: [], scope: "md", tab: "play" };
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return null; }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -306,35 +360,75 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.6rem; font-variant
     return got;
   }
 
+  function isComplete(m) {
+    var p = state.preds[m.id];
+    if (!p || p.h === null || p.a === null || p.h === undefined || p.a === undefined) return false;
+    return (m.questions || []).every(function (q) { return !!state.ans[q.id]; });
+  }
+
+  function shortWhen(iso) {
+    return new Date(iso).toLocaleString("it-IT", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" });
+  }
+
+  function chipsHtml() {
+    return "<div class='chips'>" + state.matches.map(function (m) {
+      return "<button type='button' class='mchip ko' data-sel='" + m.id + "' aria-pressed='" + (m.id === state.sel) + "'>" +
+        "<b>" + esc(m.home) + " &ndash; " + esc(m.away) + "</b><small></small></button>";
+    }).join("") + "</div>";
+  }
+
+  function refreshChips() {
+    var done = 0;
+    state.matches.forEach(function (m) {
+      var ok = isComplete(m); if (ok) done++;
+      var el = document.querySelector(".mchip[data-sel='" + m.id + "']");
+      if (!el) return;
+      el.classList.toggle("ok", ok); el.classList.toggle("ko", !ok);
+      el.querySelector("small").textContent = shortWhen(m.kickoff) + " · " + (ok ? "completa" : "da fare");
+    });
+    var pr = $("progress");
+    if (pr) pr.textContent = done + " di " + state.matches.length + " partite complete";
+  }
+
+  function cardHtml(m) {
+    var now = Date.now();
+    var started = new Date(m.kickoff).getTime() <= now, fin = m.status === "finished";
+    var p = state.preds[m.id] || { h: null, a: null };
+    var badge = fin ? "<span class='pill done'>Finita</span>" : started ? "<span class='pill live'>In corso</span>" : "<span class='pill'>Aperta</span>";
+    var qs = (m.questions || []).slice().sort(function (a, b) { return a.id - b.id; });
+    var html = "<article class='card' data-m='" + m.id + "'>" +
+      "<div class='when'><span>" + esc(fmtWhen(m.kickoff)) + "</span>" + badge + "</div>" +
+      "<div class='score'><div class='team'>" + esc(m.home) + "</div>" +
+      "<div class='goals'>" + stepperHtml("h", p.h, started) + "<span class='dash'>:</span>" + stepperHtml("a", p.a, started) + "</div>" +
+      "<div class='team away'>" + esc(m.away) + "</div></div>";
+    if (fin) html += "<div class='final'><span>Risultato</span><b>" + m.home_goals + " &ndash; " + m.away_goals + "</b>" + pointsBadge(matchPoints(m)) + "</div>";
+    html += qs.map(function (q) {
+      var done = q.correct !== null && q.correct !== undefined;
+      return "<div class='q' data-q='" + q.id + "'><p><span>" + esc(q.prompt) + "</span><em>" + (q.correct === "void" ? "annullata" : "+" + q.points) + "</em></p><div class='opts'>" +
+        q.options.map(function (o) {
+          var on = state.ans[q.id] === o.k;
+          var right = done && q.correct === o.k;
+          return "<button type='button' data-k='" + esc(o.k) + "' aria-pressed='" + on + "' class='" + (right ? "right" : "") + "'" + (started ? " disabled" : "") + ">" + esc(o.label) + "</button>";
+        }).join("") + "</div></div>";
+    }).join("");
+    if (started) html += others(m, qs);
+    else html += "<p class='lock'>Puoi cambiare fino al calcio d'inizio.</p>";
+    return html + "</article>";
+  }
+
   function renderPlay() {
     var box = $("playPane");
     if (!state.matches.length) { box.innerHTML = "<p class='empty'>Questa giornata non ha ancora partite.</p>"; return; }
-    var now = Date.now();
-    box.innerHTML = "<div class='matches'>" + state.matches.map(function (m) {
-      var started = new Date(m.kickoff).getTime() <= now, fin = m.status === "finished";
-      var p = state.preds[m.id] || { h: null, a: null };
-      var badge = fin ? "<span class='pill done'>Finita</span>" : started ? "<span class='pill live'>In corso</span>" : "<span class='pill'>Aperta</span>";
-      var qs = (m.questions || []).slice().sort(function (a, b) { return a.id - b.id; });
-      var html = "<article class='card' data-m='" + m.id + "'>" +
-        "<div class='when'><span>" + esc(fmtWhen(m.kickoff)) + "</span>" + badge + "</div>" +
-        "<div class='score'><div class='team'>" + esc(m.home) + "</div>" +
-        "<div class='goals'>" + stepperHtml("h", p.h, started) + "<span class='dash'>:</span>" + stepperHtml("a", p.a, started) + "</div>" +
-        "<div class='team away'>" + esc(m.away) + "</div></div>";
-      if (fin) html += "<div class='final'><span>Risultato</span><b>" + m.home_goals + " &ndash; " + m.away_goals + "</b>" + pointsBadge(matchPoints(m)) + "</div>";
-      html += qs.map(function (q) {
-        var done = q.correct !== null && q.correct !== undefined;
-        return "<div class='q' data-q='" + q.id + "'><p><span>" + esc(q.prompt) + "</span><em>" + (q.correct === "void" ? "annullata" : "+" + q.points) + "</em></p><div class='opts'>" +
-          q.options.map(function (o) {
-            var on = state.ans[q.id] === o.k;
-            var right = done && q.correct === o.k;
-            return "<button type='button' data-k='" + esc(o.k) + "' aria-pressed='" + on + "' class='" + (right ? "right" : "") + "'" + (started ? " disabled" : "") + ">" + esc(o.label) + "</button>";
-          }).join("") + "</div></div>";
-      }).join("");
-      if (started) html += others(m, qs);
-      else html += "<p class='lock'>Puoi cambiare fino al calcio d'inizio.</p>";
-      return html + "</article>";
-    }).join("") + "</div>" +
-    "<p class='rules'><b>Punteggio</b> &ndash; esito 1X2 giusto: 3 punti. Risultato esatto: altri 2. Ogni domanda extra: i punti indicati.</p>";
+    var cur = state.matches.filter(function (m) { return m.id === state.sel; })[0];
+    if (!cur) {
+      var now = Date.now();
+      cur = state.matches.filter(function (m) { return new Date(m.kickoff).getTime() > now && !isComplete(m); })[0] || state.matches[0];
+      state.sel = cur.id;
+    }
+    box.innerHTML = "<p class='progress' id='progress'></p>" + chipsHtml() +
+      "<div id='cardBox'>" + cardHtml(cur) + "</div>" +
+      "<p class='rules'><b>Punteggio</b> &ndash; esito 1X2 giusto: 3 punti. Risultato esatto: altri 2. Ogni domanda extra: i punti indicati.</p>";
+    refreshChips();
   }
 
   function pointsBadge(n) { return "<span class='got" + (n ? "" : " zero") + "'>" + (n ? "+" + n + " punti" : "0 punti") + "</span>"; }
@@ -360,6 +454,13 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.6rem; font-variant
   var saving = {};
   $("playPane").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b || b.disabled) return;
+    if (b.hasAttribute("data-sel")) {
+      state.sel = +b.getAttribute("data-sel");
+      renderPlay();
+      var cb = $("cardBox");
+      if (cb && cb.scrollIntoView) cb.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      return;
+    }
     var card = b.closest("article.card"); if (!card) return;
     var mid = +card.getAttribute("data-m");
     if (b.hasAttribute("data-d")) {
@@ -368,6 +469,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.6rem; font-variant
       var cur = { h: p.h === null ? 0 : p.h, a: p.a === null ? 0 : p.a };
       cur[side] = Math.max(0, Math.min(20, cur[side] + (+b.getAttribute("data-d"))));
       state.preds[mid] = cur;
+      refreshChips();
       var outs = card.querySelectorAll(".stepper output");
       outs[0].textContent = cur.h; outs[1].textContent = cur.a;
       clearTimeout(saving[mid]);
@@ -378,6 +480,7 @@ ol.rank .pts { font-family: var(--font-display); font-size: 1.6rem; font-variant
     } else if (b.hasAttribute("data-k")) {
       var qEl = b.closest(".q"), qid = +qEl.getAttribute("data-q"), k = b.getAttribute("data-k");
       state.ans[qid] = k;
+      refreshChips();
       qEl.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
       rpc("ble_save_answer", { p_name: state.me.name, p_pin: state.me.pin, p_question: qid, p_answer: k })
         .then(function () { toast("Salvato"); }).catch(function (err) { toast(err.message); loadMd(); });
