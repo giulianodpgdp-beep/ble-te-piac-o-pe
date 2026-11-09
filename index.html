@@ -967,7 +967,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   /* ---------- classifica ---------- */
   var CAR_COLORS = ["#e63946", "#ff9f1c", "#18b3a4", "#9b5de5", "#f15bb5", "#3a86ff", "#7cc22a", "#ff6b35"];
   function carCol(n) { var c = duel.colors[n]; if (c) return c; var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0; return CAR_COLORS[h % CAR_COLORS.length]; }
-  function ttl(n) { return duel.titles[n] ? " <em class='ttl'>" + esc(duel.titles[n]) + "</em>" : ""; }
+  function ttl(n, all) { var t = duel.titles[n]; if (!t) return ""; return (all ? t.split(" · ") : [t.split(" · ")[0]]).map(function (x) { return " <em class='ttl'>" + esc(x) + "</em>"; }).join(""); }
   function colorFor(n) { var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0; return CAR_COLORS[h % CAR_COLORS.length]; }
   function classicHtml(rows) {
     return "<ol class='rank'>" + rows.map(function (r, i) {
@@ -1055,7 +1055,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       var pct = function (a, b) { return b ? Math.round(a / b * 100) + "%" : "&ndash;"; };
       var row = function (k, v) { return "<div class='pfrow'><span>" + k + "</span><b>" + v + "</b></div>"; };
       var nk = (duel.nicks || {})[d.name];
-      $("profCard").innerHTML = "<h3>" + esc(d.name) + ttl(d.name) + (nk ? " <em class='nick'>" + esc(nk) + "</em>" : "") + "</h3>" + medH + palH +
+      $("profCard").innerHTML = "<h3>" + esc(d.name) + ttl(d.name, true) + (nk ? " <em class='nick'>" + esc(nk) + "</em>" : "") + "</h3>" + medH + palH +
         row("Punti totali", d.points) + row("Giornate giocate", d.days) + row("Giornate vinte", d.wins) +
         row("Media a giornata", d.days ? (d.points / d.days).toFixed(1) : "&ndash;") +
         row("Miglior giornata", d.best_md ? d.best_md.pts + " punti (G" + d.best_md.md + ")" : "&ndash;") +
@@ -1093,7 +1093,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       duel.pag = r[1]; duel.list = r[2]; duel.names = r[3].map(function (x) { return x.pname; });
       duel.colors = {}; r[4].forEach(function (x) { duel.colors[x.pname] = x.color; });
       duel.titles = {}; r[5].forEach(function (x) { duel.titles[x.pname] = x.title; });
-      if (state.me) $("whoName").textContent = state.me.name + (duel.titles[state.me.name] ? " " + duel.titles[state.me.name].split(" · ").map(function (t) { return t.split(" ")[0]; }).join("") : "");
+      if (state.me) { var wt = duel.titles[state.me.name]; $("whoName").innerHTML = esc(state.me.name) + (wt ? "<span class='ttl' style='display:block;width:max-content;margin-top:2px'>" + esc(wt.split(" · ")[0]) + "</span>" : ""); };
       drawExtra(); drawRank(); if (state.tab === "hist" && state.hist) drawHist();
     }).catch(function () {});
   }
