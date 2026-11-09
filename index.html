@@ -89,6 +89,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1
 .stripe { height: 10px; margin: 0 0 18px; border: 2px solid var(--edge); border-radius: 6px; background: repeating-linear-gradient(-45deg, var(--azzurro) 0 9px, var(--surface) 9px 18px); }
 .who { font-family: var(--font-label); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .75rem; color: var(--muted); min-width: 0; }
 .who button { display: inline-block; margin-left: 0; background: none; border: 0; padding: 4px 0; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; font-family: var(--font-label); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .75rem; }
+#whoName { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
 .who span { margin-right: auto; overflow-wrap: anywhere; color: var(--ink); }
 .who { display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin: -6px 0 10px; }
 
@@ -425,7 +426,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     <svg class="hdr-logo" id="hdrLogo" viewBox="0 0 320 330" role="img" aria-label="Il ragazzo del gruppo che dice: non è equo" hidden><use href="#mascot"/></svg>
   </header>
 
-  <div class="who" id="who" hidden><span id="whoName"></span><button type="button" id="admBtn" hidden>Admin</button><button type="button" id="chatBtn">Chat</button><button type="button" id="sugBtn">Suggerimenti</button><button type="button" id="sndBtn" aria-pressed="true">Suoni: sì</button><button type="button" id="ntfBtn">Notifiche: no</button><button type="button" id="logout">Esci</button></div>
+  <div class="who" id="who" hidden><span id="whoName" role="button" tabindex="0" title="Il mio profilo"></span><button type="button" id="admBtn" hidden>Admin</button><button type="button" id="chatBtn">Chat</button><button type="button" id="sugBtn">Suggerimenti</button><button type="button" id="sndBtn" aria-pressed="true">Suoni: sì</button><button type="button" id="ntfBtn">Notifiche: no</button><button type="button" id="logout">Esci</button></div>
   <div class="stripe" aria-hidden="true"></div>
 
   <section id="loginView" hidden>
@@ -1049,6 +1050,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         "<button type='button' class='go' id='pfOk' style='margin-top:12px'>Chiudi</button>";
     }).catch(function (err) { $("profCard").innerHTML = "<p class='gmeta'>" + esc(err.message) + "</p><button type='button' class='go' id='pfOk'>Chiudi</button>"; });
   }
+  $("whoName").addEventListener("click", function () { if (state.me) { play("chip"); pfShow(state.me.name); } });
   $("profDlg").addEventListener("click", function (e) { if (e.target.id === "profDlg" || e.target.id === "pfOk") $("profDlg").hidden = true; });
   function renderRank(noFetch) {
     var box = $("rankPane");
