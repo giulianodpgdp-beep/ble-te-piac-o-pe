@@ -1047,7 +1047,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var a0 = { p_name: state.me.name, p_pin: state.me.pin, p_player: name };
     Promise.all([rpc("ble_profile", a0), rpc("ble_medals", a0).catch(function () { return {}; })]).then(function (rr) {
       var d = rr[0], md = rr[1] || {};
-      var MED = [["profeta", "\uD83D\uDD2E", "Il Profeta", "3 esatti nella stessa giornata"], ["cecchino", "\uD83C\uDFAF", "Il Cecchino", "5 esiti giusti di fila"], ["re", "\uD83D\uDC51", "Re di giornata", "giornate vinte"], ["maledizione", "\uD83D\uDC80", "La Maledizione", "5 sbagliati di fila"], ["latitante", "\uD83D\uDE48", "Il Latitante", "giornate saltate"]];
+      var MED = [["profeta", "\uD83D\uDD2E", "O' Maestro", "3 esatti nella stessa giornata"], ["cecchino", "\uD83C\uDFAF", "Il Culo Rotto", "5 esiti giusti di fila"], ["re", "\uD83D\uDC51", "O' Fetill", "giornate vinte"], ["maledizione", "\uD83D\uDC80", "Il Samuele", "5 sbagliati di fila"], ["latitante", "\uD83D\uDE48", "Il Latitante", "giornate saltate"]];
       var got = MED.filter(function (m) { return md[m[0]] > 0; });
       var medH = "<div class='medals'>" + (got.length ? got.map(function (m) { return "<span class='medal' title='" + m[3] + "'>" + m[1] + " " + m[2] + (md[m[0]] > 1 ? " &times;" + md[m[0]] : "") + "</span>"; }).join("") : "<small>Nessuna medaglia ancora</small>") + "</div>";
       var mine = d.name.toLowerCase() === state.me.name.toLowerCase();
