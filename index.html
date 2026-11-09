@@ -552,7 +552,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   var HEAD = { apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json" };
 
   var $ = function (id) { return document.getElementById(id); };
-  var duel = { list: null, pag: [], nicks: {}, names: [], colors: {}, avs: {}, lv: {}, sp: {}, titles: {} };
+  var duel = { list: null, pag: [], nicks: {}, names: [], colors: {}, avs: {}, lv: {}, sp: {}, team: {}, titles: {} };
   var state = { view: store("ble.view") === "classic" ? "classic" : "race", rankRows: null, hist: null, sel: null, me: null, mds: [], md: null, matches: [], preds: {}, ans: {}, revP: [], revA: [], scope: "md", tab: "home" };
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return null; }
@@ -1046,12 +1046,17 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         "<span class='pts'>" + r.pts + "</span></li>";
     }).join("") + "</ol>";
   }
+  function teamPill(n) {
+    var t = duel.team[n]; if (!t) return "";
+    var tt = t.length > 16 ? t.slice(0, 15) + "\u2026" : t, tw = Math.round(tt.length * 4.6 + 12);
+    return "<rect x='" + (-tw / 2) + "' y='53' width='" + tw + "' height='12' rx='6' fill='#0b1a2e' fill-opacity='.85'/><text x='0' y='61.8' text-anchor='middle' font-size='7.5' fill='#ffffff' style='font-family: var(--font-label); font-weight: 600'>" + esc(tt) + "</text>";
+  }
   function trackHtml(rows) {
     var n = rows.length, max = rows.reduce(function (m, r) { return Math.max(m, r.pts); }, 0);
-    var LANES = [1, 2, 0, 3], SEP = 80, TOP = 118, LEN = 250, W = 340;
+    var LANES = [1, 2, 0, 3], SEP = 98, TOP = 118, LEN = 250, W = 340;
     var ys = rows.map(function (r) { return TOP + (max ? (max - r.pts) / max : 1) * LEN; });
     for (var i = 0; i < n; i++) { if (i > 0 && ys[i] < ys[i - 1]) ys[i] = ys[i - 1]; if (i >= 4) ys[i] = Math.max(ys[i], ys[i - 4] + SEP); }
-    var START = Math.max.apply(null, ys) + 96, H = Math.round(START + 56);
+    var START = Math.max.apply(null, ys) + 112, H = Math.round(START + 56);
     var XL0 = 58, XR0 = 282, XL1 = 8, XR1 = 332;
     function xl(y) { return XL0 + (XL1 - XL0) * (y / H); }
     function xr(y) { return XR0 + (XR1 - XR0) * (y / H); }
@@ -1100,7 +1105,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         "<circle cx='0' cy='-12' r='8.5' fill='" + hel + "' stroke='#0b1a2e' stroke-width='2'/><path d='M-2 -20L2 -20L2 -4L-2 -4Z' fill='#ffffff' fill-opacity='.4'/>" +
         "<circle cx='24' cy='-26' r='11' fill='#ffd23f' stroke='#0b1a2e' stroke-width='2'/><text x='24' y='-22' text-anchor='middle' font-size='" + (String(r.pts).length > 2 ? 9 : 11) + "' fill='#0b1a2e' style='font-family: var(--font-display)'>" + r.pts + "</text>" +
         "<rect x='" + (-lw / 2) + "' y='36' width='" + lw + "' height='15' rx='7.5' fill='" + (me ? "#ffd23f" : "#ffffff") + "' stroke='#0b1a2e' stroke-width='1.6'/>" +
-        "<text x='0' y='46.8' text-anchor='middle' font-size='9' fill='#0b1a2e' style='font-family: var(--font-label); font-weight: 600'>" + esc(lab) + "</text>" +
+        "<text x='0' y='46.8' text-anchor='middle' font-size='9' fill='#0b1a2e' style='font-family: var(--font-label); font-weight: 600'>" + esc(lab) + "</text>" + teamPill(r.pname) +
         "</g></g>";
     }
     return "<div class='track-wrap'>" + o + "</svg></div>";
@@ -1176,7 +1181,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     Promise.all([rpc("ble_nicknames"), rpc("ble_pagella"), rpc("ble_list_duels", a), rpc("ble_leaderboard", { p_matchday: null }), rpc("ble_colors"), rpc("ble_titles_list")]).then(function (r) {
       duel.nicks = {}; r[0].forEach(function (x) { duel.nicks[x.pname] = x.nick; });
       duel.pag = r[1]; duel.list = r[2]; duel.names = r[3].map(function (x) { return x.pname; });
-      duel.colors = {}; duel.avs = {}; duel.lv = {}; duel.sp = {}; r[4].forEach(function (x) { if (x.color) duel.colors[x.pname] = x.color; if (x.avatar) duel.avs[x.pname] = x.avatar; if (x.livery) duel.lv[x.pname] = x.livery; if (x.sponsor) duel.sp[x.pname] = x.sponsor; });
+      duel.colors = {}; duel.avs = {}; duel.lv = {}; duel.sp = {}; duel.team = {}; r[4].forEach(function (x) { if (x.team) duel.team[x.pname] = x.team; if (x.color) duel.colors[x.pname] = x.color; if (x.avatar) duel.avs[x.pname] = x.avatar; if (x.livery) duel.lv[x.pname] = x.livery; if (x.sponsor) duel.sp[x.pname] = x.sponsor; });
       duel.titles = {}; r[5].forEach(function (x) { duel.titles[x.pname] = x.title; });
       if (state.me) { var wt = duel.titles[state.me.name]; $("whoName").innerHTML = esc(state.me.name) + (wt ? "<span class='ttl' style='display:block;width:max-content;margin-top:2px'>" + esc(wt.split(" · ")[0]) + "</span>" : ""); };
       drawExtra(); drawRank(); if (state.tab === "home") drawHome(); if (state.tab === "hist" && state.hist) drawHist();
