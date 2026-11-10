@@ -400,6 +400,19 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .chatbody { position: relative; }
 .mn { background: #ffe27a; color: #0b1a2e; border-radius: 6px; padding: 0 3px; font-weight: 700; }
 .mn.me { background: #ffcb05; outline: 2px solid #0b1a2e; }
+.ins-h { font-family: var(--font-label); text-transform: uppercase; margin: 14px 0 6px; }
+.ins-card { border: 3px solid var(--edge); border-left-width: 10px; border-radius: 12px; background: var(--surface); padding: 10px 12px; margin: 8px 0; }
+.ins-card.win { background: #fff3bf; border-color: #f4b400; }
+.ins-card .who { font-family: var(--font-label); font-size: .8rem; text-transform: uppercase; opacity: .8; }
+.ins-card p { margin: 4px 0 8px; font-size: 1.02rem; overflow-wrap: anywhere; }
+.stars { display: flex; align-items: center; gap: 2px; }
+.stars button { background: none; border: 0; font-size: 1.7rem; line-height: 1; padding: 2px 3px; cursor: pointer; color: #b8b8b8; }
+.stars button.on { color: #f4b400; }
+.stars small { margin-left: 8px; opacity: .7; }
+.ins-day { font-family: var(--font-label); text-transform: capitalize; margin: 16px 0 2px; border-bottom: 2px dashed var(--edge); }
+.ins-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0; }
+.ins-nav button { font: inherit; padding: 8px 14px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.ins-nav button:disabled { opacity: .35; }
 .selbar { position: absolute; top: 4px; left: 8px; right: 8px; z-index: 6; display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--surface); border: 2px solid var(--edge); border-radius: 12px; box-shadow: 0 3px 0 var(--edge); }
 .selbar[hidden] { display: none; }
 .selbar b { flex: 1; font-family: var(--font-label); text-transform: uppercase; font-size: .85rem; }
@@ -558,6 +571,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     <div id="rankPane" hidden></div>
     <div id="histPane" hidden></div>
     <div id="goldPane" hidden></div>
+    <div id="insPane" hidden></div>
     <div id="tradePane" hidden></div>
   </section>
 
@@ -2151,6 +2165,11 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     h += "<div class='hstats'><div><b>" + (home.pos ? home.pos + "&deg;" : "&ndash;") + "</b><span>Posizione</span></div><div><b>" + (d.points != null ? d.points : "&ndash;") + "</b><span>Punti</span></div><div><b>" + (d.days != null ? d.days : "&ndash;") + "</b><span>Giornate</span></div><div><b>" + (d.exact != null ? d.exact : "&ndash;") + "</b><span>Esatti</span></div></div>";
     var mine = (duel.list || []).filter(function (x) { return x.a_name.toLowerCase() === me.toLowerCase() || x.b_name.toLowerCase() === me.toLowerCase(); });
     var x = mine.filter(function (z) { return z.status === "done"; })[0] || mine[0];
+    var ih = ins.hm;
+    if (ih) {
+      if (state.admin && ih.dow >= 6 && !ih.closed && !ih.sent && ih.items.length) h += "<div class='hcard' style='border-color:#25d366'><h3>&#128242; Offese a Blu: manda la lista<small>" + ih.items.length + " offese</small></h3><p style='margin:0 0 10px'>Invia l&rsquo;elenco della settimana nel gruppo WhatsApp e invita tutti a votare.</p><div class='gact'><button type='button' class='wago' data-hm='insa'>Invia nel gruppo</button></div></div>";
+      h += "<div class='hcard' data-hm='ins' role='button' tabindex='0' style='cursor:pointer'><h3>&#128520; Offese a Blu<small>" + ih.items.length + " questa settimana</small></h3><p style='margin:0'>" + (ih.me_target ? "Sei il bersaglio: puoi solo votare" : ih.wrote_today ? "Oggi hai gi&agrave; offeso. Vota le altre!" : "<b>Scrivi l&rsquo;offesa di oggi</b>") + "</p></div>";
+    }
     var dp = duPending();
     if (dp.length) h += "<div class='hcard' style='border-color:#e63946;background:#fff0f1'><h3>&#9876;&#65039; Sfida da accettare<small>" + dp.length + "</small></h3><p style='margin:0 0 10px'><b>" + esc(dp[0].a_name) + "</b> ti sfida nella giornata " + dp[0].matchday + "</p><div class='gact'><button type='button' class='wago' style='background:#e63946!important;color:#fff!important' data-hm='duel'>Rispondi</button></div></div>";
     h += "<div class='hcard'><h3>Ultima sfida" + (x ? "<small>Giornata " + x.matchday + "</small>" : "") + "</h3>";
@@ -2183,8 +2202,79 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     return { text: out, ids: used };
   }
   setInterval(function () { if (state.tab === "home" && !document.hidden) waLoad(); }, 60000);
+  /* ---------- Offese a Blu ---------- */
+  var ins = { d: null, week: null, hm: null };
+  function insDay(s) { try { return new Date(s + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }); } catch (e) { return s; } }
+  function insRange(w) { try { var a = new Date(w + "T12:00:00"), b = new Date(a.getTime() + 6 * 864e5), f = function (d) { return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" }); }; return f(a) + " \u2013 " + f(b); } catch (e) { return w; } }
+  function insHome() {
+    if (!state.me) return;
+    rpc("ble_ins_list", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) { ins.hm = r; if (state.tab === "home") drawHome(); }).catch(function () {});
+  }
+  function insLoad() {
+    if (!state.me) return;
+    var a = { p_name: state.me.name, p_pin: state.me.pin }; if (ins.week) a.p_week = ins.week;
+    rpc("ble_ins_list", a).then(function (r) { ins.d = r; ins.week = r.week; drawIns(); }).catch(function (err) { toast(err.message); });
+  }
+  function starsHtml(i, closed) {
+    var m = i.mine || 0, h = "<div class='stars' data-i='" + i.id + "'>";
+    for (var k = 1; k <= 5; k++) h += "<button type='button' class='" + (k <= m ? "on" : "") + "' data-st='" + k + "'" + (closed || i.own ? " disabled" : "") + " aria-label='" + k + " stelle'>&#9733;</button>";
+    return h + "<small>" + (i.votes ? String(i.avg).replace(".", ",") + " &middot; " + i.votes + (i.votes === 1 ? " voto" : " voti") : "nessun voto") + (i.own ? " &middot; la tua" : "") + "</small></div>";
+  }
+  function drawIns() {
+    var box = $("insPane"), d = ins.d; if (!box || !d) return;
+    var h = "<h2 class='gold-h'>&#128520; Offese a Blu</h2><p class='gold-sub'>Ogni giorno ognuno pu&ograve; scrivere una sola offesa. Si vota da 1 a 5 stelle (min. 2 voti): ogni domenica sera esce l&rsquo;offesa della settimana, a fine mese quella del mese.</p>";
+    h += "<div class='ins-nav'><button type='button' data-wk='prev'" + (d.weeks.indexOf(d.week) >= d.weeks.length - 1 ? " disabled" : "") + ">&larr;</button><b>" + esc(insRange(d.week)) + (d.closed ? " &middot; chiusa" : "") + "</b><button type='button' data-wk='next'" + (d.weeks.indexOf(d.week) <= 0 ? " disabled" : "") + ">&rarr;</button></div>";
+    if (d.week === d.cur) {
+      if (d.me_target) h += "<p class='gmeta'>Sei il bersaglio: tu puoi solo votare.</p>";
+      else if (d.wrote_today) h += "<p class='gmeta'>&#9989; Oggi hai gi&agrave; offeso Blu. Torna domani!</p>";
+      else h += "<form class='sug' id='insForm'><b>L&rsquo;offesa di oggi</b><textarea id='insText' maxlength='200' rows='3' placeholder='Scrivi la tua offesa a Blu (max 200 caratteri)' required style='width:100%;box-sizing:border-box;padding:10px;border:2px solid var(--edge);border-radius:10px;font:inherit;margin:8px 0'></textarea><button class='go' type='submit' style='font-family:var(--font-label);text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--azzurro);color:var(--azzurro-ink);width:100%;cursor:pointer'>Offendi Blu</button></form>";
+    }
+    var w = d.winner && d.items.filter(function (x) { return x.id === d.winner; })[0];
+    if (w) h += "<div class='ins-card win'><div class='who'>&#127942; Offesa della settimana &middot; " + esc(w.author) + "</div><p>&laquo;" + esc(w.body) + "&raquo;</p><small>" + String(w.avg).replace(".", ",") + " &#9733; &middot; " + w.votes + " voti</small></div>";
+    else if (d.closed) h += "<p class='gmeta'>Nessuna offesa ha raggiunto 2 voti.</p>";
+    var lastDay = "";
+    d.items.forEach(function (i) {
+      if (i.day !== lastDay) { lastDay = i.day; h += "<div class='ins-day'>" + esc(insDay(i.day)) + "</div>"; }
+      h += "<div class='ins-card' style='border-left-color:" + carCol(i.author) + "'><div class='who'>" + esc(i.author) + (state.admin ? " <button type='button' data-idel='" + i.id + "' style='float:right;border:0;background:none;cursor:pointer'>&times;</button>" : "") + "</div><p>" + esc(i.body) + "</p>" + starsHtml(i, d.closed) + "</div>";
+    });
+    if (!d.items.length) h += "<p class='gmeta'>Ancora nessuna offesa in questa settimana.</p>";
+    if (d.hall_w.length || d.hall_m.length) {
+      h += "<h3 class='ins-h'>&#127942; Albo d&rsquo;oro</h3>";
+      d.hall_m.forEach(function (x) { h += "<div class='ins-card win'><div class='who'>&#128081; Offesa del mese &middot; " + esc(new Date(x.month + "T12:00:00").toLocaleDateString("it-IT", { month: "long", year: "numeric" })) + " &middot; " + esc(x.author) + "</div><p>&laquo;" + esc(x.body) + "&raquo;</p><small>" + String(x.avg).replace(".", ",") + " &#9733; &middot; " + x.votes + " voti</small></div>"; });
+      d.hall_w.forEach(function (x) { h += "<div class='ins-card'><div class='who'>Settimana " + esc(insRange(x.week)) + " &middot; " + esc(x.author) + "</div><p>&laquo;" + esc(x.body) + "&raquo;</p><small>" + String(x.avg).replace(".", ",") + " &#9733; &middot; " + x.votes + " voti</small></div>"; });
+    }
+    box.innerHTML = h;
+  }
+  function insWaText(r) {
+    var by = {}, days = [];
+    r.items.slice().reverse().forEach(function (i) { if (!by[i.day]) { by[i.day] = []; days.push(i.day); } by[i.day].push(i); });
+    var out = "\ud83d\ude08 OFFESE A BLU \u2013 settimana " + insRange(r.week) + "\n", rest = 0;
+    days.forEach(function (dd) {
+      var blk = "\n" + insDay(dd).toUpperCase() + "\n" + by[dd].map(function (i) { return "\u2022 " + i.author + ": \u00ab" + i.body + "\u00bb"; }).join("\n") + "\n";
+      if (out.length + blk.length > 3200) rest += by[dd].length; else out += blk;
+    });
+    if (rest) out += "\n\u2026e altre " + rest + " nell'app\n";
+    return out + "\n\u2b50 Votate le vostre preferite (da 1 a 5 stelle) nell'app: ogni domenica sera esce l'offesa della settimana!\n" + siteUrl();
+  }
+  $("insPane").addEventListener("submit", function (e) {
+    if (e.target.id !== "insForm") return; e.preventDefault();
+    rpc("ble_ins_send", { p_name: state.me.name, p_pin: state.me.pin, p_body: $("insText").value }).then(function () { play("done"); toast("Offesa inviata!"); insLoad(); }).catch(function (err) { toast(err.message); });
+  });
+  $("insPane").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return; var d = ins.d;
+    if (b.hasAttribute("data-st")) {
+      var id = Number(b.parentNode.getAttribute("data-i")), st = Number(b.getAttribute("data-st"));
+      rpc("ble_ins_vote", { p_name: state.me.name, p_pin: state.me.pin, p_insult: id, p_stars: st }).then(function () { play("chip"); insLoad(); }).catch(function (err) { toast(err.message); });
+    } else if (b.hasAttribute("data-wk")) {
+      var i = d.weeks.indexOf(d.week); i += b.getAttribute("data-wk") === "prev" ? 1 : -1;
+      if (d.weeks[i]) { ins.week = d.weeks[i]; insLoad(); }
+    } else if (b.hasAttribute("data-idel")) {
+      if (!confirm("Eliminare questa offesa?")) return;
+      rpc("ble_ins_delete", { p_name: state.me.name, p_pin: state.me.pin, p_insult: Number(b.getAttribute("data-idel")) }).then(function () { insLoad(); }).catch(function (err) { toast(err.message); });
+    }
+  });
   function renderHome() {
-    drawHome(); waLoad();
+    drawHome(); waLoad(); insHome();
     if (!state.me) return;
     var a = { p_name: state.me.name, p_pin: state.me.pin, p_player: state.me.name };
     Promise.all([rpc("ble_profile", a).catch(function () { return null; }), rpc("ble_medals", a).catch(function () { return {}; }), rpc("ble_leaderboard", { p_matchday: null }).catch(function () { return []; })]).then(function (r) {
@@ -2271,6 +2361,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var b = e.target.closest("[data-hm]"); if (!b) return;
     if (b.getAttribute("data-hm") === "chat") { $("chatBtn").click(); return; }
     if (b.getAttribute("data-hm") === "duel") { duReqShow(true); return; }
+    if (b.getAttribute("data-hm") === "ins") { setTab("ins"); window.scrollTo(0, 0); return; }
+    if (b.getAttribute("data-hm") === "insa") {
+      rpc("ble_ins_list", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) {
+        rpc("ble_ins_mark_sent", { p_name: state.me.name, p_pin: state.me.pin }).catch(function () {});
+        if (ins.hm) ins.hm.sent = true; drawHome(); waOpen(insWaText(r));
+      }).catch(function (err) { toast(err.message); });
+      return;
+    }
     if (b.getAttribute("data-hm") === "wa") {
       var pk = waText(home.wa); if (!pk.ids.length) return;
       rpc("ble_wa_mark", { p_name: state.me.name, p_pin: state.me.pin, p_ids: pk.ids }).catch(function () {});
@@ -2290,13 +2388,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (state.tab !== t) play(t === "rank" ? "rank" : t === "hist" ? "hist" : "chip");
     state.tab = t;
     $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank"); $("tabHist").setAttribute("aria-selected", t === "hist"); $("tabGold").setAttribute("aria-selected", t === "gold"); $("tabScambi").setAttribute("aria-selected", t === "scambi");
-    $("homePane").hidden = t !== "home"; $("tabHome").setAttribute("aria-selected", t === "home"); $("playPane").hidden = t !== "play"; $("duelPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist"; $("goldPane").hidden = t !== "gold"; $("tradePane").hidden = t !== "scambi"; document.querySelector("nav.md").hidden = t === "gold" || t === "scambi" || t === "home";
+    $("homePane").hidden = t !== "home"; $("tabHome").setAttribute("aria-selected", t === "home"); $("playPane").hidden = t !== "play"; $("duelPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist"; $("goldPane").hidden = t !== "gold"; $("tradePane").hidden = t !== "scambi"; $("insPane").hidden = t !== "ins"; document.querySelector("nav.md").hidden = t === "gold" || t === "scambi" || t === "home" || t === "ins";
     if (t === "home") renderHome();
     if (t === "rank") renderRank();
     if (t === "hist") renderHist();
     markSeen(t);
     if (t === "gold") { if (gold.sec !== t) { gold.sec = t; gold.gems = null; gold.filter = "all"; gold.edit = null; gold.del = null; gold.sort = "new"; } renderGold(); }
     if (t === "scambi") renderTrades();
+    if (t === "ins") { ins.week = null; insLoad(); }
   }
   $("tabHome").addEventListener("click", function () { setTab("home"); window.scrollTo(0, 0); });
   $("tabGold").addEventListener("click", function () { setTab("gold"); });
