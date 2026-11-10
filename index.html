@@ -1658,7 +1658,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function drawCommittee() {
     var st = cm.st; if (!st) return;
-    var h = "<h2 class='gold-h'>Il Comitato delli Scambi</h2><p class='gold-sub'>I giudici decidono sugli scambi ufficiali votati da tutti al massimo (almeno 4 voti, tutti +5 oppure tutti &minus;5). Il giudice supremo scioglie i pareggi.</p>" + kindsBar();
+    var h = "<h2 class='gold-h'>Il Comitato delli Scambi</h2><p class='gold-sub'>I giudici decidono sugli scambi ufficiali votati da tutti al massimo (almeno 3 voti, tutti da +4 in su oppure tutti da &minus;4 in gi&ugrave;). Il giudice supremo scioglie i pareggi.</p>" + kindsBar();
     h += "<div class='gform' style='padding:0;margin:0 4px 12px 0'><p class='gmeta'><b>Giudici:</b> " + (st.judges.length ? st.judges.map(function (j) { return esc(j.name) + (j.admin ? " (supremo)" : ""); }).join(", ") : "nessuno") + "</p></div>";
     if (st.pending > 0) h += "<div class='note'><p>&#9878; Hai " + st.pending + (st.pending === 1 ? " scambio" : " scambi") + " da giudicare.</p></div>";
     var el = st.election;
