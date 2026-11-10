@@ -103,6 +103,7 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
 .hero .sub { position: relative; font-size: .75rem; opacity: .85; }
 .hero svg.k { position: absolute; left: 50%; top: 60px; width: 180px; transform: translateX(-50%); filter: drop-shadow(0 6px 0 rgba(0,0,0,.25)); }
 .hero .road { position: absolute; left: -20px; right: -20px; bottom: -34px; height: 86px; background: #2a3140; border-radius: 50% 50% 0 0; border-top: 4px dashed #ffffff90; }
+.hero .fgbtn { position: absolute; left: 12px; bottom: 30px; z-index: 2; border: 2px solid #0b1a2e; background: #ffcb05; color: #0b1a2e; border-radius: 999px; padding: 6px 12px; font-family: var(--font-display); font-size: .8rem; box-shadow: 0 3px 0 #0b1a2e; cursor: pointer; }
 .hero .side { position: absolute; right: 10px; top: 14px; display: flex; flex-direction: column; gap: 9px; z-index: 2; }
 .hero .side button { width: 38px; height: 38px; border-radius: 50%; background: #fff; border: 2px solid #0b1a2e; font-size: 1.05rem; padding: 0; cursor: pointer; }
 .hstats { position: relative; margin: -16px 8px 0 4px; background: #050d18; color: #fff; border-radius: 14px; border: 2px solid var(--edge); display: grid; grid-template-columns: repeat(4, 1fr); padding: 10px 2px; text-align: center; }
@@ -2009,7 +2010,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var h = "<div class='hero'><div class='ray' style='left:46px;transform:rotate(14deg)'></div><div class='ray' style='right:46px;transform:rotate(-14deg)'></div>" +
       "<h2>" + esc(state.fanta || me) + "</h2><div class='sub'>" + esc(me) + (duel.titles[me] ? " &middot; " + esc(duel.titles[me].split(" · ")[0]) : "") + "</div>" +
       "<div class='side'><button type='button' data-hm='prof' aria-label='Personalizza kart'>&#127912;</button><button type='button' data-hm='card' aria-label='Figurina'>&#128444;&#65039;</button><button type='button' data-hm='share' aria-label='Condividi'>&#128228;</button></div>" +
-      "<div class='road'></div>" + kartSvg(carCol(me), "", duel.lv[me], duel.sp[me], "h", duel.team[me] || state.fanta || "", true) + "</div>";
+      "<div class='road'></div>" + kartSvg(carCol(me), "", duel.lv[me], duel.sp[me], "h", duel.team[me] || state.fanta || "", true).replace("<svg class='k'", "<svg class='k' data-hm='card' style='cursor:pointer'") + "<button type='button' class='fgbtn' data-hm='card'>&#128444;&#65039; Figurina</button></div>";
     h += "<div class='hstats'><div><b>" + (home.pos ? home.pos + "&deg;" : "&ndash;") + "</b><span>Posizione</span></div><div><b>" + (d.points != null ? d.points : "&ndash;") + "</b><span>Punti</span></div><div><b>" + (d.days != null ? d.days : "&ndash;") + "</b><span>Giornate</span></div><div><b>" + (d.exact != null ? d.exact : "&ndash;") + "</b><span>Esatti</span></div></div>";
     var mine = (duel.list || []).filter(function (x) { return x.a_name.toLowerCase() === me.toLowerCase() || x.b_name.toLowerCase() === me.toLowerCase(); });
     var x = mine.filter(function (z) { return z.status === "done"; })[0] || mine[0];
