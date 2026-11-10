@@ -549,7 +549,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   <button type="button" class="go" id="helpOk">Ho capito</button></div></div>
 <div class="dlg" id="profDlg" hidden><div class="dlgcard" id="profCard"></div></div>
 <button type="button" id="chatFab" aria-label="Apri la chat">&#128172;<span id="chatFabN" class="fabn" hidden></span></button>
-<div class="dlg" id="cardDlg" hidden><div class="dlgcard" id="cardBox"></div></div>
+<div class="dlg" id="fgDlg" hidden><div class="dlgcard" id="fgBox"></div></div>
 <div class="dov" id="dov"></div>
 <aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><div id="adminBox"></div><h4>Banner iniziale</h4><div id="banBox" class="gform" style="padding:0"></div><h4>Chi ha l'app e le notifiche</h4><div id="stBox" class="gform" style="padding:0"></div><h4>Partecipanti</h4><div class="gform" style="padding:0" id="pList"></div><p class="gmeta">Gemme e scambi si modificano o eliminano direttamente dalla loro scheda.</p></div></aside>
@@ -2074,7 +2074,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     return svg.replace(/var\(--font-label\)/g, "Arial, sans-serif").replace(/var\(--font-display\)/g, "Arial Black, sans-serif");
   }
   function cardOpen() {
-    var box = $("cardBox"); $("cardDlg").hidden = false; card.blob = null; card.url = null;
+    var box = $("fgBox"); $("fgDlg").hidden = false; card.blob = null; card.url = null;
     function fail(e) { box.innerHTML = "<h3>La tua figurina</h3><p class='gmeta'>Non riesco a prepararla: " + esc((e && (e.message || e.name)) || "errore") + "</p><div class='gact'><button type='button' data-cd='x'>Chiudi</button></div>"; }
     box.innerHTML = "<h3>La tua figurina</h3><p class='gmeta'>Preparo l&apos;immagine&hellip;</p><div class='gact'><button type='button' data-cd='x'>Chiudi</button></div>";
     try {
@@ -2100,12 +2100,12 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       }).catch(fail);
     } catch (e) { fail(e); }
   }
-  $("cardDlg").addEventListener("click", function (e) {
+  $("fgDlg").addEventListener("click", function (e) {
     var b = e.target.closest("[data-cd]");
-    if (e.target.id === "cardDlg" || (b && b.getAttribute("data-cd") === "x")) { $("cardDlg").hidden = true; return; }
+    if (e.target.id === "fgDlg" || (b && b.getAttribute("data-cd") === "x")) { $("fgDlg").hidden = true; return; }
     if (!b) return;
     if (b.getAttribute("data-cd") === "chat") {
-      rpc("ble_send_chat", { p_name: state.me.name, p_pin: state.me.pin, p_body: card.text + "\n" + siteUrl() }).then(function () { $("cardDlg").hidden = true; toast("Figurina inviata in chat"); pollChat(true); }).catch(function (err) { toast(err.message); });
+      rpc("ble_send_chat", { p_name: state.me.name, p_pin: state.me.pin, p_body: card.text + "\n" + siteUrl() }).then(function () { $("fgDlg").hidden = true; toast("Figurina inviata in chat"); pollChat(true); }).catch(function (err) { toast(err.message); });
       return;
     }
     var msg = $("cdMsg");
