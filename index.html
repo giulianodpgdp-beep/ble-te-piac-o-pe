@@ -686,7 +686,19 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   var invite = null;
   try { invite = new URLSearchParams(location.search).get("invito"); } catch (e) {}
-  var DEEP = /[?&]vai=comitato/.test(location.search);
+  var DEEP = ""; try { DEEP = new URLSearchParams(location.search).get("vai") || ""; } catch (e) {}
+  function goTo(g) {
+    if (!g || !state.me) return;
+    closeDrawers();
+    if (g === "chat") { $("chatBtn").click(); return; }
+    if (g === "sug") { $("sugBtn").click(); return; }
+    if (g === "comitato") { tr.kind = "comitato"; tr.list = null; setTab("scambi"); }
+    else if (g === "scambi") { tr.kind = "ufficiale"; tr.list = null; setTab("scambi"); }
+    else if (g === "gold" || g === "play" || g === "ins" || g === "home" || g === "rank" || g === "hist") setTab(g);
+    else setTab("home");
+    window.scrollTo(0, 0);
+  }
+  try { navigator.serviceWorker.addEventListener("message", function (e) { if (e.data && e.data.go) goTo(e.data.go); }); } catch (e) {}
   function stripInvite() { try { history.replaceState(null, "", location.pathname); } catch (e) {} invite = null; }
   $("loginForm").addEventListener("submit", function (e) {
     e.preventDefault();
@@ -720,7 +732,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         state.md = pick;
         $("who").hidden = false; $("whoName").textContent = state.me.name; $("hdrLogo").removeAttribute("hidden");
         $("loading").hidden = true; $("appView").hidden = false; setTab("home");
-        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; waLoad(); $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); loadRx(); loadBanners(); pingDev(); if (DEEP) { DEEP = false; tr.kind = "comitato"; setTab("scambi"); } }).catch(function () {});
+        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; waLoad(); $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); loadRx(); loadBanners(); pingDev(); if (DEEP) { var g0 = DEEP; DEEP = ""; goTo(g0); try { history.replaceState(null, "", location.pathname); } catch (e) {} } }).catch(function () {});
         return loadMd();
       });
     }).catch(function (err) { $("loading").hidden = false; $("loading").textContent = err.message; });
