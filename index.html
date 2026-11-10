@@ -535,6 +535,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   <li>iPhone: Condividi &rarr; <b>Aggiungi a Home</b> e apri l'app dall'icona (serve iOS 16.4 o pi&ugrave; recente).</li></ol>
   <button type="button" class="go" id="helpOk">Ho capito</button></div></div>
 <div class="dlg" id="profDlg" hidden><div class="dlgcard" id="profCard"></div></div>
+<div class="dlg" id="cardDlg" hidden><div class="dlgcard" id="cardBox"></div></div>
 <div class="dov" id="dov"></div>
 <aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><div id="adminBox"></div><h4>Banner iniziale</h4><div id="banBox" class="gform" style="padding:0"></div><h4>Chi ha l'app e le notifiche</h4><div id="stBox" class="gform" style="padding:0"></div><h4>Partecipanti</h4><div class="gform" style="padding:0" id="pList"></div><p class="gmeta">Gemme e scambi si modificano o eliminano direttamente dalla loro scheda.</p></div></aside>
@@ -1928,7 +1929,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var me = state.me.name, d = home.d || {}, ml = home.med || {};
     var h = "<div class='hero'><div class='ray' style='left:46px;transform:rotate(14deg)'></div><div class='ray' style='right:46px;transform:rotate(-14deg)'></div>" +
       "<h2>" + esc(state.fanta || me) + "</h2><div class='sub'>" + esc(me) + (duel.titles[me] ? " &middot; " + esc(duel.titles[me].split(" · ")[0]) : "") + "</div>" +
-      "<div class='side'><button type='button' data-hm='prof' aria-label='Personalizza kart'>&#127912;</button><button type='button' data-hm='share' aria-label='Condividi'>&#128228;</button></div>" +
+      "<div class='side'><button type='button' data-hm='prof' aria-label='Personalizza kart'>&#127912;</button><button type='button' data-hm='card' aria-label='Figurina'>&#129706;</button><button type='button' data-hm='share' aria-label='Condividi'>&#128228;</button></div>" +
       "<div class='road'></div>" + kartSvg(carCol(me), "", duel.lv[me], duel.sp[me], "h", duel.team[me] || state.fanta || "", true) + "</div>";
     h += "<div class='hstats'><div><b>" + (home.pos ? home.pos + "&deg;" : "&ndash;") + "</b><span>Posizione</span></div><div><b>" + (d.points != null ? d.points : "&ndash;") + "</b><span>Punti</span></div><div><b>" + (d.days != null ? d.days : "&ndash;") + "</b><span>Giornate</span></div><div><b>" + (d.exact != null ? d.exact : "&ndash;") + "</b><span>Esatti</span></div></div>";
     var mine = (duel.list || []).filter(function (x) { return x.a_name.toLowerCase() === me.toLowerCase() || x.b_name.toLowerCase() === me.toLowerCase(); });
@@ -1959,9 +1960,75 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       if (state.tab === "home") drawHome();
     });
   }
+  /* ---------- figurina condivisibile ---------- */
+  var card = { blob: null, text: "" };
+  function cardTitles() {
+    var me = state.me.name, ml = home.med || {}, out = [];
+    [["profeta", "🔮 O' Maestro"], ["cecchino", "🎯 Il Culo Rotto"], ["re", "👑 O' Fetill"], ["maledizione", "💀 Il Samuele"], ["latitante", "🙈 Il Latitante"]].forEach(function (m) { if (ml[m[0]] > 0) out.push(m[1] + (ml[m[0]] > 1 ? " x" + ml[m[0]] : "")); });
+    return (duel.titles[me] ? duel.titles[me].split(" · ") : []).concat(out);
+  }
+  function cardSvg(logo) {
+    var me = state.me.name, d = home.d || {}, sp = duel.sp[me], team = duel.team[me] || state.fanta || me, col = carCol(me);
+    var kart = kartBody(col, duel.lv[me], sp, team, "cd", true);
+    if (sp && SPLOGO[sp]) { if (logo) kart = kart.replace("href='sponsors/" + SPLOGO[sp] + ".png'", "href='" + logo + "'"); else kart = kart.replace(/<image [^>]*\/>/, ""); }
+    var tl = cardTitles().slice(0, 6), chips = "", x = 40, y = 612;
+    tl.forEach(function (t) {
+      var w = Math.round(t.length * 11 + 30);
+      if (x + w > 560) { x = 40; y += 46; }
+      chips += "<rect x='" + x + "' y='" + y + "' width='" + w + "' height='36' rx='18' fill='#fff7d1' stroke='#0b1a2e' stroke-width='3'/><text x='" + (x + w / 2) + "' y='" + (y + 24.5) + "' text-anchor='middle' font-size='18' font-weight='700' fill='#0b1a2e'>" + esc(t) + "</text>";
+      x += w + 10;
+    });
+    function st(cx, v, l) { return "<text x='" + cx + "' y='520' text-anchor='middle' font-size='40' font-weight='800' fill='#fff'>" + esc(String(v)) + "</text><text x='" + cx + "' y='548' text-anchor='middle' font-size='15' fill='#98b0c8' letter-spacing='1'>" + l + "</text>"; }
+    var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='600' height='800' viewBox='0 0 600 800' font-family='Arial, Helvetica, sans-serif'>" +
+      "<defs><radialGradient id='bg' cx='.5' cy='.42' r='.75'><stop offset='0' stop-color='#3a86ff'/><stop offset='.55' stop-color='#1b4a9a'/><stop offset='1' stop-color='#0b2147'/></radialGradient></defs>" +
+      "<rect width='600' height='800' fill='url(#bg)'/><rect x='10' y='10' width='580' height='780' rx='26' fill='none' stroke='#ffcb05' stroke-width='6'/>" +
+      "<polygon points='120,0 250,0 60,470 -40,470' fill='#fff' fill-opacity='.08'/><polygon points='480,0 350,0 540,470 640,470' fill='#fff' fill-opacity='.08'/>" +
+      "<text x='300' y='80' text-anchor='middle' font-size='40' font-weight='900' fill='#ffcb05' stroke='#2a4aa8' stroke-width='8' paint-order='stroke' font-family='Arial Black, Impact, sans-serif'>" + esc(team.toUpperCase()) + "</text>" +
+      "<text x='300' y='116' text-anchor='middle' font-size='22' fill='#fff'>" + esc(me) + "</text>" +
+      "<g transform='translate(300 322) scale(3.5)'>" + kart + "</g>" +
+      "<rect x='30' y='462' width='540' height='104' rx='20' fill='#050d18' stroke='#0b1a2e' stroke-width='3'/>" +
+      st(105, home.pos ? home.pos + "°" : "-", "POSIZIONE") + st(240, d.points != null ? d.points : "-", "PUNTI") + st(375, d.days != null ? d.days : "-", "GIORNATE") + st(500, d.exact != null ? d.exact : "-", "ESATTI") +
+      chips + "<text x='300' y='774' text-anchor='middle' font-size='20' font-weight='700' fill='#ffcb05' font-family='Arial Black, Impact, sans-serif'>BLE TE PIAC O' PE</text></svg>";
+    return svg.replace(/var\(--font-label\)/g, "Arial, sans-serif").replace(/var\(--font-display\)/g, "Arial Black, sans-serif");
+  }
+  function cardOpen() {
+    var box = $("cardBox"); $("cardDlg").hidden = false; card.blob = null;
+    box.innerHTML = "<h3>La tua figurina</h3><p class='gmeta'>Preparo l&apos;immagine&hellip;</p>";
+    var me = state.me.name, sp = duel.sp[me];
+    var pLogo = sp && SPLOGO[sp] ? fetch("sponsors/" + SPLOGO[sp] + ".png").then(function (r) { return r.blob(); }).then(function (b) { return new Promise(function (ok) { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.readAsDataURL(b); }); }).catch(function () { return null; }) : Promise.resolve(null);
+    pLogo.then(function (logo) {
+      var svg = cardSvg(logo), img = new Image();
+      img.onload = function () {
+        var cv = document.createElement("canvas"); cv.width = 1200; cv.height = 1600;
+        var cx = cv.getContext("2d"); cx.drawImage(img, 0, 0, 1200, 1600);
+        cv.toBlob(function (b) {
+          card.blob = b; var d = home.d || {};
+          card.text = "🏁 " + (duel.team[me] || state.fanta || me) + " (" + me + ")" + (home.pos ? " — " + home.pos + "° posto" : "") + (d.points != null ? ", " + d.points + " punti" : "") + (cardTitles().length ? "\n" + cardTitles().join(" · ") : "");
+          box.innerHTML = "<h3>La tua figurina</h3><img src='" + URL.createObjectURL(b) + "' alt='Figurina' style='width:100%;border-radius:14px;border:2px solid var(--edge)'>" +
+            "<div class='gact' style='margin-top:10px'><button type='button' class='wabtn' data-cd='wa'>" + WAI + " WhatsApp</button><button type='button' data-cd='chat'>&#128172; In chat</button><button type='button' data-cd='x'>Chiudi</button></div>";
+        }, "image/png");
+      };
+      img.onerror = function () { box.innerHTML = "<h3>La tua figurina</h3><p class='gmeta'>Non riesco a creare l&apos;immagine.</p><div class='gact'><button type='button' data-cd='x'>Chiudi</button></div>"; };
+      img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    });
+  }
+  $("cardDlg").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-cd]");
+    if (e.target.id === "cardDlg" || (b && b.getAttribute("data-cd") === "x")) { $("cardDlg").hidden = true; return; }
+    if (!b) return;
+    if (b.getAttribute("data-cd") === "chat") {
+      rpc("ble_send_chat", { p_name: state.me.name, p_pin: state.me.pin, p_body: card.text + "\n" + siteUrl() }).then(function () { $("cardDlg").hidden = true; toast("Figurina inviata in chat"); pollChat(true); }).catch(function (err) { toast(err.message); });
+      return;
+    }
+    if (!card.blob) return;
+    var f = new File([card.blob], "figurina-" + state.me.name.toLowerCase() + ".png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [f] })) navigator.share({ files: [f], text: card.text + "\n" + siteUrl() }).catch(function (err) { if (!err || err.name !== "AbortError") waOpen(card.text + "\n" + siteUrl()); });
+    else waOpen(card.text + "\n" + siteUrl());
+  });
   $("homePane").addEventListener("click", function (e) {
     var b = e.target.closest("[data-hm]"); if (!b) return;
     if (b.getAttribute("data-hm") === "prof") { play("chip"); pfShow(state.me.name); }
+    else if (b.getAttribute("data-hm") === "card") { play("chip"); cardOpen(); }
     else shareWa("🏁 Ble te piac o' Pe — " + state.me.name + ": " + (home.pos ? home.pos + "° posto, " : "") + (home.d ? home.d.points + " punti" : ""));
   });
   function setTab(t) {
