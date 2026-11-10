@@ -112,6 +112,9 @@ body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
 .hstats div + div { border-left: 1px solid #1d3a5c; }
 .hcard { margin: 12px 4px 0 0; background: var(--surface); color: var(--ink); border: 2px solid var(--edge); border-radius: 14px; box-shadow: 4px 4px 0 var(--shade); padding: 12px 14px; }
 .hcard h3 { margin: 0 0 8px; font-family: var(--font-display); font-weight: 400; font-size: .9rem; display: flex; justify-content: space-between; align-items: baseline; }
+.wal { margin: 0 0 10px; padding-left: 18px; font-size: .85rem; }
+.wal li { margin: 3px 0; }
+.wago { background: #25d366 !important; color: #06240f !important; }
 .hcard h3 small { font-family: var(--font-label); color: var(--muted); font-size: .68rem; }
 .hduel { display: flex; align-items: center; justify-content: space-between; text-align: center; font-weight: 700; font-size: .85rem; gap: 6px; }
 .hduel .pl { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 98px; overflow-wrap: anywhere; }
@@ -692,7 +695,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         state.md = pick;
         $("who").hidden = false; $("whoName").textContent = state.me.name; $("hdrLogo").removeAttribute("hidden");
         $("loading").hidden = true; $("appView").hidden = false; setTab("home");
-        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); loadRx(); loadBanners(); pingDev(); if (DEEP) { DEEP = false; tr.kind = "comitato"; setTab("scambi"); } }).catch(function () {});
+        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; waLoad(); $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); loadRx(); loadBanners(); pingDev(); if (DEEP) { DEEP = false; tr.kind = "comitato"; setTab("scambi"); } }).catch(function () {});
         return loadMd();
       });
     }).catch(function (err) { $("loading").hidden = false; $("loading").textContent = err.message; });
@@ -1611,7 +1614,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function renderTrades() {
     if (!tr.list) $("tradePane").innerHTML = "<p class='empty'>Carico il mercato&hellip;</p>";
-    var load = rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; });
+    var load = rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; waLoad(); });
     if (tr.kind === "comitato") { load.then(loadCommittee).catch(function (err) { $("tradePane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; }); return; }
     load.then(function () { return rpc("ble_list_trades", { p_name: state.me.name, p_pin: state.me.pin, p_kind: tr.kind }); })
       .then(function (l) { tr.list = l; if (!$("trList")) drawTrades(); else drawTradeList(); loadRx(); })
@@ -2054,7 +2057,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   });
 
   /* ---------- home / dashboard ---------- */
-  var home = { d: null, med: null, pos: null, n: 0 };
+  var home = { d: null, med: null, pos: null, n: 0, wa: [] };
   function kartSvg(col, face, lv, sp, uid, team, showTeam) {
     return "<svg class='k' viewBox='-42 -48 84 100' role='img' aria-label='Il tuo kart'>" + kartBody(col, lv, sp, team, uid || "h", showTeam) + "</svg>";
   }
@@ -2081,13 +2084,26 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var MED = [["profeta", "🔮 O' Maestro"], ["cecchino", "🎯 Il Culo Rotto"], ["re", "👑 O' Fetill"], ["maledizione", "💀 Il Samuele"], ["latitante", "🙈 Il Latitante"]];
     var chips = MED.filter(function (m) { return ml[m[0]] > 0; }).map(function (m) { return m[1] + (ml[m[0]] > 1 ? " &times;" + ml[m[0]] : ""); });
     (duel.titles[me] ? duel.titles[me].split(" · ") : []).forEach(function (t) { chips.push(esc(t)); });
+    if (state.admin && home.wa && home.wa.length) {
+      h += "<div class='hcard' style='border-color:#25d366'><h3>&#128242; Da mandare al gruppo WhatsApp<small>" + home.wa.length + " novit&agrave;</small></h3><ul class='wal'>" + home.wa.slice(0, 5).map(function (x) { return "<li><b>" + esc(x.title) + "</b> &mdash; " + esc(x.body) + "</li>"; }).join("") + (home.wa.length > 5 ? "<li>&hellip; e altre " + (home.wa.length - 5) + "</li>" : "") + "</ul><div class='gact'><button type='button' class='wago' data-hm='wa'>Invia nel gruppo</button><button type='button' data-hm='wax'>Scarta</button></div></div>";
+    }
     var lm = chat.msgs.length ? chat.msgs[chat.msgs.length - 1] : null, npd = mnPending().length;
     h += "<div class='hcard' data-hm='chat' role='button' tabindex='0' style='cursor:pointer'><h3>Chat di gruppo<small>" + (npd ? "@" + npd + " citazioni" : chat.unread ? chat.unread + " nuovi" : "apri") + "</small></h3>" + (lm ? "<p class='gmeta' style='margin:0'><b>" + esc(lm.mine ? "Tu" : (lm.author || "Cronista")) + ":</b> " + esc(lm.body.length > 90 ? lm.body.slice(0, 89) + "\u2026" : lm.body) + "</p>" : "<p class='gmeta' style='margin:0'>Nessun messaggio. Rompi il ghiaccio!</p>") + "</div>";
     h += "<div class='hcard'><h3>I tuoi premi<small>" + chips.length + "</small></h3>" + (chips.length ? "<div class='hchips'>" + chips.map(function (c) { return "<span>" + c + "</span>"; }).join("") + "</div>" : "<p class='gmeta'>Ancora nessun premio. Gioca e vedrai!</p>") + "</div>";
     box.innerHTML = h;
   }
+  function waLoad() {
+    if (!state.me || !state.admin) { home.wa = []; return; }
+    rpc("ble_wa_pending", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) { home.wa = r || []; if (state.tab === "home") drawHome(); }).catch(function () {});
+  }
+  function waText(rows) {
+    var out = "\ud83d\udce3 Novit\u00e0 da Ble te piac o' Pe:\n", used = [];
+    for (var i = 0; i < rows.length; i++) { var l = "\n" + rows[i].title + "\n" + rows[i].body + "\n"; if (out.length + l.length > 1400 && used.length) break; out += l; used.push(rows[i].id); }
+    return { text: out, ids: used };
+  }
+  setInterval(function () { if (state.tab === "home" && !document.hidden) waLoad(); }, 60000);
   function renderHome() {
-    drawHome();
+    drawHome(); waLoad();
     if (!state.me) return;
     var a = { p_name: state.me.name, p_pin: state.me.pin, p_player: state.me.name };
     Promise.all([rpc("ble_profile", a).catch(function () { return null; }), rpc("ble_medals", a).catch(function () { return {}; }), rpc("ble_leaderboard", { p_matchday: null }).catch(function () { return []; })]).then(function (r) {
@@ -2173,6 +2189,16 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   $("homePane").addEventListener("click", function (e) {
     var b = e.target.closest("[data-hm]"); if (!b) return;
     if (b.getAttribute("data-hm") === "chat") { $("chatBtn").click(); return; }
+    if (b.getAttribute("data-hm") === "wa") {
+      var pk = waText(home.wa); if (!pk.ids.length) return;
+      rpc("ble_wa_mark", { p_name: state.me.name, p_pin: state.me.pin, p_ids: pk.ids }).catch(function () {});
+      home.wa = home.wa.filter(function (x) { return pk.ids.indexOf(x.id) < 0; });
+      waOpen(pk.text + "\n" + siteUrl()); return;
+    }
+    if (b.getAttribute("data-hm") === "wax") {
+      var ids = home.wa.map(function (x) { return x.id; }); home.wa = [];
+      rpc("ble_wa_mark", { p_name: state.me.name, p_pin: state.me.pin, p_ids: ids }).catch(function () {}); drawHome(); return;
+    }
     if (b.getAttribute("data-hm") === "prof") { play("chip"); pfShow(state.me.name); }
     else if (b.getAttribute("data-hm") === "card") { play("chip"); cardOpen(); }
     else shareWa("🏁 Ble te piac o' Pe — " + state.me.name + ": " + (home.pos ? home.pos + "° posto, " : "") + (home.d ? home.d.points + " punti" : ""));
