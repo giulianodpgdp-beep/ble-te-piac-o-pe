@@ -2041,6 +2041,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   var IN_APP = /FBAN|FBAV|Instagram|Line\/|WhatsApp|Telegram|LinkedInApp|Snapchat|TikTok|musical_ly|; wv\)/.test(UA);
   var IS_IOS = /iPhone|iPad|iPod/.test(UA);
   var STANDALONE = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  function todayKey() { return new Date().toISOString().slice(0, 10); }
   function noteHtml(id, text, yes, no) {
     return "<div class='note' data-note='" + id + "'><p>" + text + "</p><div class='nact'>" + (yes ? "<button type='button' data-ny='" + id + "'>" + yes + "</button>" : "") + "<button type='button' class='ghost' data-nn='" + id + "'>" + (no || "Ho capito") + "</button></div></div>";
   }
@@ -2048,14 +2049,17 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var h = "";
     if (IN_APP && !store("ble.noteWV")) h = noteHtml("wv", "Stai usando il browser interno di un'altra app (ad esempio WhatsApp). Qui notifiche e installazione non funzionano: tocca <b>&#8942;</b> e scegli <b>Apri nel browser</b> (Chrome o Safari).");
     else if (!pushOk()) { if (IS_IOS && !STANDALONE && !store("ble.noteIOS")) h = noteHtml("ios", "Per le notifiche su iPhone: apri il gioco con Safari, tocca <b>Condividi &rarr; Aggiungi a Home</b> e usa l'icona. Serve iOS 16.4 o pi&ugrave; recente."); }
-    else if (Notification.permission === "default" && !store("ble.noteNtf")) h = noteHtml("ntf", "Vuoi le notifiche? Ti avviso di nuove pietre, scambi, sfide, chat e risultati.", "Attiva", "Non ora");
+    else if (Notification.permission === "default" && store("ble.noteNtf2") !== todayKey()) h = noteHtml("ntf", "Vuoi le notifiche? Ti avviso di nuove pietre, scambi, sfide, chat e risultati. Tocca <b>Attiva</b> e poi <b>Consenti</b>.", "Attiva", "Non ora");
+    else if (Notification.permission === "denied" && store("ble.noteNtfD") !== todayKey()) h = noteHtml("ntfd", "Le notifiche sono bloccate sul tuo telefono. Per riattivarle apri le impostazioni del sito (icona del lucchetto accanto all'indirizzo, oppure Impostazioni &rarr; Notifiche) e scegli <b>Consenti</b>.", "", "Ho capito");
     $("topNote").innerHTML = h;
   }
   $("topNote").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
     var yes = b.getAttribute("data-ny"), no = b.getAttribute("data-nn");
-    if (yes === "ntf") { store("ble.noteNtf", "1"); $("topNote").innerHTML = ""; ntfEnable(); }
-    else if (no) { store("ble.note" + (no === "ntf" ? "Ntf" : no === "wv" ? "WV" : "IOS"), "1"); drawNote(); }
+    if (yes === "ntf") { $("topNote").innerHTML = ""; ntfEnable(); }
+    else if (no === "ntf") { store("ble.noteNtf2", todayKey()); drawNote(); }
+    else if (no === "ntfd") { store("ble.noteNtfD", todayKey()); drawNote(); }
+    else if (no) { store("ble.note" + (no === "wv" ? "WV" : "IOS"), "1"); drawNote(); }
   });
   /* puntini sulle novita */
   var dots = { gold: 0, tr: 0, maxGold: 0, maxTr: 0 };
@@ -2096,7 +2100,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       return navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; }).then(function (reg) {
         return reg.pushManager.getSubscription().then(function (sub) { return sub || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID) }); });
       }).then(function (sub) { return ntfSave(sub); }).then(function () { ntfLabel(true); toast("Salvato"); });
-    }).catch(function (err) { toast(err && err.message ? err.message : "Notifiche non attivate"); });
+    }).catch(function (err) { toast(err && err.message ? err.message : "Notifiche non attivate"); }).then(function () { drawNote(); });
   }
   function ntfDisable() {
     if (!pushOk()) return;
