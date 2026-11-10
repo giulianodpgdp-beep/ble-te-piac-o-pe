@@ -400,6 +400,15 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .chatbody { position: relative; }
 .mn { background: #ffe27a; color: #0b1a2e; border-radius: 6px; padding: 0 3px; font-weight: 700; }
 .mn.me { background: #ffcb05; outline: 2px solid #0b1a2e; }
+.selbar { position: absolute; top: 4px; left: 8px; right: 8px; z-index: 6; display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--surface); border: 2px solid var(--edge); border-radius: 12px; box-shadow: 0 3px 0 var(--edge); }
+.selbar[hidden] { display: none; }
+.selbar b { flex: 1; font-family: var(--font-label); text-transform: uppercase; font-size: .85rem; }
+.selbar button { font: inherit; font-family: var(--font-label); text-transform: uppercase; font-size: .8rem; padding: 7px 12px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.selbar .go { background: var(--azzurro); color: var(--azzurro-ink); }
+.msg.sel { outline: 4px solid #0b1a2e; outline-offset: 1px; filter: brightness(.93); }
+.chatlist.selecting { padding-top: 58px; }
+.chatlist.selecting .msg { user-select: none; -webkit-user-select: none; cursor: pointer; }
+.msg { -webkit-touch-callout: none; }
 .msg.flash { animation: mflash 1.4s ease; }
 @keyframes mflash { 0%, 60% { box-shadow: 0 0 0 4px #ffcb05; } 100% { box-shadow: none; } }
 .mnbox { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -568,7 +577,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 <aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><div id="adminBox"></div><h4>Banner iniziale</h4><div id="banBox" class="gform" style="padding:0"></div><h4>Chi ha l'app e le notifiche</h4><div id="stBox" class="gform" style="padding:0"></div><h4>Partecipanti</h4><div class="gform" style="padding:0" id="pList"></div><p class="gmeta">Gemme e scambi si modificano o eliminano direttamente dalla loro scheda.</p></div></aside>
 <aside class="drawer" id="chatDrawer" aria-label="Chat"><div class="dhead"><h3>Chat</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
-  <div class="dbody chatbody"><button type="button" id="mnChip" class="mnchip" hidden aria-label="Vai alle citazioni">@ <b id="mnN">0</b></button><div id="chatList" class="chatlist"></div><div id="mnBox" class="mnbox" hidden></div><form id="chatForm" class="chatform"><input type="text" id="chatText" maxlength="500" placeholder="Scrivi un messaggio" autocomplete="off"><button type="button" id="chatMic" class="mic" aria-label="Messaggio vocale">&#127908;</button><button class="go" id="chatGo" type="submit">Invia</button><div id="recBar" class="recbar" hidden><span class="rdot"></span><b id="recT">0:00</b><span class="rl">Sto registrando&hellip;</span><button type="button" id="recX">Annulla</button><button type="button" id="recOk" class="go">Invia</button></div></form></div></aside>
+  <div class="dbody chatbody"><button type="button" id="mnChip" class="mnchip" hidden aria-label="Vai alle citazioni">@ <b id="mnN">0</b></button><div id="selBar" class="selbar" hidden><b id="selN">0</b><button type="button" id="selAll">Tutti</button><button type="button" id="selCopy" class="go">Copia</button><button type="button" id="selX">&times;</button></div><div id="chatList" class="chatlist"></div><div id="mnBox" class="mnbox" hidden></div><form id="chatForm" class="chatform"><input type="text" id="chatText" maxlength="500" placeholder="Scrivi un messaggio" autocomplete="off"><button type="button" id="chatMic" class="mic" aria-label="Messaggio vocale">&#127908;</button><button class="go" id="chatGo" type="submit">Invia</button><div id="recBar" class="recbar" hidden><span class="rdot"></span><b id="recT">0:00</b><span class="rl">Sto registrando&hellip;</span><button type="button" id="recX">Annulla</button><button type="button" id="recOk" class="go">Invia</button></div></form></div></aside>
 <aside class="drawer" id="sugDrawer" aria-label="Suggerimenti"><div class="dhead"><h3>Suggerimenti</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><form class="gform" style="padding:0" id="sugForm"><label for="sugText">Un consiglio per migliorare il gioco<textarea id="sugText" maxlength="600" placeholder="Scrivi qui la tua idea"></textarea></label><button class="go" type="submit">Invia</button></form><div id="sugList"></div></div></aside>
 <div class="toast" id="toast" role="status"></div>
@@ -1812,13 +1821,52 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (ch) { mnSave(); mnChipDraw(); drawChatBadge(); }
   }
   var au = { el: null, id: 0, cache: {} };
+  var sel = { ids: {}, lp: 0, tm: null, x: 0, y: 0 };
+  function selCount() { return Object.keys(sel.ids).length; }
+  function selDraw() {
+    var n = selCount(); $("selBar").hidden = !n; $("selN").textContent = n + (n === 1 ? " selezionato" : " selezionati");
+    $("chatList").classList.toggle("selecting", n > 0);
+    Array.prototype.forEach.call($("chatList").querySelectorAll(".msg"), function (el) { el.classList.toggle("sel", !!sel.ids[el.getAttribute("data-mid")]); });
+  }
+  function selToggle(id) { if (sel.ids[id]) delete sel.ids[id]; else sel.ids[id] = 1; selDraw(); }
+  function selText() {
+    return chat.msgs.filter(function (m) { return sel.ids[m.id]; }).map(function (m) {
+      return "[" + hhmm(m.created_at) + "] " + (m.mine ? state.me.name : m.author) + ": " + m.body;
+    }).join("\n");
+  }
+  function selCopy() {
+    var t = selText(), n = selCount();
+    function ok() { toast(n === 1 ? "Messaggio copiato" : n + " messaggi copiati"); sel.ids = {}; selDraw(); }
+    function fb() { var ta = document.createElement("textarea"); ta.value = t; ta.style.cssText = "position:fixed;opacity:0;top:0"; document.body.appendChild(ta); ta.focus(); ta.select(); var r = false; try { r = document.execCommand("copy"); } catch (e) {} document.body.removeChild(ta); if (r) ok(); else toast("Copia non riuscita"); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok, fb); else fb();
+  }
+  (function () {
+    var box = $("chatList");
+    box.addEventListener("pointerdown", function (e) {
+      var m = e.target.closest(".msg"); if (!m || e.target.closest("button")) return;
+      sel.x = e.clientX; sel.y = e.clientY; clearTimeout(sel.tm);
+      sel.tm = setTimeout(function () { sel.skip = true; setTimeout(function () { sel.skip = false; }, 450); selToggle(m.getAttribute("data-mid")); if (navigator.vibrate) try { navigator.vibrate(15); } catch (er) {} }, 450);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(function (ev) { box.addEventListener(ev, function () { clearTimeout(sel.tm); }); });
+    box.addEventListener("pointermove", function (e) { if (Math.abs(e.clientX - sel.x) > 10 || Math.abs(e.clientY - sel.y) > 10) clearTimeout(sel.tm); });
+    box.addEventListener("contextmenu", function (e) { if (e.target.closest(".msg")) e.preventDefault(); });
+    box.addEventListener("click", function (e) {
+      if (sel.skip) { sel.skip = false; e.stopPropagation(); e.preventDefault(); return; }
+      if (!selCount()) return;
+      var m = e.target.closest(".msg"); e.stopPropagation(); e.preventDefault();
+      if (m) selToggle(m.getAttribute("data-mid"));
+    }, true);
+    $("selX").addEventListener("click", function () { sel.ids = {}; selDraw(); });
+    $("selAll").addEventListener("click", function () { chat.msgs.forEach(function (m) { sel.ids[m.id] = 1; }); selDraw(); });
+    $("selCopy").addEventListener("click", selCopy);
+  })();
   function mmss(n) { return Math.floor(n / 60) + ":" + ("0" + (n % 60)).slice(-2); }
   function audioHtml(m) { var pl = au.id === m.id && au.el && !au.el.paused; return "<p><button type='button' class='aup' data-au='" + m.id + "'>" + (pl ? "&#9208;" : "&#9654;&#65039;") + " <span class='wv'>&#9602;&#9604;&#9606;&#9608;&#9606;&#9604;&#9602;&#9604;&#9606;</span> " + mmss(m.audio_secs) + "</button></p>"; }
   function drawChat() {
     var box = $("chatList"); if (!box) return;
     var atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
     box.innerHTML = chat.msgs.length ? chat.msgs.map(function (m) {
-      var mc = carCol(m.mine ? state.me.name : (m.author || "Cronista")); return "<div class='msg" + (m.mine ? " mine" : "") + "' data-mid='" + m.id + "' style='background:color-mix(in srgb," + mc + " 32%,#ffffff);color:#0b1a2e;border-color:" + mc + "'><small>" + (m.mine ? "Tu" : esc(m.author)) + " &middot; " + hhmm(m.created_at) + (state.admin ? "<button type='button' class='cdel' data-cd='" + m.id + "' aria-label='Elimina'>&times;</button>" : "") + "</small>" + (m.audio_secs ? audioHtml(m) : "<p>" + bodyHtml(m) + "</p>") + "</div>";
+      var mc = carCol(m.mine ? state.me.name : (m.author || "Cronista")); return "<div class='msg" + (m.mine ? " mine" : "") + (sel.ids[m.id] ? " sel" : "") + "' data-mid='" + m.id + "' style='background:color-mix(in srgb," + mc + " 32%,#ffffff);color:#0b1a2e;border-color:" + mc + "'><small>" + (m.mine ? "Tu" : esc(m.author)) + " &middot; " + hhmm(m.created_at) + (state.admin ? "<button type='button' class='cdel' data-cd='" + m.id + "' aria-label='Elimina'>&times;</button>" : "") + "</small>" + (m.audio_secs ? audioHtml(m) : "<p>" + bodyHtml(m) + "</p>") + "</div>";
     }).join("") : "<p class='gmeta'>Nessun messaggio. Rompi il ghiaccio!</p>";
     if (atEnd || chat.justOpened) { box.scrollTop = box.scrollHeight; chat.justOpened = false; }
     mnCheckVisible(); mnChipDraw();
