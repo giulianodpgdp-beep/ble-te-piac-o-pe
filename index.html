@@ -2204,6 +2204,28 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   setInterval(function () { if (state.tab === "home" && !document.hidden) waLoad(); }, 60000);
   /* ---------- Offese a Blu ---------- */
   var ins = { d: null, week: null, hm: null };
+  var iau = { el: null, id: 0, cache: {} }, irec = { mr: null, chunks: [], t0: 0, tm: null, cancel: false };
+  function irecStop(send) { irec.cancel = !send; try { if (irec.mr && irec.mr.state !== "inactive") irec.mr.stop(); } catch (e) {} clearInterval(irec.tm); var b = $("insRecBar"); if (b) b.hidden = true; var rb = document.querySelector("[data-irec]"); if (rb) rb.hidden = false; }
+  function irecStart() {
+    if (!navigator.mediaDevices || !window.MediaRecorder) { toast("Il tuo browser non supporta i vocali"); return; }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (st) {
+      irec.chunks = []; irec.cancel = false;
+      var mt = recMime(), o = { audioBitsPerSecond: 24000 }; if (mt) o.mimeType = mt;
+      var mr; try { mr = new MediaRecorder(st, o); } catch (e) { mr = new MediaRecorder(st); } irec.mr = mr;
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) irec.chunks.push(e.data); };
+      mr.onstop = function () {
+        st.getTracks().forEach(function (t) { t.stop(); });
+        if (irec.cancel || !irec.chunks.length) return;
+        var secs = Math.max(1, Math.round((Date.now() - irec.t0) / 1000)), type = mr.mimeType || mt || "audio/webm", fr = new FileReader();
+        fr.onload = function () {
+          rpc("ble_ins_send_audio", { p_name: state.me.name, p_pin: state.me.pin, p_data: String(fr.result).split(",")[1] || "", p_mime: type.split(";")[0], p_secs: secs }).then(function () { play("done"); toast("Offesa vocale inviata!"); insLoad(); }).catch(function (err) { toast(err.message); });
+        };
+        fr.readAsDataURL(new Blob(irec.chunks, { type: type }));
+      };
+      mr.start(); irec.t0 = Date.now(); $("insRecT").textContent = "0:00"; $("insRecBar").hidden = false; var rb = document.querySelector("[data-irec]"); if (rb) rb.hidden = true;
+      irec.tm = setInterval(function () { var sc = Math.round((Date.now() - irec.t0) / 1000); $("insRecT").textContent = mmss(sc); if (sc >= 30) irecStop(true); }, 250);
+    }).catch(function () { toast("Serve il permesso al microfono"); });
+  }
   function insDay(s) { try { return new Date(s + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }); } catch (e) { return s; } }
   function insRange(w) { try { var a = new Date(w + "T12:00:00"), b = new Date(a.getTime() + 6 * 864e5), f = function (d) { return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" }); }; return f(a) + " \u2013 " + f(b); } catch (e) { return w; } }
   function insHome() {
@@ -2227,7 +2249,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (d.week === d.cur) {
       if (d.me_target) h += "<p class='gmeta'>Sei il bersaglio: tu puoi solo votare.</p>";
       else if (d.wrote_today) h += "<p class='gmeta'>&#9989; Oggi hai gi&agrave; offeso Blu. Torna domani!</p>";
-      else h += "<form class='sug' id='insForm'><b>Non hai ancora offeso Blu? Ma a chi aspetti munnezz?!?!</b><textarea id='insText' maxlength='200' rows='3' placeholder='Scrivi la tua offesa a Blu (max 200 caratteri)' required style='width:100%;box-sizing:border-box;padding:10px;border:2px solid var(--edge);border-radius:10px;font:inherit;margin:8px 0'></textarea><button class='go' type='submit' style='font-family:var(--font-label);text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--azzurro);color:var(--azzurro-ink);width:100%;cursor:pointer'>Offendi Blu</button></form>";
+      else h += "<form class='sug' id='insForm'><b>Non hai ancora offeso Blu? Ma a chi aspetti munnezz?!?!</b><textarea id='insText' maxlength='200' rows='3' placeholder='Scrivi la tua offesa a Blu (max 200 caratteri)' required style='width:100%;box-sizing:border-box;padding:10px;border:2px solid var(--edge);border-radius:10px;font:inherit;margin:8px 0'></textarea><button class='go' type='submit' style='font-family:var(--font-label);text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--azzurro);color:var(--azzurro-ink);width:100%;cursor:pointer'>Offendi Blu</button><button type='button' data-irec='1' style='margin-top:8px;width:100%;font-family:var(--font-label);text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--surface-2);color:var(--ink);cursor:pointer'>&#127908; Oppure offendi a voce (max 30 s)</button><div id='insRecBar' class='recbar' style='position:static;margin-top:8px;padding:8px 10px' hidden><span class='rdot'></span><b id='insRecT'>0:00</b><span class='rl'>Sto registrando&hellip;</span><button type='button' data-irx='1'>Annulla</button><button type='button' class='go' data-iok='1'>Invia</button></div></form>";
     }
     var w = d.winner && d.items.filter(function (x) { return x.id === d.winner; })[0];
     if (w) h += "<div class='ins-card win'><div class='who'>&#127942; Offesa della settimana &middot; " + esc(w.author) + "</div><p>&laquo;" + esc(w.body) + "&raquo;</p><small>" + String(w.avg).replace(".", ",") + " &#9733; &middot; " + w.votes + " voti</small></div>";
@@ -2235,7 +2257,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var lastDay = "";
     d.items.forEach(function (i) {
       if (i.day !== lastDay) { lastDay = i.day; h += "<div class='ins-day'>" + esc(insDay(i.day)) + "</div>"; }
-      h += "<div class='ins-card' style='border-left-color:" + carCol(i.author) + "'><div class='who'>" + esc(i.author) + (state.admin ? " <button type='button' data-idel='" + i.id + "' style='float:right;border:0;background:none;cursor:pointer'>&times;</button>" : "") + "</div><p>" + esc(i.body) + "</p>" + starsHtml(i, d.closed) + "</div>";
+      h += "<div class='ins-card' style='border-left-color:" + carCol(i.author) + "'><div class='who'>" + esc(i.author) + (state.admin ? " <button type='button' data-idel='" + i.id + "' style='float:right;border:0;background:none;cursor:pointer'>&times;</button>" : "") + "</div>" + (i.audio_secs ? "<p><button type='button' class='aup' data-iau='" + i.id + "'>" + (iau.id === i.id && iau.el && !iau.el.paused ? "&#9208;" : "&#9654;&#65039;") + " <span class='wv'>&#9602;&#9604;&#9606;&#9608;&#9606;&#9604;&#9602;&#9604;&#9606;</span> " + mmss(i.audio_secs) + "</button></p>" : "<p>" + esc(i.body) + "</p>") + starsHtml(i, d.closed) + "</div>";
     });
     if (!d.items.length) h += "<p class='gmeta'>Ancora nessuna offesa in questa settimana.</p>";
     if (d.hall_w.length || d.hall_m.length) {
@@ -2250,7 +2272,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     r.items.slice().reverse().forEach(function (i) { if (!by[i.day]) { by[i.day] = []; days.push(i.day); } by[i.day].push(i); });
     var out = "\ud83d\ude08 OFFESE A BLU \u2013 settimana " + insRange(r.week) + "\n", rest = 0;
     days.forEach(function (dd) {
-      var blk = "\n" + insDay(dd).toUpperCase() + "\n" + by[dd].map(function (i) { return "\u2022 " + i.author + ": \u00ab" + i.body + "\u00bb"; }).join("\n") + "\n";
+      var blk = "\n" + insDay(dd).toUpperCase() + "\n" + by[dd].map(function (i) { return "\u2022 " + i.author + ": " + (i.audio_secs ? i.body + " (ascoltala nell'app)" : "\u00ab" + i.body + "\u00bb"); }).join("\n") + "\n";
       if (out.length + blk.length > 3200) rest += by[dd].length; else out += blk;
     });
     if (rest) out += "\n\u2026e altre " + rest + " nell'app\n";
@@ -2262,6 +2284,18 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   });
   $("insPane").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return; var d = ins.d;
+    if (b.hasAttribute("data-irec")) { irecStart(); return; }
+    if (b.hasAttribute("data-irx")) { irecStop(false); return; }
+    if (b.hasAttribute("data-iok")) { irecStop(true); return; }
+    if (b.hasAttribute("data-iau")) {
+      var aid = Number(b.getAttribute("data-iau"));
+      if (iau.el && iau.id === aid) { if (iau.el.paused) iau.el.play(); else iau.el.pause(); drawIns(); return; }
+      if (iau.el) iau.el.pause();
+      var go = function (src) { var a = new Audio(src); iau.el = a; iau.id = aid; a.onended = a.onpause = a.onplay = function () { drawIns(); }; a.play().catch(function () { toast("Non riesco a riprodurre"); }); };
+      if (iau.cache[aid]) { go(iau.cache[aid]); return; }
+      rpc("ble_ins_get_audio", { p_name: state.me.name, p_pin: state.me.pin, p_id: aid }).then(function (r) { iau.cache[aid] = "data:" + r.mime + ";base64," + r.data; go(iau.cache[aid]); }).catch(function (err) { toast(err.message); });
+      return;
+    }
     if (b.hasAttribute("data-st")) {
       var id = Number(b.parentNode.getAttribute("data-i")), st = Number(b.getAttribute("data-st"));
       rpc("ble_ins_vote", { p_name: state.me.name, p_pin: state.me.pin, p_insult: id, p_stars: st }).then(function () { play("chip"); insLoad(); }).catch(function (err) { toast(err.message); });
