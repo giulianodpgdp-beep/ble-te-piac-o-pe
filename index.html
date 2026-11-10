@@ -1378,7 +1378,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function gemHtml(g) {
     var h = "<article class='gem' data-g='" + g.id + "'>";
     if (gold.edit === g.id) {
-      return h + "<form class='gform inl' data-edit='" + g.id + "'><label>Titolo<input type='text' name='t' maxlength='80' required value='" + esc(g.title) + "'></label><label>" + (g.kind === "text" ? "Frase" : "Didascalia") + "<textarea name='b' maxlength='1000'>" + esc(g.body || "") + "</textarea></label><div class='gact'><button type='submit'>Salva</button><button type='button' data-act='cancel'>Annulla</button></div></form></article>";
+      return h + "<form class='gform inl' data-edit='" + g.id + "'><label>Titolo<input type='text' name='t' maxlength='80' required value='" + esc(g.title) + "'></label><label>" + (g.kind === "text" ? "Frase" : "Didascalia") + "<textarea name='b' maxlength='8000' rows='6'>" + esc(g.body || "") + "</textarea></label><div class='gact'><button type='submit'>Salva</button><button type='button' data-act='cancel'>Annulla</button></div></form></article>";
     }
     var open = !!gold.open[g.id];
     h = h.replace("class='gem'", "class='gem" + (open ? " open" : "") + "'");
@@ -1421,7 +1421,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var h = "<h2 class='gold-h'>" + (sc ? "Scambi memorabili" : "Old but Gold") + "</h2><p class='gold-sub'>" + (sc ? "Gli scambi di fantacalcio tra giocatori da ricordare: testo e screenshot." : "Le pietre preziose del gruppo: vocali, frasi, foto e video da ricordare.") + "</p>" +
       "<details class='gadd' id='gAdd'><summary>+ " + (sc ? "Aggiungi uno scambio" : "Aggiungi una pietra preziosa") + "</summary><form class='gform' id='gForm'>" +
       "<label>Titolo<input type='text' id='gTitle' maxlength='80' required placeholder='Es. Il vocale del secolo'></label>" +
-      "<label id='gBodyL'>Testo o didascalia<textarea id='gBody' maxlength='1000'></textarea></label>" +
+      "<label id='gBodyL'>Testo o didascalia<textarea id='gBody' maxlength='8000' rows='6' placeholder='Scrivi quanto vuoi (fino a 8000 caratteri)'></textarea><small id='gCnt' style='display:block;text-align:right;opacity:.6'></small></label>" +
       "<label id='gFileL'>" + (sc ? "Immagine (facoltativa, max 40 MB)" : "File (facoltativo: audio, immagine o video, max 40 MB)") + "<input type='file' id='gFile' accept='" + (sc ? "image/*" : "audio/*,image/*,video/*,.opus,.m4a") + "'></label>" +
       "<p class='gmeta' id='gHint'>Senza file viene salvata come frase. Con un file scelgo io il tipo dal formato.</p>" +
       "<button class='go' id='gGo' type='submit'>Aggiungi</button></form></details>" +
@@ -1473,6 +1473,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     e.preventDefault();
     if (gold.busy) return;
     var title = $("gTitle").value.trim(), body = $("gBody").value.trim(), f = $("gFile").files[0];
+    if (f && body.length > 1000) { toast("Con un file la didascalia arriva a 1000 caratteri"); return; }
     var k = f ? detectKind(f) : "text", ext = f ? (f.name.split(".").pop() || "").toLowerCase() : "";
     if (f && (!k || !EXT_MIME[ext])) { toast("Formato non supportato (es. le foto HEIC)"); return; }
     if (f && gold.sec === "scambi" && k !== "image") { toast("Qui solo testo e immagini"); return; }
@@ -1909,6 +1910,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     box.innerHTML = list.slice(0, 8).map(function (n) { return "<button type='button' data-mn='" + esc(n) + "'>@" + esc(n) + "</button>"; }).join(""); box.hidden = false;
   }
   $("chatText").addEventListener("input", mnSuggest);
+  document.addEventListener("input", function (e) { if (e.target && e.target.id === "gBody") { var c = $("gCnt"); if (c) c.textContent = e.target.value.length > 600 ? e.target.value.length + " / 8000" : ""; } });
   $("mnBox").addEventListener("click", function (e) {
     var b = e.target.closest("[data-mn]"); if (!b) return; var inp = $("chatText"), v = inp.value, pos = inp.selectionStart || v.length;
     var head = v.slice(0, pos).replace(/@[A-Za-z0-9_À-ÿ]*$/, "@" + b.getAttribute("data-mn") + " ");
