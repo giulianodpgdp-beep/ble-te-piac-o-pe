@@ -1930,7 +1930,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     rpc("ble_send_chat", { p_name: state.me.name, p_pin: state.me.pin, p_body: t }).then(function () { chat.justOpened = true; pollChat(true); }).catch(function (err) { toast(err.message); $("chatText").value = t; });
   });
   /* tastiera sempre aperta: il tasto Invia non ruba il focus */
-  ["mousedown", "touchstart"].forEach(function (ev) { $("chatGo").addEventListener(ev, function (e) { if (document.activeElement === $("chatText")) e.preventDefault(); }, { passive: false }); });
+  $("chatGo").addEventListener("mousedown", function (e) { if (document.activeElement === $("chatText")) e.preventDefault(); });
   /* ---------- messaggi vocali ---------- */
   var rec = { mr: null, chunks: [], t0: 0, tm: null, cancel: false };
   function recMime() { var c = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]; for (var i = 0; i < c.length; i++) { try { if (window.MediaRecorder && MediaRecorder.isTypeSupported(c[i])) return c[i]; } catch (e) {} } return ""; }
