@@ -587,6 +587,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 <div class="dlg" id="profDlg" hidden><div class="dlgcard" id="profCard"></div></div>
 <button type="button" id="chatFab" aria-label="Apri la chat">&#128172;<span id="chatFabN" class="fabn" hidden></span></button>
 <div class="dlg" id="duDlg" hidden><div class="dlgcard" id="duBox"></div></div>
+<div class="dlg" id="decDlg" hidden><div class="dlgcard" id="decBox"></div></div>
 <div class="dlg" id="fgDlg" hidden><div class="dlgcard" id="fgBox"></div></div>
 <div class="dov" id="dov"></div>
 <aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
@@ -2150,7 +2151,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   });
 
   /* ---------- home / dashboard ---------- */
-  var home = { d: null, med: null, pos: null, n: 0, wa: [] };
+  var home = { d: null, med: null, pos: null, n: 0, wa: [], dec: null };
   function kartSvg(col, face, lv, sp, uid, team, showTeam) {
     return "<svg class='k' viewBox='-42 -48 84 100' role='img' aria-label='Il tuo kart'>" + kartBody(col, lv, sp, team, uid || "h", showTeam) + "</svg>";
   }
@@ -2187,6 +2188,11 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (state.admin && home.wa && home.wa.length) {
       h += "<div class='hcard' style='border-color:#25d366'><h3>&#128242; Da mandare al gruppo WhatsApp<small>" + home.wa.length + " novit&agrave;</small></h3><ul class='wal'>" + home.wa.slice(0, 5).map(function (x) { return "<li><b>" + esc(x.title) + "</b> &mdash; " + esc(x.body) + "</li>"; }).join("") + (home.wa.length > 5 ? "<li>&hellip; e altre " + (home.wa.length - 5) + "</li>" : "") + "</ul><div class='gact'><button type='button' class='wago' data-hm='wa'>Invia nel gruppo</button><button type='button' data-hm='wax'>Scarta</button></div></div>";
     }
+    if (home.dec && home.dec.president) {
+      h += "<div class='hcard' style='border-color:#b8860b;background:#fffbe6'><h3>&#128220; Decreto del Presidente<small>" + (home.dec.used ? "emanato" : "disponibile") + "</small></h3>" +
+        (home.dec.used ? "<p class='gmeta' style='margin:0'>Hai gi&agrave; emanato il decreto di questo mese. Il prossimo dal " + esc(String(home.dec.next).split("-").reverse().join("/")) + ".</p>"
+          : "<p style='margin:0 0 10px'>Una volta al mese puoi proclamare un titolo di una settimana a un giocatore. Annuncio solenne in chat!</p><button type='button' class='btn' data-hm='dec'>Emana il decreto</button>") + "</div>";
+    }
     var lm = chat.msgs.length ? chat.msgs[chat.msgs.length - 1] : null, npd = mnPending().length;
     h += "<div class='hcard' data-hm='chat' role='button' tabindex='0' style='cursor:pointer'><h3>Chat di gruppo<small>" + (npd ? "@" + npd + " citazioni" : chat.unread ? chat.unread + " nuovi" : "apri") + "</small></h3>" + (lm ? "<p class='gmeta' style='margin:0'><b>" + esc(lm.mine ? "Tu" : (lm.author || "Cronista")) + ":</b> " + esc(lm.body.length > 90 ? lm.body.slice(0, 89) + "\u2026" : lm.body) + "</p>" : "<p class='gmeta' style='margin:0'>Nessun messaggio. Rompi il ghiaccio!</p>") + "</div>";
     h += "<div class='hcard'><h3>I tuoi premi<small>" + chips.length + "</small></h3>" + (chips.length ? "<div class='hchips'>" + chips.map(function (c) { return "<span>" + c + "</span>"; }).join("") + "</div>" : "<p class='gmeta'>Ancora nessun premio. Gioca e vedrai!</p>") + "</div>";
@@ -2196,6 +2202,22 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (!state.me || !state.admin) { home.wa = []; return; }
     rpc("ble_wa_pending", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) { home.wa = r || []; if (state.tab === "home") drawHome(); }).catch(function () {});
   }
+  function decLoad() {
+    if (!state.me) return;
+    rpc("ble_decree_state", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) { home.dec = r; if (state.tab === "home") drawHome(); }).catch(function () {});
+  }
+  function decOpen() {
+    var me = state.me.name.toLowerCase(), opts = (duel.names || []).filter(function (n) { return n.toLowerCase() !== me; }).map(function (n) { return "<option>" + esc(n) + "</option>"; }).join("");
+    $("decBox").innerHTML = "<h3>&#128220; Decreto del Presidente</h3><form id='decForm'><label>Chi viene proclamato?<select id='decWho' required>" + opts + "</select></label><label>Titolo (2-30 caratteri)<input id='decTitle' maxlength='30' minlength='2' required placeholder='es. Re dei Cornuti'></label><p class='gmeta'>Il titolo dura 7 giorni. Puoi emanare un solo decreto al mese.</p><div style='display:flex;gap:8px'><button type='button' class='btn' id='decX' style='background:#999'>Annulla</button><button type='submit' class='btn'>Proclama</button></div></form>";
+    $("decDlg").hidden = false;
+  }
+  $("decDlg").addEventListener("click", function (e) { if (e.target === $("decDlg") || e.target.id === "decX") $("decDlg").hidden = true; });
+  $("decDlg").addEventListener("submit", function (e) {
+    e.preventDefault();
+    rpc("ble_decree", { p_name: state.me.name, p_pin: state.me.pin, p_target: $("decWho").value, p_title: $("decTitle").value }).then(function () {
+      $("decDlg").hidden = true; play("done"); toast("Decreto proclamato!"); decLoad(); loadExtra();
+    }).catch(function (err) { toast(err.message); });
+  });
   function waText(rows) {
     var out = "\ud83d\udce3 Novit\u00e0 da Ble te piac o' Pe:\n", used = [];
     for (var i = 0; i < rows.length; i++) { var l = "\n" + rows[i].title + "\n" + rows[i].body + "\n"; if (out.length + l.length > 1400 && used.length) break; out += l; used.push(rows[i].id); }
@@ -2308,7 +2330,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     }
   });
   function renderHome() {
-    drawHome(); waLoad(); insHome();
+    drawHome(); waLoad(); insHome(); decLoad();
     if (!state.me) return;
     var a = { p_name: state.me.name, p_pin: state.me.pin, p_player: state.me.name };
     Promise.all([rpc("ble_profile", a).catch(function () { return null; }), rpc("ble_medals", a).catch(function () { return {}; }), rpc("ble_leaderboard", { p_matchday: null }).catch(function () { return []; })]).then(function (r) {
@@ -2395,6 +2417,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var b = e.target.closest("[data-hm]"); if (!b) return;
     if (b.getAttribute("data-hm") === "chat") { $("chatBtn").click(); return; }
     if (b.getAttribute("data-hm") === "duel") { duReqShow(true); return; }
+    if (b.getAttribute("data-hm") === "dec") { decOpen(); return; }
     if (b.getAttribute("data-hm") === "ins") { setTab("ins"); window.scrollTo(0, 0); return; }
     if (b.getAttribute("data-hm") === "insa") {
       rpc("ble_ins_list", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) {
