@@ -392,7 +392,19 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .chatlist { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 2px 0; }
 .msg { max-width: 82%; border: 2px solid var(--edge); border-radius: 14px; padding: 7px 11px; background: var(--surface); overflow-wrap: anywhere; align-self: flex-start; }
 .msg.mine { align-self: flex-end; background: var(--azzurro); color: var(--azzurro-ink); }
-.msg small { display: block; font-family: var(--font-label); font-size: .65rem; text-transform: uppercase; letter-spacing: .05em; opacity: .75; }
+.mnchip { position: absolute; top: 6px; right: 10px; z-index: 4; border: 2px solid var(--edge); background: #ffcb05; color: #0b1a2e; border-radius: 999px; padding: 4px 12px; font-family: var(--font-display); font-size: 1rem; box-shadow: 0 3px 0 var(--shade); cursor: pointer; }
+.chatbody { position: relative; }
+.mn { background: #ffe27a; color: #0b1a2e; border-radius: 6px; padding: 0 3px; font-weight: 700; }
+.mn.me { background: #ffcb05; outline: 2px solid #0b1a2e; }
+.msg.flash { animation: mflash 1.4s ease; }
+@keyframes mflash { 0%, 60% { box-shadow: 0 0 0 4px #ffcb05; } 100% { box-shadow: none; } }
+.mnbox { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.mnbox button { border: 2px solid var(--edge); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 4px 11px; font-weight: 700; font-size: .85rem; }
+#chatFab { position: fixed; right: 14px; bottom: calc(100px + env(safe-area-inset-bottom, 0px)); z-index: 56; width: 58px; height: 58px; border-radius: 50%; border: 3px solid #0b1a2e; background: #ffcb05; font-size: 1.6rem; box-shadow: 0 4px 0 #0b1a2e; cursor: pointer; padding: 0; }
+#chatFab .fabn { position: absolute; top: -8px; right: -8px; min-width: 24px; height: 24px; border-radius: 12px; background: #e63946; color: #fff; border: 2px solid #0b1a2e; font-size: .78rem; font-weight: 800; display: grid; place-items: center; padding: 0 4px; font-family: var(--font-label); }
+#chatFab .fabn.at { background: #ffcb05; color: #0b1a2e; }
+.msg small .at { }
+.msg { display: block; font-family: var(--font-label); font-size: .65rem; text-transform: uppercase; letter-spacing: .05em; opacity: .75; }
 .msg p { margin: 2px 0 0; white-space: pre-wrap; }
 .msg .cdel { background: none; border: 0; color: inherit; opacity: .6; padding: 0 0 0 6px; font-size: .9rem; }
 .chatform { display: flex; gap: 8px; margin-top: 10px; }
@@ -535,12 +547,13 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   <li>iPhone: Condividi &rarr; <b>Aggiungi a Home</b> e apri l'app dall'icona (serve iOS 16.4 o pi&ugrave; recente).</li></ol>
   <button type="button" class="go" id="helpOk">Ho capito</button></div></div>
 <div class="dlg" id="profDlg" hidden><div class="dlgcard" id="profCard"></div></div>
+<button type="button" id="chatFab" aria-label="Apri la chat">&#128172;<span id="chatFabN" class="fabn" hidden></span></button>
 <div class="dlg" id="cardDlg" hidden><div class="dlgcard" id="cardBox"></div></div>
 <div class="dov" id="dov"></div>
 <aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><div id="adminBox"></div><h4>Banner iniziale</h4><div id="banBox" class="gform" style="padding:0"></div><h4>Chi ha l'app e le notifiche</h4><div id="stBox" class="gform" style="padding:0"></div><h4>Partecipanti</h4><div class="gform" style="padding:0" id="pList"></div><p class="gmeta">Gemme e scambi si modificano o eliminano direttamente dalla loro scheda.</p></div></aside>
 <aside class="drawer" id="chatDrawer" aria-label="Chat"><div class="dhead"><h3>Chat</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
-  <div class="dbody chatbody"><div id="chatList" class="chatlist"></div><form id="chatForm" class="chatform"><input type="text" id="chatText" maxlength="500" placeholder="Scrivi un messaggio" autocomplete="off"><button class="go" type="submit">Invia</button></form></div></aside>
+  <div class="dbody chatbody"><button type="button" id="mnChip" class="mnchip" hidden aria-label="Vai alle citazioni">@ <b id="mnN">0</b></button><div id="chatList" class="chatlist"></div><div id="mnBox" class="mnbox" hidden></div><form id="chatForm" class="chatform"><input type="text" id="chatText" maxlength="500" placeholder="Scrivi un messaggio" autocomplete="off"><button class="go" type="submit">Invia</button></form></div></aside>
 <aside class="drawer" id="sugDrawer" aria-label="Suggerimenti"><div class="dhead"><h3>Suggerimenti</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><form class="gform" style="padding:0" id="sugForm"><label for="sugText">Un consiglio per migliorare il gioco<textarea id="sugText" maxlength="600" placeholder="Scrivi qui la tua idea"></textarea></label><button class="go" type="submit">Invia</button></form><div id="sugList"></div></div></aside>
 <div class="toast" id="toast" role="status"></div>
@@ -1743,15 +1756,40 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   /* ---------- chat ---------- */
   var chat = { last: 0, msgs: [], unread: 0, open: false, timer: null, seen: Number(store("ble.chatSeen") || 0) };
   function hhmm(iso) { var d = new Date(iso); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
+  var mnDone = {}; try { (JSON.parse(store("ble.mnDone") || "[]")).forEach(function (x) { mnDone[x] = 1; }); } catch (e) {}
+  function mnSave() { try { store("ble.mnDone", JSON.stringify(Object.keys(mnDone).slice(-300))); } catch (e) {} }
+  function chatNames() {
+    var set = {}; (duel.names || []).forEach(function (n) { set[n] = 1; }); chat.msgs.forEach(function (m) { if (m.author) set[m.author] = 1; }); if (state.me) set[state.me.name] = 1;
+    return Object.keys(set).sort(function (a, b) { return b.length - a.length; });
+  }
+  function mnRe() { var ns = chatNames().map(function (n) { return n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }); return ns.length ? new RegExp("@(" + ns.join("|") + ")(?![A-Za-z0-9_À-ÿ])", "gi") : null; }
+  function mentionsMe(m) { if (m.mine || !state.me) return false; var re = mnRe(); if (!re) return false; var r; re.lastIndex = 0; while ((r = re.exec(m.body))) { if (r[1].toLowerCase() === state.me.name.toLowerCase()) return true; } return false; }
+  function mnPending() { return chat.msgs.filter(function (m) { return !mnDone[m.id] && mentionsMe(m); }); }
+  function bodyHtml(m) {
+    var re = mnRe(), t = esc(m.body); if (!re) return t;
+    return t.replace(re, function (x, nm) { var me = state.me && nm.toLowerCase() === state.me.name.toLowerCase(); return "<span class='mn" + (me ? " me" : "") + "'>" + x + "</span>"; });
+  }
+  function mnChipDraw() { var n = mnPending().length; $("mnChip").hidden = !n || !chat.open; $("mnN").textContent = n; }
+  function mnCheckVisible() {
+    if (!chat.open) return; var box = $("chatList"), r0 = box.getBoundingClientRect(), ch = false;
+    mnPending().forEach(function (m) { var el = box.querySelector("[data-mid='" + m.id + "']"); if (!el) return; var r = el.getBoundingClientRect(); if (r.top >= r0.top - 2 && r.bottom <= r0.bottom + 2) { mnDone[m.id] = 1; ch = true; } });
+    if (ch) { mnSave(); mnChipDraw(); drawChatBadge(); }
+  }
   function drawChat() {
     var box = $("chatList"); if (!box) return;
     var atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
     box.innerHTML = chat.msgs.length ? chat.msgs.map(function (m) {
-      var mc = carCol(m.mine ? state.me.name : (m.author || "Cronista")); return "<div class='msg" + (m.mine ? " mine" : "") + "' style='background:color-mix(in srgb," + mc + " 32%,#ffffff);color:#0b1a2e;border-color:" + mc + "'><small>" + (m.mine ? "Tu" : esc(m.author)) + " &middot; " + hhmm(m.created_at) + (state.admin ? "<button type='button' class='cdel' data-cd='" + m.id + "' aria-label='Elimina'>&times;</button>" : "") + "</small><p>" + esc(m.body) + "</p></div>";
+      var mc = carCol(m.mine ? state.me.name : (m.author || "Cronista")); return "<div class='msg" + (m.mine ? " mine" : "") + "' data-mid='" + m.id + "' style='background:color-mix(in srgb," + mc + " 32%,#ffffff);color:#0b1a2e;border-color:" + mc + "'><small>" + (m.mine ? "Tu" : esc(m.author)) + " &middot; " + hhmm(m.created_at) + (state.admin ? "<button type='button' class='cdel' data-cd='" + m.id + "' aria-label='Elimina'>&times;</button>" : "") + "</small><p>" + bodyHtml(m) + "</p></div>";
     }).join("") : "<p class='gmeta'>Nessun messaggio. Rompi il ghiaccio!</p>";
     if (atEnd || chat.justOpened) { box.scrollTop = box.scrollHeight; chat.justOpened = false; }
+    mnCheckVisible(); mnChipDraw();
   }
-  function drawChatBadge() { $("chatBtn").textContent = "Chat" + (chat.unread ? " (" + chat.unread + ")" : ""); }
+  function drawChatBadge() {
+    var np = mnPending().length;
+    $("chatBtn").textContent = "Chat" + (chat.unread ? " (" + chat.unread + ")" : "") + (np ? " @" + np : "");
+    var f = $("chatFabN"); f.hidden = !(chat.unread || np); f.className = "fabn" + (np ? " at" : ""); f.textContent = np ? "@" + np : chat.unread;
+    if (state.tab === "home" && typeof drawHome === "function") drawHome();
+  }
   function pollChat(force) {
     if (!state.me || (document.hidden && !force)) return;
     rpc("ble_list_chat", { p_name: state.me.name, p_pin: state.me.pin, p_after: chat.last }).then(function (rows) {
@@ -1775,6 +1813,27 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var t = $("chatText").value.trim(); if (!t) return;
     $("chatText").value = "";
     rpc("ble_send_chat", { p_name: state.me.name, p_pin: state.me.pin, p_body: t }).then(function () { chat.justOpened = true; pollChat(true); }).catch(function (err) { toast(err.message); $("chatText").value = t; });
+  });
+  $("mnChip").addEventListener("click", function () {
+    var p = mnPending()[0]; if (!p) return;
+    var el = $("chatList").querySelector("[data-mid='" + p.id + "']"); if (!el) { mnDone[p.id] = 1; mnSave(); mnChipDraw(); drawChatBadge(); return; }
+    el.scrollIntoView({ block: "center", behavior: "smooth" }); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+    mnDone[p.id] = 1; mnSave(); mnChipDraw(); drawChatBadge();
+  });
+  var mnT = null; $("chatList").addEventListener("scroll", function () { clearTimeout(mnT); mnT = setTimeout(mnCheckVisible, 120); });
+  $("chatFab").addEventListener("click", function () { $("chatBtn").click(); });
+  function mnSuggest() {
+    var inp = $("chatText"), v = inp.value.slice(0, inp.selectionStart || inp.value.length), m = /(?:^|\s)@([A-Za-z0-9_À-ÿ]*)$/.exec(v), box = $("mnBox");
+    if (!m) { box.hidden = true; return; }
+    var q = m[1].toLowerCase(), list = chatNames().filter(function (n) { return n.toLowerCase().indexOf(q) === 0 && (!state.me || n !== state.me.name); }).sort();
+    if (!list.length) { box.hidden = true; return; }
+    box.innerHTML = list.slice(0, 8).map(function (n) { return "<button type='button' data-mn='" + esc(n) + "'>@" + esc(n) + "</button>"; }).join(""); box.hidden = false;
+  }
+  $("chatText").addEventListener("input", mnSuggest);
+  $("mnBox").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-mn]"); if (!b) return; var inp = $("chatText"), v = inp.value, pos = inp.selectionStart || v.length;
+    var head = v.slice(0, pos).replace(/@[A-Za-z0-9_À-ÿ]*$/, "@" + b.getAttribute("data-mn") + " ");
+    inp.value = head + v.slice(pos); inp.focus(); $("mnBox").hidden = true;
   });
   $("chatList").addEventListener("click", function (e) {
     var b = e.target.closest("[data-cd]"); if (!b) return;
@@ -1946,6 +2005,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var MED = [["profeta", "🔮 O' Maestro"], ["cecchino", "🎯 Il Culo Rotto"], ["re", "👑 O' Fetill"], ["maledizione", "💀 Il Samuele"], ["latitante", "🙈 Il Latitante"]];
     var chips = MED.filter(function (m) { return ml[m[0]] > 0; }).map(function (m) { return m[1] + (ml[m[0]] > 1 ? " &times;" + ml[m[0]] : ""); });
     (duel.titles[me] ? duel.titles[me].split(" · ") : []).forEach(function (t) { chips.push(esc(t)); });
+    var lm = chat.msgs.length ? chat.msgs[chat.msgs.length - 1] : null, npd = mnPending().length;
+    h += "<div class='hcard' data-hm='chat' role='button' tabindex='0' style='cursor:pointer'><h3>Chat di gruppo<small>" + (npd ? "@" + npd + " citazioni" : chat.unread ? chat.unread + " nuovi" : "apri") + "</small></h3>" + (lm ? "<p class='gmeta' style='margin:0'><b>" + esc(lm.mine ? "Tu" : (lm.author || "Cronista")) + ":</b> " + esc(lm.body.length > 90 ? lm.body.slice(0, 89) + "\u2026" : lm.body) + "</p>" : "<p class='gmeta' style='margin:0'>Nessun messaggio. Rompi il ghiaccio!</p>") + "</div>";
     h += "<div class='hcard'><h3>I tuoi premi<small>" + chips.length + "</small></h3>" + (chips.length ? "<div class='hchips'>" + chips.map(function (c) { return "<span>" + c + "</span>"; }).join("") + "</div>" : "<p class='gmeta'>Ancora nessun premio. Gioca e vedrai!</p>") + "</div>";
     box.innerHTML = h;
   }
@@ -2027,6 +2088,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   });
   $("homePane").addEventListener("click", function (e) {
     var b = e.target.closest("[data-hm]"); if (!b) return;
+    if (b.getAttribute("data-hm") === "chat") { $("chatBtn").click(); return; }
     if (b.getAttribute("data-hm") === "prof") { play("chip"); pfShow(state.me.name); }
     else if (b.getAttribute("data-hm") === "card") { play("chip"); cardOpen(); }
     else shareWa("🏁 Ble te piac o' Pe — " + state.me.name + ": " + (home.pos ? home.pos + "° posto, " : "") + (home.d ? home.d.points + " punti" : ""));
