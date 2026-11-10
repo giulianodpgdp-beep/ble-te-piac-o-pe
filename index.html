@@ -410,6 +410,17 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .msg .cdel { background: none; border: 0; color: inherit; opacity: .6; padding: 0 0 0 6px; font-size: .9rem; }
 .chatform { display: flex; gap: 8px; margin-top: 10px; }
 .chatform input { flex: 1; font: inherit; padding: 10px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); min-width: 0; }
+.chatform { position: relative; }
+.chatform .mic { font-size: 1.15rem; padding: 0 12px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.chatform .recbar { position: absolute; inset: 0; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 12px; background: var(--surface); border: 2px solid var(--edge); border-radius: 10px; z-index: 2; }
+.chatform .recbar[hidden] { display: none; }
+.recbar .rdot { width: 12px; height: 12px; border-radius: 50%; background: #e63946; animation: rpulse 1s infinite; flex: none; }
+@keyframes rpulse { 50% { opacity: .25; } }
+.recbar .rl { flex: 1; font-size: .8rem; opacity: .7; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.recbar button { font: inherit; font-family: var(--font-label); text-transform: uppercase; font-size: .8rem; padding: 8px 12px; border: 2px solid var(--edge); border-radius: 10px; background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.recbar .go { background: var(--azzurro); color: var(--azzurro-ink); }
+.aup { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-weight: 700; padding: 8px 14px; border: 2px solid #0b1a2e; border-radius: 999px; background: #fff; color: #0b1a2e; cursor: pointer; box-shadow: 0 2px 0 #0b1a2e; }
+.aup .wv { letter-spacing: 1px; opacity: .55; font-size: .7rem; }
 .chatform .go { font-family: var(--font-label); font-weight: 600; text-transform: uppercase; padding: 0 14px; border: 2px solid var(--edge); border-radius: 10px; background: var(--azzurro); color: var(--azzurro-ink); }
 .note { border: 2px solid var(--edge); border-radius: 12px; padding: 10px 12px; background: var(--giallo); color: var(--giallo-ink); margin: 0 4px 14px 0; display: grid; gap: 8px; }
 .note p { margin: 0; }
@@ -554,7 +565,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 <aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><div id="adminBox"></div><h4>Banner iniziale</h4><div id="banBox" class="gform" style="padding:0"></div><h4>Chi ha l'app e le notifiche</h4><div id="stBox" class="gform" style="padding:0"></div><h4>Partecipanti</h4><div class="gform" style="padding:0" id="pList"></div><p class="gmeta">Gemme e scambi si modificano o eliminano direttamente dalla loro scheda.</p></div></aside>
 <aside class="drawer" id="chatDrawer" aria-label="Chat"><div class="dhead"><h3>Chat</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
-  <div class="dbody chatbody"><button type="button" id="mnChip" class="mnchip" hidden aria-label="Vai alle citazioni">@ <b id="mnN">0</b></button><div id="chatList" class="chatlist"></div><div id="mnBox" class="mnbox" hidden></div><form id="chatForm" class="chatform"><input type="text" id="chatText" maxlength="500" placeholder="Scrivi un messaggio" autocomplete="off"><button class="go" type="submit">Invia</button></form></div></aside>
+  <div class="dbody chatbody"><button type="button" id="mnChip" class="mnchip" hidden aria-label="Vai alle citazioni">@ <b id="mnN">0</b></button><div id="chatList" class="chatlist"></div><div id="mnBox" class="mnbox" hidden></div><form id="chatForm" class="chatform"><input type="text" id="chatText" maxlength="500" placeholder="Scrivi un messaggio" autocomplete="off"><button type="button" id="chatMic" class="mic" aria-label="Messaggio vocale">&#127908;</button><button class="go" id="chatGo" type="submit">Invia</button><div id="recBar" class="recbar" hidden><span class="rdot"></span><b id="recT">0:00</b><span class="rl">Sto registrando&hellip;</span><button type="button" id="recX">Annulla</button><button type="button" id="recOk" class="go">Invia</button></div></form></div></aside>
 <aside class="drawer" id="sugDrawer" aria-label="Suggerimenti"><div class="dhead"><h3>Suggerimenti</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
   <div class="dbody"><form class="gform" style="padding:0" id="sugForm"><label for="sugText">Un consiglio per migliorare il gioco<textarea id="sugText" maxlength="600" placeholder="Scrivi qui la tua idea"></textarea></label><button class="go" type="submit">Invia</button></form><div id="sugList"></div></div></aside>
 <div class="toast" id="toast" role="status"></div>
@@ -1796,11 +1807,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     mnPending().forEach(function (m) { var el = box.querySelector("[data-mid='" + m.id + "']"); if (!el) return; var r = el.getBoundingClientRect(); if (r.top >= r0.top - 2 && r.bottom <= r0.bottom + 2) { mnDone[m.id] = 1; ch = true; } });
     if (ch) { mnSave(); mnChipDraw(); drawChatBadge(); }
   }
+  var au = { el: null, id: 0, cache: {} };
+  function mmss(n) { return Math.floor(n / 60) + ":" + ("0" + (n % 60)).slice(-2); }
+  function audioHtml(m) { var pl = au.id === m.id && au.el && !au.el.paused; return "<p><button type='button' class='aup' data-au='" + m.id + "'>" + (pl ? "&#9208;" : "&#9654;&#65039;") + " <span class='wv'>&#9602;&#9604;&#9606;&#9608;&#9606;&#9604;&#9602;&#9604;&#9606;</span> " + mmss(m.audio_secs) + "</button></p>"; }
   function drawChat() {
     var box = $("chatList"); if (!box) return;
     var atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
     box.innerHTML = chat.msgs.length ? chat.msgs.map(function (m) {
-      var mc = carCol(m.mine ? state.me.name : (m.author || "Cronista")); return "<div class='msg" + (m.mine ? " mine" : "") + "' data-mid='" + m.id + "' style='background:color-mix(in srgb," + mc + " 32%,#ffffff);color:#0b1a2e;border-color:" + mc + "'><small>" + (m.mine ? "Tu" : esc(m.author)) + " &middot; " + hhmm(m.created_at) + (state.admin ? "<button type='button' class='cdel' data-cd='" + m.id + "' aria-label='Elimina'>&times;</button>" : "") + "</small><p>" + bodyHtml(m) + "</p></div>";
+      var mc = carCol(m.mine ? state.me.name : (m.author || "Cronista")); return "<div class='msg" + (m.mine ? " mine" : "") + "' data-mid='" + m.id + "' style='background:color-mix(in srgb," + mc + " 32%,#ffffff);color:#0b1a2e;border-color:" + mc + "'><small>" + (m.mine ? "Tu" : esc(m.author)) + " &middot; " + hhmm(m.created_at) + (state.admin ? "<button type='button' class='cdel' data-cd='" + m.id + "' aria-label='Elimina'>&times;</button>" : "") + "</small>" + (m.audio_secs ? audioHtml(m) : "<p>" + bodyHtml(m) + "</p>") + "</div>";
     }).join("") : "<p class='gmeta'>Nessun messaggio. Rompi il ghiaccio!</p>";
     if (atEnd || chat.justOpened) { box.scrollTop = box.scrollHeight; chat.justOpened = false; }
     mnCheckVisible(); mnChipDraw();
@@ -1831,9 +1845,50 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   setInterval(function () { if (!chat.open) pollChat(); }, 25000);
   $("chatForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    var t = $("chatText").value.trim(); if (!t) return;
-    $("chatText").value = "";
+    var t = $("chatText").value.trim(); $("chatText").focus(); if (!t) return;
+    $("chatText").value = ""; $("mnBox").hidden = true; $("chatText").focus();
     rpc("ble_send_chat", { p_name: state.me.name, p_pin: state.me.pin, p_body: t }).then(function () { chat.justOpened = true; pollChat(true); }).catch(function (err) { toast(err.message); $("chatText").value = t; });
+  });
+  /* tastiera sempre aperta: il tasto Invia non ruba il focus */
+  ["mousedown", "touchstart"].forEach(function (ev) { $("chatGo").addEventListener(ev, function (e) { if (document.activeElement === $("chatText")) e.preventDefault(); }, { passive: false }); });
+  /* ---------- messaggi vocali ---------- */
+  var rec = { mr: null, chunks: [], t0: 0, tm: null, cancel: false };
+  function recMime() { var c = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]; for (var i = 0; i < c.length; i++) { try { if (window.MediaRecorder && MediaRecorder.isTypeSupported(c[i])) return c[i]; } catch (e) {} } return ""; }
+  function recStop(send) { rec.cancel = !send; try { if (rec.mr && rec.mr.state !== "inactive") rec.mr.stop(); } catch (e) {} clearInterval(rec.tm); $("recBar").hidden = true; }
+  function recStart() {
+    if (!navigator.mediaDevices || !window.MediaRecorder) { toast("Il tuo browser non supporta i vocali"); return; }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (st) {
+      rec.chunks = []; rec.cancel = false;
+      var mt = recMime(), o = { audioBitsPerSecond: 24000 }; if (mt) o.mimeType = mt;
+      try { rec.mr = new MediaRecorder(st, o); } catch (e) { rec.mr = new MediaRecorder(st); }
+      var mr = rec.mr;
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) rec.chunks.push(e.data); };
+      mr.onstop = function () {
+        st.getTracks().forEach(function (t) { t.stop(); });
+        if (rec.cancel || !rec.chunks.length) return;
+        var secs = Math.max(1, Math.round((Date.now() - rec.t0) / 1000)), type = mr.mimeType || mt || "audio/webm", blob = new Blob(rec.chunks, { type: type });
+        var fr = new FileReader();
+        fr.onload = function () {
+          var data = String(fr.result).split(",")[1] || "";
+          rpc("ble_send_audio", { p_name: state.me.name, p_pin: state.me.pin, p_data: data, p_mime: type.split(";")[0], p_secs: secs }).then(function () { chat.justOpened = true; pollChat(true); }).catch(function (err) { toast(err.message); });
+        };
+        fr.readAsDataURL(blob);
+      };
+      mr.start(); rec.t0 = Date.now(); $("recT").textContent = "0:00"; $("recBar").hidden = false;
+      rec.tm = setInterval(function () { var s = Math.round((Date.now() - rec.t0) / 1000); $("recT").textContent = mmss(s); if (s >= 60) recStop(true); }, 250);
+    }).catch(function () { toast("Serve il permesso al microfono"); });
+  }
+  $("chatMic").addEventListener("click", recStart);
+  $("recX").addEventListener("click", function () { recStop(false); });
+  $("recOk").addEventListener("click", function () { recStop(true); });
+  $("chatList").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-au]"); if (!b) return;
+    var id = Number(b.getAttribute("data-au"));
+    if (au.el && au.id === id) { if (au.el.paused) au.el.play(); else au.el.pause(); drawChat(); return; }
+    if (au.el) au.el.pause();
+    function go(src) { var a = new Audio(src); au.el = a; au.id = id; a.onended = a.onpause = a.onplay = function () { drawChat(); }; a.play().catch(function () { toast("Non riesco a riprodurre"); }); }
+    if (au.cache[id]) { go(au.cache[id]); return; }
+    rpc("ble_get_audio", { p_name: state.me.name, p_pin: state.me.pin, p_id: id }).then(function (r) { au.cache[id] = "data:" + r.mime + ";base64," + r.data; go(au.cache[id]); }).catch(function (err) { toast(err.message); });
   });
   $("mnChip").addEventListener("click", function () {
     var p = mnPending()[0]; if (!p) return;
