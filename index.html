@@ -1931,6 +1931,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   });
   /* tastiera sempre aperta: il tasto Invia non ruba il focus */
   $("chatGo").addEventListener("mousedown", function (e) { if (document.activeElement === $("chatText")) e.preventDefault(); });
+  $("chatGo").addEventListener("touchend", function (e) { e.preventDefault(); if (e.cancelable === false) return; try { $("chatForm").requestSubmit(); } catch (er) { $("chatForm").dispatchEvent(new Event("submit", { cancelable: true })); } $("chatText").focus(); });
   /* ---------- messaggi vocali ---------- */
   var rec = { mr: null, chunks: [], t0: 0, tm: null, cancel: false };
   function recMime() { var c = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]; for (var i = 0; i < c.length; i++) { try { if (window.MediaRecorder && MediaRecorder.isTypeSupported(c[i])) return c[i]; } catch (e) {} } return ""; }
