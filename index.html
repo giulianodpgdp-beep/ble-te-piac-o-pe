@@ -1988,7 +1988,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var me = state.me.name, d = home.d || {}, ml = home.med || {};
     var h = "<div class='hero'><div class='ray' style='left:46px;transform:rotate(14deg)'></div><div class='ray' style='right:46px;transform:rotate(-14deg)'></div>" +
       "<h2>" + esc(state.fanta || me) + "</h2><div class='sub'>" + esc(me) + (duel.titles[me] ? " &middot; " + esc(duel.titles[me].split(" · ")[0]) : "") + "</div>" +
-      "<div class='side'><button type='button' data-hm='prof' aria-label='Personalizza kart'>&#127912;</button><button type='button' data-hm='card' aria-label='Figurina'>&#129706;</button><button type='button' data-hm='share' aria-label='Condividi'>&#128228;</button></div>" +
+      "<div class='side'><button type='button' data-hm='prof' aria-label='Personalizza kart'>&#127912;</button><button type='button' data-hm='card' aria-label='Figurina'>&#128444;&#65039;</button><button type='button' data-hm='share' aria-label='Condividi'>&#128228;</button></div>" +
       "<div class='road'></div>" + kartSvg(carCol(me), "", duel.lv[me], duel.sp[me], "h", duel.team[me] || state.fanta || "", true) + "</div>";
     h += "<div class='hstats'><div><b>" + (home.pos ? home.pos + "&deg;" : "&ndash;") + "</b><span>Posizione</span></div><div><b>" + (d.points != null ? d.points : "&ndash;") + "</b><span>Punti</span></div><div><b>" + (d.days != null ? d.days : "&ndash;") + "</b><span>Giornate</span></div><div><b>" + (d.exact != null ? d.exact : "&ndash;") + "</b><span>Esatti</span></div></div>";
     var mine = (duel.list || []).filter(function (x) { return x.a_name.toLowerCase() === me.toLowerCase() || x.b_name.toLowerCase() === me.toLowerCase(); });
@@ -2063,13 +2063,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         var cv = document.createElement("canvas"); cv.width = 1200; cv.height = 1600;
         var cx = cv.getContext("2d"); cx.drawImage(img, 0, 0, 1200, 1600);
         cv.toBlob(function (b) {
-          card.blob = b; var d = home.d || {};
+          if (!b) { var du = cv.toDataURL("image/png"), bin = atob(du.split(",")[1]), u8 = new Uint8Array(bin.length); for (var q = 0; q < bin.length; q++) u8[q] = bin.charCodeAt(q); b = new Blob([u8], { type: "image/png" }); }
+          card.blob = b; card.url = URL.createObjectURL(b); var d = home.d || {};
           card.text = "🏁 " + (duel.team[me] || state.fanta || me) + " (" + me + ")" + (home.pos ? " — " + home.pos + "° posto" : "") + (d.points != null ? ", " + d.points + " punti" : "") + (cardTitles().length ? "\n" + cardTitles().join(" · ") : "");
-          box.innerHTML = "<h3>La tua figurina</h3><img src='" + URL.createObjectURL(b) + "' alt='Figurina' style='width:100%;border-radius:14px;border:2px solid var(--edge)'>" +
-            "<div class='gact' style='margin-top:10px'><button type='button' class='wabtn' data-cd='wa'>" + WAI + " WhatsApp</button><button type='button' data-cd='chat'>&#128172; In chat</button><button type='button' data-cd='x'>Chiudi</button></div>";
+          box.innerHTML = "<h3>La tua figurina</h3><img src='" + card.url + "' alt='Figurina' style='width:100%;border-radius:14px;border:2px solid var(--edge)'>" +
+            "<div class='gact' style='margin-top:10px'><button type='button' class='wabtn' data-cd='wa'>" + WAI + " WhatsApp</button><button type='button' data-cd='chat'>&#128172; In chat</button><button type='button' data-cd='dl'>&#11015;&#65039; Salva</button><button type='button' data-cd='x'>Chiudi</button></div><p class='gmeta' id='cdMsg'></p>";
         }, "image/png");
       };
-      img.onerror = function () { box.innerHTML = "<h3>La tua figurina</h3><p class='gmeta'>Non riesco a creare l&apos;immagine.</p><div class='gact'><button type='button' data-cd='x'>Chiudi</button></div>"; };
+      img.onerror = function () { box.innerHTML = "<h3>La tua figurina</h3><p class='gmeta'>Non riesco a creare l&apos;immagine su questo telefono.</p><div class='gact'><button type='button' data-cd='x'>Chiudi</button></div>"; };
       img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
     });
   }
@@ -2082,9 +2083,11 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       return;
     }
     if (!card.blob) return;
-    var f = new File([card.blob], "figurina-" + state.me.name.toLowerCase() + ".png", { type: "image/png" });
-    if (navigator.canShare && navigator.canShare({ files: [f] })) navigator.share({ files: [f], text: card.text + "\n" + siteUrl() }).catch(function (err) { if (!err || err.name !== "AbortError") waOpen(card.text + "\n" + siteUrl()); });
-    else waOpen(card.text + "\n" + siteUrl());
+    var msg = $("cdMsg");
+    if (b.getAttribute("data-cd") === "dl") { var a = document.createElement("a"); a.href = card.url; a.download = "figurina-" + state.me.name.toLowerCase() + ".png"; document.body.appendChild(a); a.click(); a.remove(); if (msg) msg.textContent = "Immagine salvata: la trovi nella Galleria o nei Download."; return; }
+    var f; try { f = new File([card.blob], "figurina-" + state.me.name.toLowerCase() + ".png", { type: "image/png" }); } catch (x) { f = null; }
+    if (f && navigator.canShare && navigator.canShare({ files: [f] })) navigator.share({ files: [f], text: card.text + "\n" + siteUrl() }).catch(function (err) { if (!err || err.name !== "AbortError") { if (msg) msg.textContent = "Condivisione non riuscita (" + ((err && err.name) || "errore") + "). Premi Salva e allega l'immagine da WhatsApp."; } });
+    else { if (msg) msg.textContent = "Questo browser non invia immagini direttamente: premi Salva, poi allegala da WhatsApp."; }
   });
   $("homePane").addEventListener("click", function (e) {
     var b = e.target.closest("[data-hm]"); if (!b) return;
