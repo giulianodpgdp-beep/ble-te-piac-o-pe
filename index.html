@@ -1753,6 +1753,26 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   $("admBtn").addEventListener("click", function () { openDrawer("admDrawer"); loadAdmin(); loadPlayers(); });
   $("sugBtn").addEventListener("click", function () { openDrawer("sugDrawer"); loadSug(); });
   $("logout").addEventListener("click", function () { resetChat(); closeDrawers(); $("admBtn").hidden = true; state.admin = false; });
+  /* ---------- swipe da sinistra verso destra per chiudere i pannelli laterali ---------- */
+  (function () {
+    var d = null, x0 = 0, y0 = 0, dx = 0, lock = null;
+    document.addEventListener("touchstart", function (e) {
+      d = e.target.closest && e.target.closest(".drawer.open"); if (!d || e.touches.length !== 1) { d = null; return; }
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; lock = null; d.style.transition = "none";
+    }, { passive: true });
+    document.addEventListener("touchmove", function (e) {
+      if (!d) return; var t = e.touches[0], mx = t.clientX - x0, my = t.clientY - y0;
+      if (lock === null && (Math.abs(mx) > 10 || Math.abs(my) > 10)) lock = (Math.abs(mx) > Math.abs(my) * 1.4 && mx > 0) ? "x" : "y";
+      if (lock === "x") { dx = Math.max(0, mx); d.style.transform = "translateX(" + dx + "px)"; }
+    }, { passive: true });
+    function end() {
+      if (!d) return; var w = d.offsetWidth, el = d; d = null; el.style.transition = ""; el.style.transform = "";
+      if (lock === "x" && dx > Math.min(90, w * 0.25)) { var c = el.querySelector("[data-close]"); if (c) c.click(); }
+    }
+    document.addEventListener("touchend", end, { passive: true });
+    document.addEventListener("touchcancel", end, { passive: true });
+  })();
+
   /* ---------- chat ---------- */
   var chat = { last: 0, msgs: [], unread: 0, open: false, timer: null, seen: Number(store("ble.chatSeen") || 0) };
   function hhmm(iso) { var d = new Date(iso); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
