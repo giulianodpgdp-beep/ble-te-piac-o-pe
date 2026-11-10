@@ -572,6 +572,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   <button type="button" class="go" id="helpOk">Ho capito</button></div></div>
 <div class="dlg" id="profDlg" hidden><div class="dlgcard" id="profCard"></div></div>
 <button type="button" id="chatFab" aria-label="Apri la chat">&#128172;<span id="chatFabN" class="fabn" hidden></span></button>
+<div class="dlg" id="duDlg" hidden><div class="dlgcard" id="duBox"></div></div>
 <div class="dlg" id="fgDlg" hidden><div class="dlgcard" id="fgBox"></div></div>
 <div class="dov" id="dov"></div>
 <aside class="drawer" id="admDrawer" aria-label="Strumenti admin"><div class="dhead"><h3>Admin</h3><button type="button" class="dclose" data-close aria-label="Chiudi">&times;</button></div>
@@ -1228,13 +1229,13 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   /* ---------- pagella e sfide a due ---------- */
   function loadExtra() {
     var a = { p_name: state.me.name, p_pin: state.me.pin };
-    Promise.all([rpc("ble_nicknames"), rpc("ble_pagella"), rpc("ble_list_duels", a), rpc("ble_leaderboard", { p_matchday: null }), rpc("ble_colors"), rpc("ble_titles_list")]).then(function (r) {
+    Promise.all([rpc("ble_nicknames"), rpc("ble_pagella"), rpc("ble_list_duels", a), rpc("ble_leaderboard", { p_matchday: null }), rpc("ble_colors"), rpc("ble_titles_list"), rpc("ble_duel_md")]).then(function (r) {
       duel.nicks = {}; r[0].forEach(function (x) { duel.nicks[x.pname] = x.nick; });
       duel.pag = r[1]; duel.list = r[2]; duel.names = r[3].map(function (x) { return x.pname; });
       duel.colors = {}; duel.avs = {}; duel.lv = {}; duel.sp = {}; duel.team = {}; r[4].forEach(function (x) { if (x.team) duel.team[x.pname] = x.team; if (x.color) duel.colors[x.pname] = x.color; if (x.avatar) duel.avs[x.pname] = x.avatar; if (x.livery) duel.lv[x.pname] = x.livery; if (x.sponsor) duel.sp[x.pname] = x.sponsor; });
-      duel.titles = {}; r[5].forEach(function (x) { duel.titles[x.pname] = x.title; });
+      duel.titles = {}; r[5].forEach(function (x) { duel.titles[x.pname] = x.title; }); duel.md = r[6];
       if (state.me) { var wt = duel.titles[state.me.name]; $("whoName").innerHTML = esc(state.me.name) + (wt ? "<span class='ttl' style='display:block;width:max-content;margin-top:2px'>" + esc(wt.split(" · ")[0]) + "</span>" : ""); };
-      drawExtra(); drawRank(); if (state.tab === "home") drawHome(); if (state.tab === "hist" && state.hist) drawHist();
+      drawExtra(); drawRank(); if (state.tab === "home") drawHome(); duReqShow(false); if (state.tab === "hist" && state.hist) drawHist();
     }).catch(function () {});
   }
   function pagHtml() {
@@ -1243,6 +1244,33 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     duel.pag.forEach(function (x) { if (!by[x.title]) { by[x.title] = []; order.push(x.title); } by[x.title].push(x.pname); });
     return "<div class='sug' style='margin-bottom:12px'><b>Pagella &middot; Giornata " + duel.pag[0].md + "</b>" + order.map(function (t) { return "<p><strong>" + esc(t) + "</strong>: " + by[t].map(esc).join(", ") + "</p>"; }).join("") + "</div>";
   }
+  /* ---------- richiesta di sfida in primo piano ---------- */
+  var duDis = {};
+  function duPending() { if (!state.me || !duel.list) return []; var me = state.me.name.toLowerCase(); return duel.list.filter(function (d) { return d.status === "proposed" && d.b_name.toLowerCase() === me; }); }
+  function duReqShow(force) {
+    var box = $("duBox"), dlg = $("duDlg"); if (!box) return;
+    var pl = duPending().filter(function (d) { return force || !duDis[d.id]; });
+    if (!pl.length) { dlg.hidden = true; return; }
+    var d = pl[0];
+    box.setAttribute("data-did", d.id);
+    box.innerHTML = "<h2 style='margin:0 0 6px'>&#9876;&#65039; Sfida in arrivo!</h2><p style='margin:0 0 8px;font-size:1.05rem'><strong>" + esc(d.a_name) + "</strong> ti sfida nella <strong>Giornata " + d.matchday + "</strong>.</p>" +
+      (d.pledge ? "<p class='pledge'>&#129309; Pegno: " + esc(d.pledge) + "</p>" : "") +
+      "<p style='margin:0 0 10px'>Se perdi tu sarai: &laquo;<b>" + esc(d.nick_for_b) + "</b>&raquo;</p>" +
+      "<input type='text' id='duNick' maxlength='30' placeholder='Soprannome per " + esc(d.a_name) + " se perde' style='width:100%;box-sizing:border-box;padding:10px;border:2px solid var(--edge);border-radius:10px;font:inherit;margin-bottom:10px'>" +
+      "<div class='gact'><button type='button' class='acc' data-dq='yes' style='flex:1'>Accetta</button><button type='button' class='rej' data-dq='no' style='flex:1'>Rifiuta</button></div>" +
+      "<button type='button' data-dq='later' style='margin-top:8px;width:100%;background:none;border:0;text-decoration:underline;color:inherit;opacity:.7;font:inherit;cursor:pointer'>Decido dopo</button>";
+    dlg.hidden = false;
+  }
+  $("duDlg").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-dq]"); if (!b) return;
+    var box = $("duBox"), id = Number(box.getAttribute("data-did")), act = b.getAttribute("data-dq");
+    if (act === "later") { duDis[id] = 1; $("duDlg").hidden = true; if (state.tab === "home") drawHome(); return; }
+    var yes = act === "yes", nick = $("duNick").value.trim();
+    if (yes && nick.length < 2) { toast("Scrivi un soprannome (almeno 2 lettere)"); $("duNick").focus(); return; }
+    rpc("ble_answer_duel", { p_name: state.me.name, p_pin: state.me.pin, p_duel: id, p_accept: yes, p_nick: yes ? nick : null })
+      .then(function () { play(yes ? "done" : "chip"); toast(yes ? "Sfida accettata!" : "Sfida rifiutata"); $("duDlg").hidden = true; loadExtra(); })
+      .catch(function (err) { toast(err.message); });
+  });
   function oppOptions(md) {
     var f = duel.names.filter(function (n) { return n.toLowerCase() !== duel.me && !duel.mdBusy(md, n); });
     return f.length ? f.map(function (n) { return "<option>" + esc(n) + "</option>"; }).join("") : "<option value=''>Nessuno libero in questa giornata</option>";
@@ -1271,8 +1299,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     });
     if (!duel.list.length) h += "<p class='gmeta'>Nessuna sfida. Lancia la prima!</p>";
     var mdBusy = function (md, nm) { return open.some(function (d) { return d.matchday === md && (d.status === "proposed" || d.status === "active") && (d.a_name.toLowerCase() === nm.toLowerCase() || d.b_name.toLowerCase() === nm.toLowerCase()); }); };
-    var mds = state.mds.filter(function (m) { return m >= state.md && !mdBusy(m, me); });
-    if (!mds.length) h += "<p class='gmeta'>Hai gi&agrave; una sfida in ogni giornata disponibile: una a giornata.</p>";
+    var mds = state.mds.filter(function (m) { return m === duel.md && !mdBusy(m, me); });
+    if (!mds.length) h += "<p class='gmeta'>Si sfida solo per la prossima giornata" + (duel.md ? " (la " + duel.md + ")" : "") + ", una sfida a testa: ne hai gi&agrave; una.</p>";
     else {
       duel.mdBusy = mdBusy; duel.me = me;
       h += "<form class='sug' id='duelForm'><b>Lancia una sfida</b><p class='gmeta'>Una sola sfida a giornata per ciascuno.</p><select id='dMd' class='tr-sel'>" + mds.map(function (m) { return "<option value='" + m + "'>Giornata " + m + "</option>"; }).join("") + "</select>" +
@@ -2122,6 +2150,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     h += "<div class='hstats'><div><b>" + (home.pos ? home.pos + "&deg;" : "&ndash;") + "</b><span>Posizione</span></div><div><b>" + (d.points != null ? d.points : "&ndash;") + "</b><span>Punti</span></div><div><b>" + (d.days != null ? d.days : "&ndash;") + "</b><span>Giornate</span></div><div><b>" + (d.exact != null ? d.exact : "&ndash;") + "</b><span>Esatti</span></div></div>";
     var mine = (duel.list || []).filter(function (x) { return x.a_name.toLowerCase() === me.toLowerCase() || x.b_name.toLowerCase() === me.toLowerCase(); });
     var x = mine.filter(function (z) { return z.status === "done"; })[0] || mine[0];
+    var dp = duPending();
+    if (dp.length) h += "<div class='hcard' style='border-color:#e63946;background:#fff0f1'><h3>&#9876;&#65039; Sfida da accettare<small>" + dp.length + "</small></h3><p style='margin:0 0 10px'><b>" + esc(dp[0].a_name) + "</b> ti sfida nella giornata " + dp[0].matchday + "</p><div class='gact'><button type='button' class='wago' style='background:#e63946!important;color:#fff!important' data-hm='duel'>Rispondi</button></div></div>";
     h += "<div class='hcard'><h3>Ultima sfida" + (x ? "<small>Giornata " + x.matchday + "</small>" : "") + "</h3>";
     if (!x) h += "<p class='gmeta'>Nessuna sfida ancora. Lanciane una dai Pronostici!</p>";
     else {
@@ -2239,6 +2269,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   $("homePane").addEventListener("click", function (e) {
     var b = e.target.closest("[data-hm]"); if (!b) return;
     if (b.getAttribute("data-hm") === "chat") { $("chatBtn").click(); return; }
+    if (b.getAttribute("data-hm") === "duel") { duReqShow(true); return; }
     if (b.getAttribute("data-hm") === "wa") {
       var pk = waText(home.wa); if (!pk.ids.length) return;
       rpc("ble_wa_mark", { p_name: state.me.name, p_pin: state.me.pin, p_ids: pk.ids }).catch(function () {});
