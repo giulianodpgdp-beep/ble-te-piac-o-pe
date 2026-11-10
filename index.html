@@ -403,7 +403,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .ins-h { font-family: var(--font-label); text-transform: uppercase; margin: 14px 0 6px; }
 .ins-card { border: 3px solid var(--edge); border-left-width: 10px; border-radius: 12px; background: var(--surface); padding: 10px 12px; margin: 8px 0; }
 .ins-card.win { background: #fff3bf; border-color: #f4b400; }
-.ins-card .who { font-family: var(--font-label); font-size: .8rem; text-transform: uppercase; opacity: .8; }
+.ins-card .ins-who { font-family: var(--font-label); font-size: .8rem; text-transform: uppercase; opacity: .8; }
 .ins-card p { margin: 4px 0 8px; font-size: 1.02rem; overflow-wrap: anywhere; }
 .stars { display: flex; align-items: center; gap: 2px; }
 .stars button { background: none; border: 0; font-size: 1.7rem; line-height: 1; padding: 2px 3px; cursor: pointer; color: #b8b8b8; }
@@ -2252,18 +2252,18 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       else h += "<form class='sug' id='insForm'><b>Non hai ancora offeso Blu? Ma a chi aspetti munnezz?!?!</b><textarea id='insText' maxlength='200' rows='3' placeholder='Scrivi la tua offesa a Blu (max 200 caratteri)' required style='width:100%;box-sizing:border-box;padding:10px;border:2px solid var(--edge);border-radius:10px;font:inherit;margin:8px 0'></textarea><button class='go' type='submit' style='font-family:var(--font-label);text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--azzurro);color:var(--azzurro-ink);width:100%;cursor:pointer'>Offendi Blu</button><button type='button' data-irec='1' style='margin-top:8px;width:100%;font-family:var(--font-label);text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--surface-2);color:var(--ink);cursor:pointer'>&#127908; Oppure offendi a voce (max 30 s)</button><div id='insRecBar' class='recbar' style='position:static;margin-top:8px;padding:8px 10px' hidden><span class='rdot'></span><b id='insRecT'>0:00</b><span class='rl'>Sto registrando&hellip;</span><button type='button' data-irx='1'>Annulla</button><button type='button' class='go' data-iok='1'>Invia</button></div></form>";
     }
     var w = d.winner && d.items.filter(function (x) { return x.id === d.winner; })[0];
-    if (w) h += "<div class='ins-card win'><div class='who'>&#127942; Offesa della settimana &middot; " + esc(w.author) + "</div><p>&laquo;" + esc(w.body) + "&raquo;</p><small>" + String(w.avg).replace(".", ",") + " &#9733; &middot; " + w.votes + " voti</small></div>";
+    if (w) h += "<div class='ins-card win'><div class='ins-who'>&#127942; Offesa della settimana &middot; " + esc(w.author) + "</div><p>&laquo;" + esc(w.body) + "&raquo;</p><small>" + String(w.avg).replace(".", ",") + " &#9733; &middot; " + w.votes + " voti</small></div>";
     else if (d.closed) h += "<p class='gmeta'>Nessuna offesa ha raggiunto 2 voti.</p>";
     var lastDay = "";
     d.items.forEach(function (i) {
       if (i.day !== lastDay) { lastDay = i.day; h += "<div class='ins-day'>" + esc(insDay(i.day)) + "</div>"; }
-      h += "<div class='ins-card' style='border-left-color:" + carCol(i.author) + "'><div class='who'>" + esc(i.author) + (state.admin ? " <button type='button' data-idel='" + i.id + "' style='float:right;border:0;background:none;cursor:pointer'>&times;</button>" : "") + "</div>" + (i.audio_secs ? "<p><button type='button' class='aup' data-iau='" + i.id + "'>" + (iau.id === i.id && iau.el && !iau.el.paused ? "&#9208;" : "&#9654;&#65039;") + " <span class='wv'>&#9602;&#9604;&#9606;&#9608;&#9606;&#9604;&#9602;&#9604;&#9606;</span> " + mmss(i.audio_secs) + "</button></p>" : "<p>" + esc(i.body) + "</p>") + starsHtml(i, d.closed) + "</div>";
+      h += "<div class='ins-card' style='border-left-color:" + carCol(i.author) + "'><div class='ins-who'>" + esc(i.author) + (state.admin ? " <button type='button' data-idel='" + i.id + "' style='float:right;border:0;background:none;cursor:pointer'>&times;</button>" : "") + "</div>" + (i.audio_secs ? "<p><button type='button' class='aup' data-iau='" + i.id + "'>" + (iau.id === i.id && iau.el && !iau.el.paused ? "&#9208;" : "&#9654;&#65039;") + " <span class='wv'>&#9602;&#9604;&#9606;&#9608;&#9606;&#9604;&#9602;&#9604;&#9606;</span> " + mmss(i.audio_secs) + "</button></p>" : "<p>" + esc(i.body) + "</p>") + starsHtml(i, d.closed) + "</div>";
     });
     if (!d.items.length) h += "<p class='gmeta'>Ancora nessuna offesa in questa settimana.</p>";
     if (d.hall_w.length || d.hall_m.length) {
       h += "<h3 class='ins-h'>&#127942; Albo d&rsquo;oro</h3>";
-      d.hall_m.forEach(function (x) { h += "<div class='ins-card win'><div class='who'>&#128081; Offesa del mese &middot; " + esc(new Date(x.month + "T12:00:00").toLocaleDateString("it-IT", { month: "long", year: "numeric" })) + " &middot; " + esc(x.author) + "</div><p>&laquo;" + esc(x.body) + "&raquo;</p><small>" + String(x.avg).replace(".", ",") + " &#9733; &middot; " + x.votes + " voti</small></div>"; });
-      d.hall_w.forEach(function (x) { h += "<div class='ins-card'><div class='who'>Settimana " + esc(insRange(x.week)) + " &middot; " + esc(x.author) + "</div><p>&laquo;" + esc(x.body) + "&raquo;</p><small>" + String(x.avg).replace(".", ",") + " &#9733; &middot; " + x.votes + " voti</small></div>"; });
+      d.hall_m.forEach(function (x) { h += "<div class='ins-card win'><div class='ins-who'>&#128081; Offesa del mese &middot; " + esc(new Date(x.month + "T12:00:00").toLocaleDateString("it-IT", { month: "long", year: "numeric" })) + " &middot; " + esc(x.author) + "</div><p>&laquo;" + esc(x.body) + "&raquo;</p><small>" + String(x.avg).replace(".", ",") + " &#9733; &middot; " + x.votes + " voti</small></div>"; });
+      d.hall_w.forEach(function (x) { h += "<div class='ins-card'><div class='ins-who'>Settimana " + esc(insRange(x.week)) + " &middot; " + esc(x.author) + "</div><p>&laquo;" + esc(x.body) + "&raquo;</p><small>" + String(x.avg).replace(".", ",") + " &#9733; &middot; " + x.votes + " voti</small></div>"; });
     }
     box.innerHTML = h;
   }
