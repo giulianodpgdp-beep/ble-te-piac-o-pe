@@ -774,7 +774,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     closeDrawers();
     if (g === "chat") { $("chatBtn").click(); return; }
     if (g === "sug") { $("sugBtn").click(); return; }
-    if (g === "comitato") { tr.kind = "comitato"; tr.list = null; setTab("scambi"); }
+    if (g === "giorno") { tr.kind = "giorno"; tr.list = null; setTab("scambi"); }
+    else if (g === "comitato") { tr.kind = "comitato"; tr.list = null; setTab("scambi"); }
     else if (g === "scambi") { tr.kind = "ufficiale"; tr.list = null; setTab("scambi"); }
     else if (g === "gold" || g === "play" || g === "ins" || g === "home" || g === "rank" || g === "hist") setTab(g);
     else setTab("home");
@@ -1692,8 +1693,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 
   /* ---------- scambi ufficiali / proposte oscene ---------- */
   var tr = { f: "tovote", kind: "ufficiale", list: null, edit: null, del: null, busy: false, open: {} };
-  var TR_L = { ufficiale: "Scambi ufficiali", oscena: "Proposte oscene", comitato: "&#9878; Comitato" };
-  function kindsBar() { return "<div class='tkinds'>" + ["ufficiale", "oscena", "comitato"].map(function (k) { return "<button type='button' data-tk='" + k + "' aria-pressed='" + (tr.kind === k) + "'>" + TR_L[k] + "</button>"; }).join("") + "</div>"; }
+  var TR_L = { ufficiale: "Scambi ufficiali", oscena: "Proposte oscene", comitato: "&#9878; Comitato", giorno: "&#128260; Del giorno" };
+  function kindsBar() { return "<div class='tkinds'>" + ["ufficiale", "oscena", "comitato", "giorno"].map(function (k) { return "<button type='button' data-tk='" + k + "' aria-pressed='" + (tr.kind === k) + "'>" + TR_L[k] + "</button>"; }).join("") + "</div>"; }
   function trUrl(t) { var m = /^u\/\d+\/(static-[a-z0-9-]+\.[a-z0-9]+)$/.exec(t.path); return m ? "trades/" + m[1] : SB + "/storage/v1/object/public/ble-gems/" + t.path; }
   function trRate(t) {
     if (t.status !== "done") return "<p class='tr-pend'>Il voto si apre dopo la trascrizione (ogni sera).</p>";
@@ -1762,10 +1763,46 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function renderTrades() {
     if (!tr.list) $("tradePane").innerHTML = "<p class='empty'>Carico il mercato&hellip;</p>";
     var load = rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; waLoad(); pkInit(); });
+    if (tr.kind === "giorno") { load.then(aiLoad).catch(function (err) { $("tradePane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; }); return; }
     if (tr.kind === "comitato") { load.then(loadCommittee).catch(function (err) { $("tradePane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; }); return; }
     load.then(function () { return rpc("ble_list_trades", { p_name: state.me.name, p_pin: state.me.pin, p_kind: tr.kind }); })
       .then(function (l) { tr.list = l; if (!$("trList")) drawTrades(); else drawTradeList(); loadRx(); })
       .catch(function (err) { $("tradePane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
+  }
+  /* ---------- scambio del giorno ---------- */
+  var ai = { d: null };
+  function aiLoad() {
+    return rpc("ble_ai_list", { p_name: state.me.name, p_pin: state.me.pin }).then(function (d) { ai.d = d; if (tr.kind === "giorno") aiDraw(); });
+  }
+  function aiCard(t) {
+    var a = esc(t.a_team), b = esc(t.b_team), open = t.status === "open", tot = (t.v_equo || 0) + (t.v_a || 0) + (t.v_b || 0);
+    var st = { open: "In votazione", accepted: "Accettato", rejected: "Rifiutato" }[t.status] || t.status;
+    var h = "<article class='gem open' data-ai='" + t.id + "'><div class='gem-head' style='cursor:default'><span class='gh-main'><span class='tr-who'><span>" + a + "</span><i>&#8646;</i><span>" + b + "</span></span><span class='gmeta'>" + esc(st) + " &middot; " + tot + (tot === 1 ? " voto" : " voti") + "</span></span><span class='gscore'>&#128260;</span></div>";
+    h += "<div class='tr-gives'><div><b>" + a + " cede</b>" + esc(t.gives_a) + "</div><div><b>" + b + " cede</b>" + esc(t.gives_b) + "</div></div>";
+    h += "<p class='gmeta'><b>" + a + ":</b> " + esc(t.reason_a) + "</p><p class='gmeta'><b>" + b + ":</b> " + esc(t.reason_b) + "</p>";
+    var m = t.mine;
+    h += "<div class='rate-b' style='grid-template-columns:1fr 1fr 1fr'>" + [["equo", "Equo (" + (t.v_equo || 0) + ")"], ["a", "Meglio per " + t.a_team + " (" + (t.v_a || 0) + ")"], ["b", "Meglio per " + t.b_team + " (" + (t.v_b || 0) + ")"]].map(function (x) { return "<button type='button' data-av='" + x[0] + "' aria-pressed='" + (m === x[0]) + "'" + (open ? "" : " disabled") + ">" + (x[0] === "equo" ? x[1] : esc(x[1])) + "</button>"; }).join("") + "</div>";
+    if (open && t.side) {
+      var my = t.side === "a" ? t.dec_a : t.dec_b;
+      if (my === null || my === undefined) h += "<p class='gmeta'><b>Sei uno dei due titolari: decidi!</b></p><div class='gact'><button type='button' data-ad='1'>S&igrave;, lo faccio</button><button type='button' data-ad='0'>No, fottiti</button></div>";
+      else h += "<p class='gmeta'>Hai risposto " + (my ? "s&igrave;" : "no") + ". Aspetto l'altro titolare.</p>";
+    } else if (open) h += "<p class='gmeta'>" + a + ": " + (t.dec_a === null ? "non ha ancora deciso" : t.dec_a ? "s&igrave;" : "no") + " &middot; " + b + ": " + (t.dec_b === null ? "non ha ancora deciso" : t.dec_b ? "s&igrave;" : "no") + "</p>";
+    return h + "</article>";
+  }
+  function aiDraw() {
+    var d = ai.d; if (!d) return;
+    var h = "<h2 class='gold-h'>Lo scambio del giorno</h2><p class='gold-sub'>Ogni giorno una proposta di scambio tra due squadre, a parit&agrave; di giocatori. Tutti votano se &egrave; equo; solo i due titolari decidono. Stima automatica su fantamedia, presenze e ruoli Mantra: non considera calendario n&eacute; minuti giocati.</p>" + kindsBar();
+    h += d.items && d.items.length ? d.items.map(aiCard).join("") : "<p class='empty'>Ancora nessuno scambio del giorno. Il primo esce alle 12.</p>";
+    h += "<p class='gmeta'>In coda: " + (d.queued || 0) + (d.queued === 1 ? " proposta" : " proposte") + ".</p>";
+    if (state.admin) h += "<div class='gact'><button type='button' data-apub='1'>Pubblica ora la prossima</button></div>";
+    $("tradePane").innerHTML = h;
+  }
+  function aiClick(b) {
+    if (b.hasAttribute("data-apub")) { rpc("ble_ai_publish_now", { p_name: state.me.name, p_pin: state.me.pin }).then(function () { play("done"); toast("Pubblicato"); return aiLoad(); }).catch(function (err) { toast(err.message); }); return; }
+    var card = b.closest("[data-ai]"); if (!card) return;
+    var id = Number(card.getAttribute("data-ai")), v = b.getAttribute("data-av"), dd = b.getAttribute("data-ad");
+    if (v) rpc("ble_ai_vote", { p_name: state.me.name, p_pin: state.me.pin, p_trade: id, p_vote: v }).then(function () { play("chip"); toast("Voto salvato"); return aiLoad(); }).catch(function (err) { toast(err.message); });
+    else if (dd !== null) rpc("ble_ai_decide", { p_name: state.me.name, p_pin: state.me.pin, p_trade: id, p_yes: dd === "1" }).then(function (r) { play("chip"); toast(r === "accepted" ? "Scambio accettato!" : r === "rejected" ? "Scambio rifiutato" : "Risposta salvata"); return aiLoad(); }).catch(function (err) { toast(err.message); });
   }
   /* ---------- il comitato delli scambi ---------- */
   var cm = { st: null, pick: null, tie: null };
@@ -1886,6 +1923,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     }
     if (b.hasAttribute("data-tk")) { tr.kind = b.getAttribute("data-tk"); tr.list = null; tr.edit = null; tr.del = null; play("chip"); $("tradePane").innerHTML = ""; renderTrades(); return; }
     if (b.hasAttribute("data-tf")) { tr.f = b.getAttribute("data-tf"); play("chip"); drawTradeList(); return; }
+    if (tr.kind === "giorno") { aiClick(b); return; }
     if (tr.kind === "comitato") { cmClick(b); return; }
     var card = b.closest("[data-t]"); if (!card) return;
     var id = Number(card.getAttribute("data-t"));
