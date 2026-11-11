@@ -2255,8 +2255,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var pend = sug.list.filter(function (x) { return x.status === "pending"; }).length;
     $("sugBtn").textContent = "Suggerimenti" + (state.admin && pend ? " (" + pend + ")" : "");
     $("sugList").innerHTML = sug.list.length ? sug.list.map(function (x) {
-      var h = "<div class='sug " + x.status + "' data-s='" + x.id + "'><p>" + esc(x.body) + "</p><small>" + esc(x.author) + " &middot; " + SUG_LBL[x.status] + "</small>";
-      if (state.admin) h += "<div class='sact'>" + (x.status === "accepted" ? "" : "<button type='button' class='acc' data-sd='accepted'>Accetta</button>") + (x.status === "rejected" ? "" : "<button type='button' class='rej' data-sd='rejected'>Rifiuta</button>") + (x.status === "pending" ? "" : "<button type='button' data-sd='pending'>In attesa</button>") + "</div>";
+      var h = "<div class='sug " + x.status + "' data-s='" + x.id + "'><p>" + esc(x.body) + "</p><small>" + esc(x.author) + " &middot; " + SUG_LBL[x.status] + "</small>" + (x.admin_note ? "<p class='gmeta' style='margin:6px 0 0'><b>Risposta:</b> " + esc(x.admin_note) + "</p>" : "");
+      if (state.admin) h += "<input type='text' class='snote' maxlength='300' placeholder='Commento (facoltativo, lo vede chi l&rsquo;ha scritto)' value='" + esc(x.admin_note || "") + "' style='width:100%;margin:8px 0 0;box-sizing:border-box'><div class='sact'>" + (x.status === "accepted" ? "" : "<button type='button' class='acc' data-sd='accepted'>Accetta</button>") + (x.status === "rejected" ? "" : "<button type='button' class='rej' data-sd='rejected'>Rifiuta</button>") + (x.status === "pending" ? "" : "<button type='button' data-sd='pending'>In attesa</button>") + "</div>";
       return h + "</div>";
     }).join("") : "<p class='gmeta'>Ancora nessun suggerimento.</p>";
   }
@@ -2272,8 +2272,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   });
   $("sugList").addEventListener("click", function (e) {
     var b = e.target.closest("[data-sd]"); if (!b) return;
-    var id = Number(b.closest("[data-s]").getAttribute("data-s"));
-    rpc("ble_decide_suggestion", { p_name: state.me.name, p_pin: state.me.pin, p_id: id, p_status: b.getAttribute("data-sd") })
+    var card = b.closest("[data-s]"), id = Number(card.getAttribute("data-s")), ni = card.querySelector(".snote");
+    rpc("ble_decide_suggestion", { p_name: state.me.name, p_pin: state.me.pin, p_id: id, p_status: b.getAttribute("data-sd"), p_note: ni ? ni.value : null })
       .then(function () { loadSug(); }).catch(function (err) { toast(err.message); });
   });
   $("pList").addEventListener("click", function (e) {
