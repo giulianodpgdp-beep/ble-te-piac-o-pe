@@ -458,6 +458,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .dlgcard h3 { margin: 0 0 8px; font-family: var(--font-display); font-weight: 400; text-transform: uppercase; font-size: 1rem; }
 .dlgcard ol { padding-left: 20px; margin: 8px 0 14px; display: grid; gap: 6px; }
 .dlgcard .go { width: 100%; font-family: var(--font-label); font-weight: 600; text-transform: uppercase; padding: 12px; border: 2px solid var(--edge); border-radius: 10px; background: var(--azzurro); color: var(--azzurro-ink); }
+.tkinds button[data-n]:not([data-n="0"])::after { content: attr(data-n); background: var(--bad); color: #fff; border-radius: 8px; font-family: var(--font-label); font-size: .6rem; padding: 1px 6px; margin-left: 5px; vertical-align: middle; }
 .tabs button[data-n]:not([data-n="0"])::after { content: attr(data-n); background: var(--bad); color: #fff; border-radius: 8px; font-family: var(--font-label); font-size: .55rem; padding: 1px 5px; margin-left: 3px; vertical-align: middle; }
 .wabtn, .wa { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
 .wabtn { font-family: var(--font-label); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; border-radius: 12px; padding: 12px; background: #25D366 !important; color: #fff !important; border-color: #128C7E !important; }
@@ -841,7 +842,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       state.revP = r[2]; state.revA = r[3];
       var first = state.matches[0];
       var sub = $("mdSub"); if (sub && first) sub.textContent = fmtWhen(first.kickoff).replace(/,.*$/, "") ;
-      renderPlay(); drawExtra();
+      renderPlay(); drawExtra(); playDot();
       if (state.tab === "rank") renderRank();
     }).catch(function (err) {
       if (/Nome o PIN/.test(err.message)) { store("ble.me", null); showLogin(); return; }
@@ -1021,6 +1022,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 
   var wasDone = {};
   function refreshChips(quiet) {
+    try { playDot(); } catch (e) {}
     var done = 0;
     state.matches.forEach(function (m) {
       var ok = isComplete(m); if (ok) done++;
@@ -1147,7 +1149,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       clearTimeout(saving[mid]);
       saving[mid] = setTimeout(function () {
         rpc("ble_save_prediction", { p_name: state.me.name, p_pin: state.me.pin, p_match: mid, p_home: cur.h, p_away: cur.a })
-          .then(function () { toast("Salvato"); }).catch(function (err) { toast(err.message); loadMd(); });
+          .then(function () { toast("Salvato"); playDot(); }).catch(function (err) { toast(err.message); loadMd(); });
       }, 350);
     } else if (b.hasAttribute("data-k")) {
       var qEl = b.closest(".q"), qid = +qEl.getAttribute("data-q"), k = b.getAttribute("data-k");
@@ -1673,7 +1675,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (b.hasAttribute("data-vote")) {
       var sc = Number(b.getAttribute("data-vote"));
       rpc("ble_vote_gem", { p_name: state.me.name, p_pin: state.me.pin, p_gem: id, p_score: sc })
-        .then(function () { play("chip"); toast("Salvato"); return refreshRates(); }).catch(function (err) { toast(err.message); });
+        .then(function () { play("chip"); toast("Salvato"); refreshDots(); return refreshRates(); }).catch(function (err) { toast(err.message); });
       return;
     }
     var act = b.getAttribute("data-act");
@@ -1694,7 +1696,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   /* ---------- scambi ufficiali / proposte oscene ---------- */
   var tr = { f: "tovote", kind: "ufficiale", list: null, edit: null, del: null, busy: false, open: {} };
   var TR_L = { ufficiale: "Scambi ufficiali", oscena: "Proposte oscene", comitato: "&#9878; Comitato", giorno: "&#128260; Del giorno" };
-  function kindsBar() { return "<div class='tkinds'>" + ["ufficiale", "oscena", "comitato", "giorno"].map(function (k) { return "<button type='button' data-tk='" + k + "' aria-pressed='" + (tr.kind === k) + "'>" + TR_L[k] + "</button>"; }).join("") + "</div>"; }
+  function kindsBar() { return "<div class='tkinds'>" + ["ufficiale", "oscena", "comitato", "giorno"].map(function (k) { return "<button type='button' data-tk='" + k + "' data-n='" + (sub[k] || 0) + "' aria-pressed='" + (tr.kind === k) + "'>" + TR_L[k] + "</button>"; }).join("") + "</div>"; }
   function trUrl(t) { var m = /^u\/\d+\/(static-[a-z0-9-]+\.[a-z0-9]+)$/.exec(t.path); return m ? "trades/" + m[1] : SB + "/storage/v1/object/public/ble-gems/" + t.path; }
   function trRate(t) {
     if (t.status !== "done") return "<p class='tr-pend'>Il voto si apre dopo la trascrizione (ogni sera).</p>";
@@ -1772,7 +1774,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   /* ---------- scambio del giorno ---------- */
   var ai = { d: null };
   function aiLoad() {
-    return rpc("ble_ai_list", { p_name: state.me.name, p_pin: state.me.pin }).then(function (d) { ai.d = d; if (tr.kind === "giorno") aiDraw(); });
+    return rpc("ble_ai_list", { p_name: state.me.name, p_pin: state.me.pin }).then(function (d) { ai.d = d; refreshDots(); if (tr.kind === "giorno") aiDraw(); });
   }
   function aiCard(t) {
     var a = esc(t.a_team), b = esc(t.b_team), open = t.status === "open", tot = (t.v_equo || 0) + (t.v_a || 0) + (t.v_b || 0);
@@ -1809,7 +1811,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   var VERD = { regolare: "Regolare", irregolare: "Pacco", pareggio: "Pareggio: decide il supremo" };
   function loadCommittee() {
     return Promise.all([rpc("ble_committee_state", { p_name: state.me.name, p_pin: state.me.pin }), rpc("ble_election_ends", { p_name: state.me.name, p_pin: state.me.pin }).catch(function () { return null; }), rpc("ble_election_tally", { p_name: state.me.name, p_pin: state.me.pin }).catch(function () { return []; })]).then(function (rr) {
-      var st = rr[0]; cm.ends = rr[1]; cm.tally = rr[2] || []; cm.st = st; if (cm.pick === null || !st.election) cm.pick = st.election ? (st.election.mine || []).slice() : [];
+      var st = rr[0]; cm.ends = rr[1]; cm.tally = rr[2] || []; cm.st = st; refreshDots(); if (cm.pick === null || !st.election) cm.pick = st.election ? (st.election.mine || []).slice() : [];
       if (tr.kind === "comitato") drawCommittee();
     });
   }
@@ -1884,7 +1886,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function refreshTrades() {
     return rpc("ble_list_trades", { p_name: state.me.name, p_pin: state.me.pin, p_kind: tr.kind }).then(function (l) {
-      tr.list = l;
+      tr.list = l; refreshDots();
       l.forEach(function (t) {
         var el = document.querySelector("#trList [data-t='" + t.id + "'] .rate"); if (el) el.innerHTML = trRate(t);
         var sc = document.querySelector("#trList [data-t='" + t.id + "'] .gscore"); if (sc) sc.innerHTML = trScore(t);
@@ -2181,23 +2183,28 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   var dots = { gold: 0, tr: 0, maxGold: 0, maxTr: 0 };
   function setDot(id, n) { $(id).setAttribute("data-n", String(n)); }
   function maxId(l) { return l.reduce(function (m, x) { return Math.max(m, x.id); }, 0); }
+  var sub = { ufficiale: 0, oscena: 0, giorno: 0, comitato: 0 };
+  function playDot() {
+    if (!state.matches) return;
+    var n = state.matches.filter(function (m) { return new Date(m.kickoff).getTime() > Date.now() && !isComplete(m); }).length;
+    setDot("tabPlay", n);
+  }
   function refreshDots() {
     if (!state.me || document.hidden) return;
-    var a = { p_name: state.me.name, p_pin: state.me.pin }, me = state.me.name.toLowerCase();
-    Promise.all([rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: "gold" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "ufficiale" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "oscena" }), rpc("ble_committee_state", { p_name: a.p_name, p_pin: a.p_pin }).catch(function () { return { pending: 0 }; })]).then(function (r) {
-      var gl = r[0], tl = r[1].concat(r[2]), pend = Number(r[3].pending || 0);
-      dots.maxGold = maxId(gl); dots.maxTr = maxId(tl);
-      if (store("ble.seenGold") === null || store("ble.seenGold") === undefined) { store("ble.seenGold", String(dots.maxGold)); store("ble.seenTr", String(dots.maxTr)); }
-      var sg = Number(store("ble.seenGold") || 0), st = Number(store("ble.seenTr") || 0);
-      var other = function (x) { return !(x.author && String(x.author).toLowerCase() === me); };
-      var ng = state.tab === "gold" ? 0 : gl.filter(function (x) { return x.id > sg && other(x); }).length;
-      var nt = state.tab === "scambi" ? 0 : tl.filter(function (x) { return x.id > st && other(x); }).length + pend;
-      setDot("tabGold", ng); setDot("tabScambi", nt);
+    var a = { p_name: state.me.name, p_pin: state.me.pin };
+    var none = function (v) { return function () { return v; }; };
+    Promise.all([rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: "gold" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "ufficiale" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "oscena" }), rpc("ble_committee_state", { p_name: a.p_name, p_pin: a.p_pin }).catch(none({ pending: 0 })), rpc("ble_ai_list", { p_name: a.p_name, p_pin: a.p_pin }).catch(none({ items: [] }))]).then(function (r) {
+      var unv = function (x) { return x.mine === null || x.mine === undefined; };
+      var tv = function (t) { return t.status === "done" && !t.blocked && unv(t); };
+      var ng = r[0].filter(unv).length;
+      sub.ufficiale = r[1].filter(tv).length; sub.oscena = r[2].filter(tv).length; sub.comitato = Number(r[3].pending || 0);
+      sub.giorno = (r[4].items || []).filter(function (t) { return t.status === "open" && (unv(t) || (t.side && (t.side === "a" ? t.dec_a : t.dec_b) === null)); }).length;
+      setDot("tabGold", ng); setDot("tabScambi", sub.ufficiale + sub.oscena + sub.comitato + sub.giorno); playDot();
+      Array.prototype.forEach.call(document.querySelectorAll(".tkinds [data-tk]"), function (b) { b.setAttribute("data-n", String(sub[b.getAttribute("data-tk")] || 0)); });
     }).catch(function () {});
   }
   function markSeen(t) {
-    if (t === "gold") { store("ble.seenGold", String(dots.maxGold)); setDot("tabGold", 0); }
-    if (t === "scambi") { store("ble.seenTr", String(dots.maxTr)); setDot("tabScambi", 0); }
+    /* i numerini restano finche non voti */
   }
   setInterval(refreshDots, 60000);
   function ntfInit() {
@@ -2301,9 +2308,10 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var ih = ins.hm;
     if (ih) {
       if (state.admin && ih.dow >= 6 && !ih.closed && !ih.sent && ih.items.length) h += "<div class='hcard' style='border-color:#25d366'><h3>&#128242; Offese a Blu: manda la lista<small>" + ih.items.length + " offese</small></h3><p style='margin:0 0 10px'>Invia l&rsquo;elenco della settimana nel gruppo WhatsApp e invita tutti a votare.</p><div class='gact'><button type='button' class='wago' data-hm='insa'>Invia nel gruppo</button></div></div>";
-      h += "<div class='hcard' data-hm='ins' role='button' tabindex='0' style='cursor:pointer'><h3>&#128520; Offese a Blu<small>" + ih.items.length + " questa settimana</small></h3><p style='margin:0'>" + (ih.me_target ? "Sei il bersaglio: puoi solo votare" : ih.wrote_today ? "Oggi hai gi&agrave; offeso. Vota le altre!" : "<b>Non hai ancora offeso Blu? Ma a chi aspetti munnezz?!?!</b>") + "</p></div>";
+      h += "<div class='hcard' data-hm='ins' role='button' tabindex='0' style='cursor:pointer'><h3>&#128520; Offese a Blu<small>" + ih.items.length + " questa settimana" + (insTv(ih) ? " &middot; <b style='color:var(--bad)'>" + insTv(ih) + " da votare</b>" : "") + "</small></h3><p style='margin:0'>" + (ih.me_target ? "Sei il bersaglio: puoi solo votare" : ih.wrote_today ? "Oggi hai gi&agrave; offeso. Vota le altre!" : "<b>Non hai ancora offeso Blu? Ma a chi aspetti munnezz?!?!</b>") + "</p></div>";
     }
     var dp = duPending();
+    setDot("tabHome", (ih ? insTv(ih) : 0) + dp.length);
     if (dp.length) h += "<div class='hcard' style='border-color:#e63946;background:#fff0f1'><h3>&#9876;&#65039; Sfida da accettare<small>" + dp.length + "</small></h3><p style='margin:0 0 10px'><b>" + esc(dp[0].a_name) + "</b> ti sfida nella giornata " + dp[0].matchday + "</p><div class='gact'><button type='button' class='wago' style='background:#e63946!important;color:#fff!important' data-hm='duel'>Rispondi</button></div></div>";
     h += "<div class='hcard'><h3>Ultima sfida" + (x ? "<small>Giornata " + x.matchday + "</small>" : "") + "</h3>";
     if (!x) h += "<p class='gmeta'>Nessuna sfida ancora. Lanciane una dai Pronostici!</p>";
@@ -2382,6 +2390,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function insDay(s) { try { return new Date(s + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }); } catch (e) { return s; } }
   function insRange(w) { try { var a = new Date(w + "T12:00:00"), b = new Date(a.getTime() + 6 * 864e5), f = function (d) { return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" }); }; return f(a) + " \u2013 " + f(b); } catch (e) { return w; } }
+  function insTv(d) { if (d.closed) return 0; return (d.items || []).filter(function (i) { return !i.own && !(i.mine > 0); }).length; }
   function insHome() {
     if (!state.me) return;
     rpc("ble_ins_list", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) { ins.hm = r; if (state.tab === "home") drawHome(); }).catch(function () {});
