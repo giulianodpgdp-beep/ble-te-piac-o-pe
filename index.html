@@ -2360,15 +2360,19 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (!news.vid || !state.me) return;
     rpc("ble_visit_ping", { p_name: state.me.name, p_pin: state.me.pin, p_vid: news.vid, p_close: !!close }).catch(function () {});
   }
+  function newsSeen() {
+    $("newsDlg").hidden = true;
+    if (news.vid && state.me) rpc("ble_news_seen", { p_name: state.me.name, p_pin: state.me.pin, p_vid: news.vid }).catch(function () {});
+  }
   function newsShow(r) {
     var more = (r.total || r.items.length) - r.items.length;
-    $("newsBox").innerHTML = "<h3>&#127881; Novit&agrave; dall&rsquo;ultima volta</h3><p class='gmeta' style='margin:0 0 10px'>Da " + esc(new Date(r.since).toLocaleString("it-IT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" })) + "</p><div class='news'>" + r.items.map(function (i) { return "<button type='button' data-ng='" + esc(i.go) + "'><span>" + (NEWS_I[i.k] || "&#10024;") + "</span>" + esc(i.tx) + "</button>"; }).join("") + "</div>" + (more > 0 ? "<p class='gmeta'>&hellip;e altre " + more + " novit&agrave;.</p>" : "") + "<div class='gact'><button type='button' id='newsX'>Ok, ho visto</button></div>";
+    $("newsBox").innerHTML = "<button type='button' id='newsXX' aria-label='Chiudi' style='float:right;border:2px solid var(--edge);background:transparent;color:inherit;border-radius:10px;font:inherit;font-size:1rem;line-height:1;padding:4px 9px;cursor:pointer'>&#10005;</button><h3>&#127881; Novit&agrave; dall&rsquo;ultima volta</h3><p class='gmeta' style='margin:0 0 10px'>Da " + esc(new Date(r.since).toLocaleString("it-IT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" })) + "</p><div class='news'>" + r.items.map(function (i) { return "<button type='button' data-ng='" + esc(i.go) + "'><span>" + (NEWS_I[i.k] || "&#10024;") + "</span>" + esc(i.tx) + "</button>"; }).join("") + "</div>" + (more > 0 ? "<p class='gmeta'>&hellip;e altre " + more + " novit&agrave;.</p>" : "") + "<div class='gact'><button type='button' id='newsX'>Ok, ho visto</button></div>";
     $("newsDlg").hidden = false;
   }
   $("newsDlg").addEventListener("click", function (e) {
     var b = e.target.closest("[data-ng]");
-    if (b) { $("newsDlg").hidden = true; goTo(b.getAttribute("data-ng")); return; }
-    if (e.target === $("newsDlg") || e.target.id === "newsX") $("newsDlg").hidden = true;
+    if (b) { newsSeen(); goTo(b.getAttribute("data-ng")); return; }
+    if (e.target === $("newsDlg") || e.target.id === "newsX" || e.target.closest("#newsXX")) newsSeen();
   });
   document.addEventListener("visibilitychange", function () { if (document.hidden) newsPing(true); else newsOpen(); });
   window.addEventListener("pagehide", function () { newsPing(true); });
