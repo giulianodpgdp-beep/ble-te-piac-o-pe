@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1522">
-<title>Ble te piac o' Pe</title>
+<title>Liga Barz: Golden Era</title>
 <meta name="description" content="Pronostici Serie A tra amici: risultati e statistiche strane di ogni giornata, con classifica del gruppo.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Ble te piac o' Pe">
+<meta property="og:title" content="Liga Barz: Golden Era">
 <meta property="og:description" content="Pronostici Serie A tra amici. Entra, metti i tuoi risultati e scala la classifica.">
 <meta property="og:image" content="https://giulianodpgdp-beep.github.io/ble-te-piac-o-pe/og.png">
 <meta property="og:image:width" content="1200">
@@ -19,7 +19,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Ble te piac">
+<meta name="apple-mobile-web-app-title" content="Golden Era">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -580,7 +580,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       <circle cx="181" cy="158" r="5" fill="#e88f86" opacity=".35"/>
     </symbol></svg>
   <header class="top">
-    <h1 class="vh">Ble te piac o' Pe</h1>
+    <h1 class="vh">Liga Barz: Golden Era</h1>
     <svg class="hdr-logo" id="hdrLogo" viewBox="0 0 320 330" role="img" aria-label="Il ragazzo del gruppo che dice: non è equo" hidden><use href="#mascot"/></svg>
   </header>
 
@@ -988,7 +988,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       rpc("ble_create_invite", { p_name: state.me.name, p_pin: state.me.pin, p_label: label || null }).then(function (tok) {
         var link = location.origin + location.pathname + "?invito=" + tok;
         $("invLabel").value = "";
-        waOpen("Ciao" + (label ? " " + label : "") + "! Ti invito a giocare a \"Ble te piac o' Pe\", il gioco dei pronostici di Serie A del gruppo. Entra da qui (il link vale solo per te):\n" + link, w);
+        waOpen("Ciao" + (label ? " " + label : "") + "! Ti invito a giocare a \"Liga Barz: Golden Era\", il gioco dei pronostici di Serie A del gruppo. Entra da qui (il link vale solo per te):\n" + link, w);
       }).catch(function (err) { if (w) try { w.close(); } catch (x) {} toast(err.message); }).then(function () { b.disabled = false; });
     } else if (b.id === "solBtn") {
       waOpen("Mancano ancora i pronostici della giornata " + state.md + " a: " + state.late.join(", ") + ". Completateli prima del calcio d'inizio!");
@@ -1455,7 +1455,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (b.hasAttribute("data-pf")) { play("chip"); pfShow(b.getAttribute("data-pf")); return; }
     if (b.hasAttribute("data-share")) {
       var rows = (state.rankRows || []).filter(function (r) { return r.pts > 0 || state.scope === "all"; });
-      shareWa("🏆 Ble te piac o' Pe — Classifica " + (state.scope === "md" ? "giornata " + state.md : "generale") + "\n" + rows.map(function (r, i) { return (["🥇", "🥈", "🥉"][i] || (i + 1) + ".") + " " + r.pname + " " + r.pts; }).join("\n"));
+      shareWa("🏆 Liga Barz: Golden Era — Classifica " + (state.scope === "md" ? "giornata " + state.md : "generale") + "\n" + rows.map(function (r, i) { return (["🥇", "🥈", "🥉"][i] || (i + 1) + ".") + " " + r.pname + " " + r.pts; }).join("\n"));
       return;
     }
     if (b.hasAttribute("data-s")) { state.scope = b.getAttribute("data-s"); renderRank(); }
@@ -2420,7 +2420,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function iqImage() {
     var d = iq.d, W = 1080, rowH = 92, H = 380 + d.entries.length * rowH + 250, c = document.createElement("canvas"); c.width = W; c.height = H;
     var g = c.getContext("2d"), gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "#1d4a80"); gr.addColorStop(1, "#0f2a4a"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
-    g.textBaseline = "middle"; g.fillStyle = "#ffd23f"; g.font = "700 30px sans-serif"; g.fillText("BLE TE PIAC O' PE'", 64, 70);
+    g.textBaseline = "middle"; g.fillStyle = "#ffd23f"; g.font = "700 30px sans-serif"; g.fillText("LIGA BARZ: GOLDEN ERA", 64, 70);
     g.fillStyle = "#fff"; g.font = "900 82px sans-serif"; g.fillText("\uD83E\uDDE0 CLASSIFICA", 64, 160); g.fillText("INTELLIGENZA", 64, 250);
     g.fillStyle = "#9fc3ee"; g.font = "30px sans-serif"; g.fillText("Secondo il Professore Blu \u00b7 " + new Date().toLocaleDateString("it-IT", { day: "numeric", month: "long", timeZone: "Europe/Rome" }), 64, 315);
     var cnt = {}; d.entries.forEach(function (e) { cnt[e.pos] = (cnt[e.pos] || 0) + 1; });
@@ -2469,7 +2469,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     }).catch(function (err) { toast(err.message); });
   });
   function waText(rows) {
-    var out = "\ud83d\udce3 Novit\u00e0 da Ble te piac o' Pe:\n", used = [];
+    var out = "\ud83d\udce3 Novit\u00e0 da Liga Barz: Golden Era:\n", used = [];
     for (var i = 0; i < rows.length; i++) { var l = "\n" + rows[i].title + "\n" + rows[i].body + "\n"; if (out.length + l.length > 1400 && used.length) break; out += l; used.push(rows[i].id); }
     return { text: out, ids: used };
   }
@@ -2704,7 +2704,7 @@ window.pkStart=start;
       "<g transform='translate(300 322) scale(3.5)'>" + kart + "</g>" +
       "<rect x='30' y='462' width='540' height='104' rx='20' fill='#050d18' stroke='#0b1a2e' stroke-width='3'/>" +
       st(105, home.pos ? home.pos + "°" : "-", "POSIZIONE") + st(240, d.points != null ? d.points : "-", "PUNTI") + st(375, d.days != null ? d.days : "-", "GIORNATE") + st(500, d.exact != null ? d.exact : "-", "ESATTI") +
-      chips + "<text x='300' y='774' text-anchor='middle' font-size='20' font-weight='700' fill='#ffcb05' font-family='Arial Black, Impact, sans-serif'>BLE TE PIAC O' PE</text></svg>";
+      chips + "<text x='300' y='774' text-anchor='middle' font-size='20' font-weight='700' fill='#ffcb05' font-family='Arial Black, Impact, sans-serif'>LIGA BARZ: GOLDEN ERA</text></svg>";
     return svg.replace(/var\(--font-label\)/g, "Arial, sans-serif").replace(/var\(--font-display\)/g, "Arial Black, sans-serif");
   }
   function cardOpen() {
@@ -2775,7 +2775,7 @@ window.pkStart=start;
     }
     if (b.getAttribute("data-hm") === "prof") { play("chip"); pfShow(state.me.name); }
     else if (b.getAttribute("data-hm") === "card") { play("chip"); cardOpen(); }
-    else shareWa("🏁 Ble te piac o' Pe — " + state.me.name + ": " + (home.pos ? home.pos + "° posto, " : "") + (home.d ? home.d.points + " punti" : ""));
+    else shareWa("🏁 Liga Barz: Golden Era — " + state.me.name + ": " + (home.pos ? home.pos + "° posto, " : "") + (home.d ? home.d.points + " punti" : ""));
   });
   function setTab(t) {
     if (state.tab !== t) stopAudio();

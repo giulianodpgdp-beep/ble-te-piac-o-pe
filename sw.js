@@ -3,7 +3,7 @@ self.addEventListener("activate", function (e) { e.waitUntil(self.clients.claim(
 self.addEventListener("push", function (e) {
   var d = {};
   try { d = e.data.json(); } catch (x) {}
-  e.waitUntil(self.registration.showNotification(d.title || "Ble te piac o' Pe", {
+  e.waitUntil(self.registration.showNotification(d.title || "Liga Barz: Golden Era", {
     body: d.body || "", icon: "icon-192.png", badge: "icon-192.png"
   }));
 });
