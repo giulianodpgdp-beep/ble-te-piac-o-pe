@@ -458,6 +458,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .dlgcard h3 { margin: 0 0 8px; font-family: var(--font-display); font-weight: 400; text-transform: uppercase; font-size: 1rem; }
 .dlgcard ol { padding-left: 20px; margin: 8px 0 14px; display: grid; gap: 6px; }
 .dlgcard .go { width: 100%; font-family: var(--font-label); font-weight: 600; text-transform: uppercase; padding: 12px; border: 2px solid var(--edge); border-radius: 10px; background: var(--azzurro); color: var(--azzurro-ink); }
+.news { display: grid; gap: 6px; max-height: 52vh; overflow: auto; margin-bottom: 12px; }
+.news button { display: flex; gap: 8px; align-items: flex-start; text-align: left; width: 100%; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--edge); background: transparent; color: inherit; font: inherit; font-size: .9rem; cursor: pointer; }
 .tkinds button[data-n]:not([data-n="0"])::after { content: attr(data-n); background: var(--bad); color: #fff; border-radius: 8px; font-family: var(--font-label); font-size: .6rem; padding: 1px 6px; margin-left: 5px; vertical-align: middle; }
 .tabs button[data-n]:not([data-n="0"])::after { content: attr(data-n); background: var(--bad); color: #fff; border-radius: 8px; font-family: var(--font-label); font-size: .55rem; padding: 1px 5px; margin-left: 3px; vertical-align: middle; }
 .wabtn, .wa { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
@@ -631,6 +633,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 <div class="dlg" id="profDlg" hidden><div class="dlgcard" id="profCard"></div></div>
 <button type="button" id="chatFab" aria-label="Apri la chat">&#128172;<span id="chatFabN" class="fabn" hidden></span></button>
 <div class="dlg" id="duDlg" hidden><div class="dlgcard" id="duBox"></div></div>
+<div class="dlg" id="newsDlg" hidden><div class="dlgcard" id="newsBox"></div></div>
 <div class="dlg" id="decDlg" hidden><div class="dlgcard" id="decBox"></div></div>
 <div class="dlg" id="fgDlg" hidden><div class="dlgcard" id="fgBox"></div></div>
 <div class="dov" id="dov"></div>
@@ -816,7 +819,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         state.md = pick;
         $("who").hidden = false; $("whoName").textContent = state.me.name; $("hdrLogo").removeAttribute("hidden");
         $("loading").hidden = true; $("appView").hidden = false; setTab("home");
-        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; waLoad(); pkInit(); $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); loadRx(); loadBanners(); pingDev(); if (DEEP) { var g0 = DEEP; DEEP = ""; goTo(g0); try { history.replaceState(null, "", location.pathname); } catch (e) {} } }).catch(function () {});
+        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; waLoad(); pkInit(); newsOpen(); $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); loadRx(); loadBanners(); pingDev(); if (DEEP) { var g0 = DEEP; DEEP = ""; goTo(g0); try { history.replaceState(null, "", location.pathname); } catch (e) {} } }).catch(function () {});
         return loadMd();
       });
     }).catch(function (err) { $("loading").hidden = false; $("loading").textContent = err.message; });
@@ -2342,6 +2345,34 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (!state.me || !state.admin) { home.wa = []; return; }
     rpc("ble_wa_pending", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) { home.wa = r || []; if (state.tab === "home") drawHome(); }).catch(function () {});
   }
+  /* ---------- novita dall'ultima uscita + log accessi ---------- */
+  var news = { vid: null, last: 0 };
+  var NEWS_I = { chat: "&#128172;", trade: "&#128260;", ai: "&#128260;", gem: "&#128142;", ins: "&#128520;", dec: "&#128220;", cm: "&#9878;&#65039;", sug: "&#128161;", notice: "&#128227;", md: "&#9917;", recap: "&#127937;", duel: "&#9876;&#65039;", title: "&#127941;", el: "&#128499;&#65039;" };
+  function newsOpen() {
+    if (!state.me) return;
+    var t = Date.now(); if (t - news.last < 5000) return; news.last = t;
+    rpc("ble_visit_open", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) {
+      if (!r) return; news.vid = r.vid;
+      if (r.items && r.items.length) setTimeout(function () { newsShow(r); }, DEEP ? 1500 : 400);
+    }).catch(function () {});
+  }
+  function newsPing(close) {
+    if (!news.vid || !state.me) return;
+    rpc("ble_visit_ping", { p_name: state.me.name, p_pin: state.me.pin, p_vid: news.vid, p_close: !!close }).catch(function () {});
+  }
+  function newsShow(r) {
+    var more = (r.total || r.items.length) - r.items.length;
+    $("newsBox").innerHTML = "<h3>&#127881; Novit&agrave; dall&rsquo;ultima volta</h3><p class='gmeta' style='margin:0 0 10px'>Da " + esc(new Date(r.since).toLocaleString("it-IT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" })) + "</p><div class='news'>" + r.items.map(function (i) { return "<button type='button' data-ng='" + esc(i.go) + "'><span>" + (NEWS_I[i.k] || "&#10024;") + "</span>" + esc(i.tx) + "</button>"; }).join("") + "</div>" + (more > 0 ? "<p class='gmeta'>&hellip;e altre " + more + " novit&agrave;.</p>" : "") + "<div class='gact'><button type='button' id='newsX'>Ok, ho visto</button></div>";
+    $("newsDlg").hidden = false;
+  }
+  $("newsDlg").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-ng]");
+    if (b) { $("newsDlg").hidden = true; goTo(b.getAttribute("data-ng")); return; }
+    if (e.target === $("newsDlg") || e.target.id === "newsX") $("newsDlg").hidden = true;
+  });
+  document.addEventListener("visibilitychange", function () { if (document.hidden) newsPing(true); else newsOpen(); });
+  window.addEventListener("pagehide", function () { newsPing(true); });
+  setInterval(function () { if (!document.hidden) newsPing(false); }, 45000);
   function decLoad() {
     if (!state.me) return;
     rpc("ble_decree_state", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) { home.dec = r; if (state.tab === "home") drawHome(); }).catch(function () {});
