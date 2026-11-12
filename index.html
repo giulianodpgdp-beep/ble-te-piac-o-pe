@@ -1219,7 +1219,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (k2 >= 0 && free.length) return free[k2 % free.length];
     var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0; return CAR_COLORS[h % CAR_COLORS.length];
   }
-  function ttl(n, all) { var t = duel.titles[n]; if (!t) return ""; return (all ? t.split(" · ") : [t.split(" · ")[0]]).map(function (x) { return " <em class='ttl'>" + esc(x) + "</em>"; }).join(""); }
+  function topT(t) { var a = t.split(" · "); return a.filter(function (x) { return /Professore/.test(x); })[0] || a[0]; }
+  function ttl(n, all) { var t = duel.titles[n]; if (!t) return ""; return (all ? t.split(" · ") : [topT(t)]).map(function (x) { return " <em class='ttl'>" + esc(x) + "</em>"; }).join(""); }
   function colorFor(n) { var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0; return CAR_COLORS[h % CAR_COLORS.length]; }
   function classicHtml(rows) {
     return "<ol class='rank'>" + rows.map(function (r, i) {
@@ -1358,7 +1359,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       duel.pag = r[1]; duel.list = r[2]; duel.names = r[3].map(function (x) { return x.pname; });
       duel.colors = {}; duel.avs = {}; duel.lv = {}; duel.sp = {}; duel.team = {}; r[4].forEach(function (x) { if (x.team) duel.team[x.pname] = x.team; if (x.color) duel.colors[x.pname] = x.color; if (x.avatar) duel.avs[x.pname] = x.avatar; if (x.livery) duel.lv[x.pname] = x.livery; if (x.sponsor) duel.sp[x.pname] = x.sponsor; });
       duel.titles = {}; r[5].forEach(function (x) { duel.titles[x.pname] = x.title; }); duel.md = r[6];
-      if (state.me) { var wt = duel.titles[state.me.name]; $("whoName").innerHTML = esc(state.me.name) + (wt ? "<span class='ttl' style='display:block;width:max-content;margin-top:2px'>" + esc(wt.split(" · ")[0]) + "</span>" : ""); };
+      if (state.me) { var wt = duel.titles[state.me.name]; $("whoName").innerHTML = esc(state.me.name) + (wt ? "<span class='ttl' style='display:block;width:max-content;margin-top:2px'>" + esc(topT(wt)) + "</span>" : ""); };
       drawExtra(); drawRank(); if (state.tab === "home") drawHome(); duReqShow(false); if (state.tab === "hist" && state.hist) drawHist();
     }).catch(function () {});
   }
@@ -2311,7 +2312,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var box = $("homePane"); if (!box || !state.me) return;
     var me = state.me.name, d = home.d || {}, ml = home.med || {};
     var h = "<div class='hero'><div class='ray' style='left:46px;transform:rotate(14deg)'></div><div class='ray' style='right:46px;transform:rotate(-14deg)'></div>" +
-      "<h2>" + esc(state.fanta || me) + "</h2><div class='sub'>" + esc(me) + (duel.titles[me] ? " &middot; " + esc(duel.titles[me].split(" · ")[0]) : "") + "</div>" +
+      "<h2>" + esc(state.fanta || me) + "</h2><div class='sub'>" + esc(me) + (duel.titles[me] ? " &middot; " + esc(topT(duel.titles[me])) : "") + "</div>" +
       "<div class='side'><button type='button' data-hm='prof' aria-label='Personalizza kart'>&#127912;</button><button type='button' data-hm='card' aria-label='Figurina'>&#128444;&#65039;</button><button type='button' data-hm='share' aria-label='Condividi'>&#128228;</button></div>" +
       "<div class='road'></div>" + kartSvg(carCol(me), "", duel.lv[me], duel.sp[me], "h", duel.team[me] || state.fanta || "", true).replace("<svg class='k'", "<svg class='k' data-hm='card' style='cursor:pointer'") + "</div>";
     h += "<div class='hstats'><div><b>" + (home.pos ? home.pos + "&deg;" : "&ndash;") + "</b><span>Posizione</span></div><div><b>" + (d.points != null ? d.points : "&ndash;") + "</b><span>Punti</span></div><div><b>" + (d.days != null ? d.days : "&ndash;") + "</b><span>Giornate</span></div><div><b>" + (d.exact != null ? d.exact : "&ndash;") + "</b><span>Esatti</span></div></div>";
