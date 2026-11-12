@@ -11,6 +11,7 @@ function goFor(t) {
   t = t || "";
   if (/Decreto/.test(t)) return "chat";
   if (/Comitato|Sentenza/.test(t)) return "comitato";
+  if (/intelligenza/i.test(t)) return "iq";
   if (/Scambio del giorno/.test(t)) return "giorno";
   if (/scambio|proposta/i.test(t)) return "scambi";
   if (/pietra/i.test(t)) return "gold";

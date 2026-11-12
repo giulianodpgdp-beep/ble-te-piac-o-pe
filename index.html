@@ -458,6 +458,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .dlgcard h3 { margin: 0 0 8px; font-family: var(--font-display); font-weight: 400; text-transform: uppercase; font-size: 1rem; }
 .dlgcard ol { padding-left: 20px; margin: 8px 0 14px; display: grid; gap: 6px; }
 .dlgcard .go { width: 100%; font-family: var(--font-label); font-weight: 600; text-transform: uppercase; padding: 12px; border: 2px solid var(--edge); border-radius: 10px; background: var(--azzurro); color: var(--azzurro-ink); }
+.iqr { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 3px solid var(--edge); border-radius: 14px; padding: 8px 14px; margin-bottom: 8px; font-size: 1rem; }
+.iqr.me { outline: 3px solid #ffd23f; }
+.iqr.last { background: #7f1d1d; color: #fff; }
+.iqp { width: 3.2em; color: #ffd23f; }
+.iqn { flex: 1; font-weight: 700; }
+.iqs { opacity: .8; }
+.iqm { width: 2.6em; text-align: right; }
+#iqForm select, #iqForm textarea { width: 100%; box-sizing: border-box; margin: 8px 0; }
 .news { display: grid; gap: 6px; max-height: 52vh; overflow: auto; margin-bottom: 12px; }
 .news button { display: flex; gap: 8px; align-items: flex-start; text-align: left; width: 100%; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--edge); background: transparent; color: inherit; font: inherit; font-size: .9rem; cursor: pointer; }
 .tkinds button[data-n]:not([data-n="0"])::after { content: attr(data-n); background: var(--bad); color: #fff; border-radius: 8px; font-family: var(--font-label); font-size: .6rem; padding: 1px 6px; margin-left: 5px; vertical-align: middle; }
@@ -618,6 +626,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     <div id="histPane" hidden></div>
     <div id="goldPane" hidden></div>
     <div id="insPane" hidden></div>
+    <div id="iqPane" hidden></div>
     <div id="tradePane" hidden></div>
   </section>
 
@@ -781,7 +790,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (g === "giorno") { tr.kind = "giorno"; tr.list = null; setTab("scambi"); }
     else if (g === "comitato") { tr.kind = "comitato"; tr.list = null; setTab("scambi"); }
     else if (g === "scambi") { tr.kind = "ufficiale"; tr.list = null; setTab("scambi"); }
-    else if (g === "gold" || g === "play" || g === "ins" || g === "home" || g === "rank" || g === "hist") setTab(g);
+    else if (g === "gold" || g === "play" || g === "ins" || g === "iq" || g === "home" || g === "rank" || g === "hist") setTab(g);
     else setTab("home");
     window.scrollTo(0, 0);
   }
@@ -2313,6 +2322,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       if (state.admin && ih.dow >= 6 && !ih.closed && !ih.sent && ih.items.length) h += "<div class='hcard' style='border-color:#25d366'><h3>&#128242; Offese a Blu: manda la lista<small>" + ih.items.length + " offese</small></h3><p style='margin:0 0 10px'>Invia l&rsquo;elenco della settimana nel gruppo WhatsApp e invita tutti a votare.</p><div class='gact'><button type='button' class='wago' data-hm='insa'>Invia nel gruppo</button></div></div>";
       h += "<div class='hcard' data-hm='ins' role='button' tabindex='0' style='cursor:pointer'><h3>&#128520; Offese a Blu<small>" + ih.items.length + " questa settimana" + (insTv(ih) ? " &middot; <b style='color:var(--bad)'>" + insTv(ih) + " da votare</b>" : "") + "</small></h3><p style='margin:0'>" + (ih.me_target ? "Sei il bersaglio: puoi solo votare" : ih.wrote_today ? "Oggi hai gi&agrave; offeso. Vota le altre!" : "<b>Non hai ancora offeso Blu? Ma a chi aspetti munnezz?!?!</b>") + "</p></div>";
     }
+    if (iq.hm) { var ie = iq.hm.entries, lastE = ie[ie.length - 1], meE = ie.filter(function (x) { return x.me; })[0]; h += "<div class='hcard' data-hm='iq' role='button' tabindex='0' style='cursor:pointer'><h3>&#129504; Classifica intelligenza<small>" + (meE ? meE.pos + "&deg; posto" : "") + "</small></h3><p style='margin:0'>Il Professore Blu giudica. Ultimo: <b>" + esc(lastE.name) + "</b> (" + lastE.pts + " pt)</p></div>"; }
     var dp = duPending();
     setDot("tabHome", (ih ? insTv(ih) : 0) + dp.length);
     if (dp.length) h += "<div class='hcard' style='border-color:#e63946;background:#fff0f1'><h3>&#9876;&#65039; Sfida da accettare<small>" + dp.length + "</small></h3><p style='margin:0 0 10px'><b>" + esc(dp[0].a_name) + "</b> ti sfida nella giornata " + dp[0].matchday + "</p><div class='gact'><button type='button' class='wago' style='background:#e63946!important;color:#fff!important' data-hm='duel'>Rispondi</button></div></div>";
@@ -2377,6 +2387,70 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   document.addEventListener("visibilitychange", function () { if (document.hidden) newsPing(true); else newsOpen(); });
   window.addEventListener("pagehide", function () { newsPing(true); });
   setInterval(function () { if (!document.hidden) newsPing(false); }, 45000);
+  /* ---------- classifica intelligenza ---------- */
+  var iq = { d: null, hm: null, sel: null, pts: 1 };
+  function iqHome() {
+    if (!state.me) return;
+    rpc("ble_iq_list", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) { iq.hm = r; if (state.tab === "home") drawHome(); }).catch(function () {});
+  }
+  function iqLoad() {
+    if (!state.me) return;
+    rpc("ble_iq_list", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) { iq.d = r; iq.hm = r; iqDraw(); }).catch(function (err) { $("iqPane").innerHTML = "<p class='empty'>" + esc(err.message) + "</p>"; });
+  }
+  function iqRows(d) {
+    var cnt = {}; d.entries.forEach(function (e) { cnt[e.pos] = (cnt[e.pos] || 0) + 1; });
+    return d.entries.map(function (e, i) {
+      var mv = e.prev === null || e.prev === undefined || e.prev === e.pos ? "" : e.prev > e.pos ? "<b style='color:#4ade80'>&#9650;" + (e.prev - e.pos) + "</b>" : "<b style='color:#f87171'>&#9660;" + (e.pos - e.prev) + "</b>";
+      var last = i === d.entries.length - 1;
+      return "<div class='iqr" + (e.me ? " me" : "") + (last ? " last" : "") + "'><b class='iqp'>" + e.pos + "&deg;" + (cnt[e.pos] > 1 ? "=" : "") + "</b><span class='iqn'>" + esc(e.name) + (e.name === "Blu" ? " &#127891;" : "") + (last ? " &#129313;" : "") + "</span><span class='iqs'>" + e.pts + " pt</span><span class='iqm'>" + mv + "</span></div>";
+    }).join("");
+  }
+  function iqDraw() {
+    var d = iq.d; if (!d) return;
+    var h = "<h2 class='gold-h'>&#129504; Classifica intelligenza</h2><p class='gold-sub'>Giudica solo il Professore Blu. Ogni punto fa scendere in classifica: chi ha meno punti &egrave; pi&ugrave; intelligente. Parit&agrave; a pari merito. Ogni domenica mattina esce in chat.</p>" + iqRows(d);
+    h += "<div class='gact'><button type='button' data-iq='img'>&#128247; Immagine da condividere</button></div>";
+    if (d.blu) {
+      var opts = d.entries.map(function (e) { return "<option value='" + e.id + "'" + (String(iq.sel) === String(e.id) ? " selected" : "") + ">" + esc(e.name) + " (" + e.pts + ")</option>"; }).join("");
+      h += "<form class='sug' id='iqForm'><b>Assegna punti (oggi ancora " + d.left + ")</b><select id='iqWho'>" + opts + "</select><div class='rate-b' style='grid-template-columns:1fr 1fr 1fr'>" + [1, 2, 3].map(function (n) { return "<button type='button' data-iqp='" + n + "' aria-pressed='" + (iq.pts === n) + "'>+" + n + "</button>"; }).join("") + "</div><textarea id='iqWhy' maxlength='190' rows='2' placeholder='Perch&eacute;? (obbligatorio, visibile a tutti)'></textarea><button type='submit'" + (d.left ? "" : " disabled") + ">Assegna</button></form>";
+    }
+    h += "<h3 class='ins-h'>Ultime assegnazioni</h3>" + (d.log.length ? d.log.map(function (l) { return "<div class='ins-card'><div class='ins-who'>" + esc(l.name) + " +" + l.pts + "</div><p>" + esc(l.reason) + "</p><small>" + esc(new Date(l.at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" })) + "</small></div>"; }).join("") : "<p class='gmeta'>Ancora nessuna assegnazione.</p>");
+    $("iqPane").innerHTML = h;
+  }
+  function iqImage() {
+    var d = iq.d, W = 1080, rowH = 92, H = 380 + d.entries.length * rowH + 250, c = document.createElement("canvas"); c.width = W; c.height = H;
+    var g = c.getContext("2d"), gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "#1d4a80"); gr.addColorStop(1, "#0f2a4a"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    g.textBaseline = "middle"; g.fillStyle = "#ffd23f"; g.font = "700 30px sans-serif"; g.fillText("BLE TE PIAC O' PE'", 64, 70);
+    g.fillStyle = "#fff"; g.font = "900 82px sans-serif"; g.fillText("\uD83E\uDDE0 CLASSIFICA", 64, 160); g.fillText("INTELLIGENZA", 64, 250);
+    g.fillStyle = "#9fc3ee"; g.font = "30px sans-serif"; g.fillText("Secondo il Professore Blu \u00b7 " + new Date().toLocaleDateString("it-IT", { day: "numeric", month: "long", timeZone: "Europe/Rome" }), 64, 315);
+    var cnt = {}; d.entries.forEach(function (e) { cnt[e.pos] = (cnt[e.pos] || 0) + 1; });
+    d.entries.forEach(function (e, i) {
+      var y = 360 + i * rowH, last = i === d.entries.length - 1;
+      g.fillStyle = last ? "#7f1d1d" : "#12365e"; g.strokeStyle = last ? "#ff6b6b" : "#2d6cb0"; g.lineWidth = 3;
+      g.beginPath(); if (g.roundRect) g.roundRect(64, y, W - 128, rowH - 12, 20); else g.rect(64, y, W - 128, rowH - 12); g.fill(); g.stroke();
+      var cy = y + (rowH - 12) / 2; g.font = "700 38px sans-serif"; g.fillStyle = "#ffd23f"; g.textAlign = "left"; g.fillText(e.pos + "\u00b0" + (cnt[e.pos] > 1 ? "=" : ""), 92, cy);
+      g.fillStyle = "#fff"; g.fillText(e.name + (e.name === "Blu" ? " \uD83C\uDF93" : "") + (last ? " \uD83E\uDD21" : ""), 250, cy);
+      g.fillStyle = "#9fc3ee"; g.textAlign = "right"; g.fillText(e.pts + " pt", W - 250, cy);
+      if (e.prev !== null && e.prev !== undefined && e.prev !== e.pos) { g.fillStyle = e.prev > e.pos ? "#4ade80" : "#f87171"; g.fillText((e.prev > e.pos ? "\u25B2" : "\u25BC") + Math.abs(e.prev - e.pos), W - 100, cy); }
+      g.textAlign = "left";
+    });
+    var ly = 380 + d.entries.length * rowH; g.fillStyle = "#ffd23f"; g.beginPath(); if (g.roundRect) g.roundRect(64, ly, W - 128, 180, 22); else g.rect(64, ly, W - 128, 180); g.fill();
+    g.fillStyle = "#0f2a4a"; g.font = "700 36px sans-serif"; var ln = ["Complimenti " + d.entries[d.entries.length - 1].name + "!", "Ultimo in classifica: il pi\u00f9 stupido", "secondo il Professore Blu. \uD83D\uDC4F"]; ln.forEach(function (t, k) { g.fillText(t, 96, ly + 50 + k * 50); });
+    c.toBlob(function (b) {
+      var f; try { f = new File([b], "classifica-intelligenza.png", { type: "image/png" }); } catch (x) { f = null; }
+      if (f && navigator.canShare && navigator.canShare({ files: [f] })) navigator.share({ files: [f], title: "Classifica intelligenza" }).catch(function () {});
+      else { var u = URL.createObjectURL(b), a = document.createElement("a"); a.href = u; a.download = "classifica-intelligenza.png"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 5000); }
+    }, "image/png");
+  }
+  $("iqPane").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    if (b.getAttribute("data-iq") === "img") { iqImage(); return; }
+    if (b.hasAttribute("data-iqp")) { iq.pts = Number(b.getAttribute("data-iqp")); Array.prototype.forEach.call($("iqPane").querySelectorAll("[data-iqp]"), function (x) { x.setAttribute("aria-pressed", String(x === b)); }); }
+  });
+  $("iqPane").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var who = Number($("iqWho").value), why = $("iqWhy").value; iq.sel = who;
+    rpc("ble_iq_assign", { p_name: state.me.name, p_pin: state.me.pin, p_entry: who, p_pts: iq.pts, p_reason: why }).then(function () { play("done"); toast("Punti assegnati"); iqLoad(); }).catch(function (err) { toast(err.message); });
+  });
   function decLoad() {
     if (!state.me) return;
     rpc("ble_decree_state", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) { home.dec = r; if (state.tab === "home") drawHome(); }).catch(function () {});
@@ -2591,7 +2665,7 @@ window.pkStart=start;
     rpc("ble_prank_state", { p_name: state.me.name, p_pin: state.me.pin }).then(function (show) { if (show === true) window.pkRun(); else pkOn = false; }).catch(function () { pkOn = false; });
   }
   function renderHome() {
-    drawHome(); waLoad(); insHome(); decLoad();
+    drawHome(); waLoad(); insHome(); decLoad(); iqHome();
     if (!state.me) return;
     var a = { p_name: state.me.name, p_pin: state.me.pin, p_player: state.me.name };
     Promise.all([rpc("ble_profile", a).catch(function () { return null; }), rpc("ble_medals", a).catch(function () { return {}; }), rpc("ble_leaderboard", { p_matchday: null }).catch(function () { return []; })]).then(function (r) {
@@ -2679,6 +2753,7 @@ window.pkStart=start;
     if (b.getAttribute("data-hm") === "chat") { $("chatBtn").click(); return; }
     if (b.getAttribute("data-hm") === "duel") { duReqShow(true); return; }
     if (b.getAttribute("data-hm") === "dec") { decOpen(); return; }
+    if (b.getAttribute("data-hm") === "iq") { setTab("iq"); window.scrollTo(0, 0); return; }
     if (b.getAttribute("data-hm") === "ins") { setTab("ins"); window.scrollTo(0, 0); return; }
     if (b.getAttribute("data-hm") === "insa") {
       rpc("ble_ins_list", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) {
@@ -2706,7 +2781,7 @@ window.pkStart=start;
     if (state.tab !== t) play(t === "rank" ? "rank" : t === "hist" ? "hist" : "chip");
     state.tab = t;
     $("tabPlay").setAttribute("aria-selected", t === "play"); $("tabRank").setAttribute("aria-selected", t === "rank"); $("tabHist").setAttribute("aria-selected", t === "hist"); $("tabGold").setAttribute("aria-selected", t === "gold"); $("tabScambi").setAttribute("aria-selected", t === "scambi");
-    $("homePane").hidden = t !== "home"; $("tabHome").setAttribute("aria-selected", t === "home"); $("playPane").hidden = t !== "play"; $("duelPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist"; $("goldPane").hidden = t !== "gold"; $("tradePane").hidden = t !== "scambi"; $("insPane").hidden = t !== "ins"; document.querySelector("nav.md").hidden = t === "gold" || t === "scambi" || t === "home" || t === "ins";
+    $("homePane").hidden = t !== "home"; $("tabHome").setAttribute("aria-selected", t === "home"); $("playPane").hidden = t !== "play"; $("duelPane").hidden = t !== "play"; $("rankPane").hidden = t !== "rank"; $("histPane").hidden = t !== "hist"; $("goldPane").hidden = t !== "gold"; $("tradePane").hidden = t !== "scambi"; $("insPane").hidden = t !== "ins"; $("iqPane").hidden = t !== "iq"; document.querySelector("nav.md").hidden = t === "gold" || t === "scambi" || t === "home" || t === "ins" || t === "iq";
     if (t === "home") renderHome();
     if (t === "rank") renderRank();
     if (t === "hist") renderHist();
@@ -2714,6 +2789,7 @@ window.pkStart=start;
     if (t === "gold") { if (gold.sec !== t) { gold.sec = t; gold.gems = null; gold.filter = "all"; gold.edit = null; gold.del = null; gold.sort = "new"; } renderGold(); }
     if (t === "scambi") renderTrades();
     if (t === "ins") { ins.week = null; insLoad(); }
+    if (t === "iq") iqLoad();
   }
   $("tabHome").addEventListener("click", function () { setTab("home"); window.scrollTo(0, 0); });
   $("tabGold").addEventListener("click", function () { setTab("gold"); });
