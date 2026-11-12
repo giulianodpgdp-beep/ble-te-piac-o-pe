@@ -496,6 +496,23 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .podio button { display: flex; width: 100%; justify-content: space-between; gap: 8px; text-align: left; background: none; border: 0; border-top: 1px dashed var(--giallo-ink); color: inherit; padding: 7px 0; font: inherit; }
 
 /* scherzo salsiccia */
+#ltrRoot{position:fixed;inset:0;z-index:190;background:rgba(5,10,22,.92);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+#ltrRoot[hidden]{display:none!important}
+.ltr-env{position:relative;width:min(86vw,360px);height:min(56vw,230px);background:#d9c7a0;border-radius:8px;box-shadow:0 14px 40px #000a;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;animation:ltrPulse 1.6s ease-in-out infinite}
+.ltr-env::before{content:"";position:absolute;left:0;right:0;top:0;height:60%;background:#c9b387;clip-path:polygon(0 0,100% 0,50% 100%);border-radius:8px 8px 0 0}
+.ltr-env b{position:relative;margin-bottom:18px;font:700 1rem sans-serif;color:#4a3b1d;text-align:center;padding:0 12px}
+.ltr-seal{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff6b6b,#a01212);box-shadow:0 3px 8px #0008}
+@keyframes ltrPulse{50%{transform:scale(1.03) rotate(-1deg)}}
+.ltr-paper{width:min(94vw,560px);background:#e8dcc0;border-radius:6px;padding:22px 18px 18px;box-shadow:0 14px 40px #000b;animation:ltrUp .5s ease-out}
+@keyframes ltrUp{from{transform:translateY(60px) scale(.9);opacity:0}}
+.ltr-w{display:inline-block;padding:2px 7px;margin:3px 2px;box-shadow:1px 2px 3px #0006;font-weight:700;animation:ltrPop .25s ease-out both}
+@keyframes ltrPop{from{opacity:0;transform:scale(1.6) rotate(0)}}
+.ltr-line{margin-bottom:10px;line-height:1.35}
+.ltr-cart{display:flex;justify-content:flex-end;height:96px;margin-top:6px}
+.ltr-cart svg{width:260px;height:94px;transform-origin:70% 50%;animation:ltrDrop .9s cubic-bezier(.3,1.4,.5,1) both;filter:drop-shadow(0 6px 6px #0008)}
+@keyframes ltrDrop{0%{transform:translateY(-320px) rotate(-60deg);opacity:0}60%{opacity:1}100%{transform:translateY(0) rotate(-6deg)}}
+.ltr-ok{display:block;margin:14px auto 0;padding:12px 22px;border-radius:12px;border:3px solid #222;background:#ffd23f;color:#111;font:700 1rem sans-serif;cursor:pointer}
+.ico-cart{display:inline-block;vertical-align:middle;margin:0 2px 2px 4px}
 #pkRoot [hidden]{display:none!important}
 #pkRoot *{box-sizing:border-box}
 #pkRoot{position:fixed;inset:0;z-index:200;overflow-y:auto;overflow-x:hidden;--bg:#1a1030;--panel:#271a47;--wall:#3b2a72;--floor:#f3e6c8;--ink:#fff7e6;--muted:#b8a9dd;--accent:#ff5a36;--display:"Bowlby One",Impact,sans-serif;--body:"DM Sans",system-ui,sans-serif;color-scheme:dark;margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 var(--body);padding-block:12px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow-x:hidden}
@@ -540,6 +557,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&display=swap">
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="cgHull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5a52"/><stop offset=".18" stop-color="#e3262c"/><stop offset=".55" stop-color="#b3141b"/><stop offset=".9" stop-color="#6d0b10"/><stop offset="1" stop-color="#4d070b"/></linearGradient><linearGradient id="cgBrass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".12" stop-color="#f1cf5a"/><stop offset=".45" stop-color="#c8952a"/><stop offset=".8" stop-color="#8a6212"/><stop offset="1" stop-color="#5c3f08"/></linearGradient><linearGradient id="cgRim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6c4"/><stop offset=".3" stop-color="#e2b840"/><stop offset=".7" stop-color="#a87a1c"/><stop offset="1" stop-color="#6b4a0b"/></linearGradient><linearGradient id="cgGloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="cgEdge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset=".08" stop-color="#000" stop-opacity="0"/><stop offset=".92" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></linearGradient><symbol id="cart" viewBox="0 0 310 112"> <ellipse cx="160" cy="104" rx="140" ry="5" fill="#000" opacity=".35"/> <path d="M84 20 H262 Q276 20 284 26 L300 34 Q304 36 304 40 V72 Q304 76 300 78 L284 86 Q276 92 262 92 H84 Z" fill="url(#cgHull)"/> <path d="M84 20 H262 Q276 20 284 26 L300 34 Q304 36 304 40 V72 Q304 76 300 78 L284 86 Q276 92 262 92 H84 Z" fill="url(#cgEdge)"/> <g stroke="#3c0509" stroke-opacity=".55" stroke-width="1.4" fill="none"><path d="M286 27 L303 40"/><path d="M286 33 L304 45"/><path d="M286 40 L304 51"/><path d="M286 56 L304 56"/><path d="M286 72 L304 61"/><path d="M286 79 L304 67"/><path d="M286 85 L303 72"/></g> <rect x="150" y="38" width="112" height="36" rx="3" fill="#f6efe0" opacity=".95"/> <rect x="150" y="38" width="112" height="6" fill="#111" opacity=".85"/> <text x="206" y="62" text-anchor="middle" font-family="Arial Black,Impact,sans-serif" font-size="17" fill="#8a0f15" letter-spacing="1">CAL. 12</text> <text x="206" y="71.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="6.5" fill="#222" letter-spacing="1.5">MAGNUM · 70mm</text> <path d="M84 24 H262 Q272 24 279 28 H84 Z" fill="url(#cgGloss)" opacity=".8"/> <path d="M40 18 H88 V94 H40 Z" fill="url(#cgBrass)"/> <g stroke="#5c3f08" stroke-opacity=".45" stroke-width="1"><path d="M50 18V94"/><path d="M58 18V94"/><path d="M66 18V94"/><path d="M74 18V94"/></g> <path d="M40 18 H88 V32 H40 Z" fill="url(#cgGloss)" opacity=".7"/> <rect x="84" y="18" width="5" height="76" fill="#5c3f08" opacity=".5"/> <path d="M22 10 H44 Q48 10 48 14 V98 Q48 102 44 102 H22 Q18 102 18 98 V14 Q18 10 22 10 Z" fill="url(#cgRim)" stroke="#5c3f08" stroke-width="1.2"/> <path d="M22 12 H44 V30 H22 Z" fill="url(#cgGloss)" opacity=".7"/> <ellipse cx="22" cy="56" rx="4" ry="40" fill="#fff" opacity=".12"/></symbol></defs></svg>
+<div id="ltrRoot" hidden></div>
 <div class="wrap">
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="mascot" viewBox="0 0 320 330">
       <path d="M40 10H280Q296 10 296 26V56Q296 72 280 72H196L172 100L170 72H40Q24 72 24 56V26Q24 10 40 10Z" fill="var(--surface)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
@@ -828,7 +847,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
         state.md = pick;
         $("who").hidden = false; $("whoName").textContent = state.me.name; $("hdrLogo").removeAttribute("hidden");
         $("loading").hidden = true; $("appView").hidden = false; setTab("home");
-        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; waLoad(); pkInit(); newsOpen(); $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); loadRx(); loadBanners(); pingDev(); if (DEEP) { var g0 = DEEP; DEEP = ""; goTo(g0); try { history.replaceState(null, "", location.pathname); } catch (e) {} } }).catch(function () {});
+        rpc("ble_whoami", { p_name: state.me.name, p_pin: state.me.pin }).then(function (w) { state.admin = !!w.is_admin; state.fanta = w.fanta_name || ""; waLoad(); pkInit(); ltrCheck(); newsOpen(); $("admBtn").hidden = !state.admin; loadSug(); loadExtra(); ntfInit(); resetChat(); pollChat(true); drawNote(); refreshDots(); loadRx(); loadBanners(); pingDev(); if (DEEP) { var g0 = DEEP; DEEP = ""; goTo(g0); try { history.replaceState(null, "", location.pathname); } catch (e) {} } }).catch(function () {});
         return loadMd();
       });
     }).catch(function (err) { $("loading").hidden = false; $("loading").textContent = err.message; });
@@ -1220,7 +1239,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0; return CAR_COLORS[h % CAR_COLORS.length];
   }
   function topT(t) { var a = t.split(" · "); return a.filter(function (x) { return /Professore/.test(x); })[0] || a[0]; }
-  function ttl(n, all) { var t = duel.titles[n]; if (!t) return ""; return (all ? t.split(" · ") : [topT(t)]).map(function (x) { return " <em class='ttl'>" + esc(x) + "</em>"; }).join(""); }
+  function ttl(n, all) { var t = duel.titles[n]; var ic = n === "Blu" ? cartIco(46) : ""; if (!t) return ic; return ic + (all ? t.split(" · ") : [topT(t)]).map(function (x) { return " <em class='ttl'>" + esc(x) + "</em>"; }).join(""); }
   function colorFor(n) { var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0; return CAR_COLORS[h % CAR_COLORS.length]; }
   function classicHtml(rows) {
     return "<ol class='rank'>" + rows.map(function (r, i) {
@@ -1359,7 +1378,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       duel.pag = r[1]; duel.list = r[2]; duel.names = r[3].map(function (x) { return x.pname; });
       duel.colors = {}; duel.avs = {}; duel.lv = {}; duel.sp = {}; duel.team = {}; r[4].forEach(function (x) { if (x.team) duel.team[x.pname] = x.team; if (x.color) duel.colors[x.pname] = x.color; if (x.avatar) duel.avs[x.pname] = x.avatar; if (x.livery) duel.lv[x.pname] = x.livery; if (x.sponsor) duel.sp[x.pname] = x.sponsor; });
       duel.titles = {}; r[5].forEach(function (x) { duel.titles[x.pname] = x.title; }); duel.md = r[6];
-      if (state.me) { var wt = duel.titles[state.me.name]; $("whoName").innerHTML = esc(state.me.name) + (wt ? "<span class='ttl' style='display:block;width:max-content;margin-top:2px'>" + esc(topT(wt)) + "</span>" : ""); };
+      if (state.me) { var wt = duel.titles[state.me.name]; $("whoName").innerHTML = esc(state.me.name) + (state.me.name === "Blu" ? cartIco(46) : "") + (wt ? "<span class='ttl' style='display:block;width:max-content;margin-top:2px'>" + esc(topT(wt)) + "</span>" : ""); };
       drawExtra(); drawRank(); if (state.tab === "home") drawHome(); duReqShow(false); if (state.tab === "hist" && state.hist) drawHist();
     }).catch(function () {});
   }
@@ -2356,6 +2375,41 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (!state.me || !state.admin) { home.wa = []; return; }
     rpc("ble_wa_pending", { p_name: state.me.name, p_pin: state.me.pin }).then(function (r) { home.wa = r || []; if (state.tab === "home") drawHome(); }).catch(function () {});
   }
+  /* ---------- la lettera ---------- */
+  var ltr = { busy: false, key: "blu1" };
+  var LTR_T = [["BLU,"], ["SMETTILA", "DI", "ROMPERE", "I", "COGLIONI", "A", "TUTTO", "IL", "QUARTIERE", "ALTRIMENTI..."], ["SEI", "UNA", "PERSONA", "INSOPPORTABILE."], ["SEI", "DIVENTATO", "IL", "NOSTRO", "PRIMO", "NEMICO."]];
+  function cartIco(w) { return "<svg class='ico-cart' width='" + w + "' height='" + Math.round(w * 112 / 310) + "' viewBox='0 0 310 112' aria-label='cartuccia'><use href='#cart'/></svg>"; }
+  function ltrCheck() {
+    if (!state.me) return; ltr.busy = true;
+    rpc("ble_letter_state", { p_name: state.me.name, p_pin: state.me.pin, p_key: ltr.key }).then(function (p) { if (p) ltrEnvelope(); else ltr.busy = false; }).catch(function () { ltr.busy = false; });
+  }
+  function ltrEnvelope() {
+    var r = $("ltrRoot"); r.hidden = false;
+    r.innerHTML = "<div class='ltr-env' id='ltrEnv' role='button' tabindex='0'><div class='ltr-seal'></div><b>&#9993;&#65039; Hai ricevuto una lettera.<br>Toccala per aprirla.</b></div>";
+    $("ltrEnv").addEventListener("click", ltrOpenLetter);
+    try { if (navigator.vibrate) navigator.vibrate([60, 40, 60]); } catch (e) {}
+  }
+  function ltrOpenLetter() {
+    var fonts = ["Georgia,serif", "Impact,Haettenschweiler,sans-serif", "'Courier New',monospace", "'Arial Black',Arial,sans-serif", "'Times New Roman',serif", "Verdana,sans-serif"], bgs = ["#f4ecd8", "#ffffff", "#111111", "#e63946", "#ffd23f", "#cfe3ff", "#d9f0c9", "#222222"];
+    var seed = 7, rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }, n = 0;
+    var h = "<div class='ltr-paper'>" + LTR_T.map(function (line) {
+      return "<div class='ltr-line'>" + line.map(function (w) {
+        var b = bgs[Math.floor(rnd() * bgs.length)], dark = b === "#111111" || b === "#222222" || b === "#e63946", c = dark ? "#fff" : ["#111", "#7a0000", "#0b2a6f"][Math.floor(rnd() * 3)];
+        var st = "font-family:" + fonts[Math.floor(rnd() * fonts.length)] + ";background:" + b + ";color:" + c + ";font-size:" + (20 + Math.floor(rnd() * 12)) + "px;transform:rotate(" + ((rnd() * 10 - 5).toFixed(1)) + "deg);animation-delay:" + (n++ * 0.12 + 0.4).toFixed(2) + "s";
+        return "<span class='ltr-w' style='" + st + "'>" + esc(w) + "</span>";
+      }).join("") + "</div>";
+    }).join("") + "<div class='ltr-cart' id='ltrCart'></div><button type='button' class='ltr-ok' id='ltrOk' hidden>Ho letto</button></div>";
+    $("ltrRoot").innerHTML = h;
+    setTimeout(function () {
+      $("ltrCart").innerHTML = "<svg viewBox='0 0 310 112'><use href='#cart'/></svg>";
+      try { if (navigator.vibrate) navigator.vibrate([200, 60, 120]); } catch (e) {}
+      $("ltrOk").hidden = false;
+    }, n * 120 + 700);
+    $("ltrOk").addEventListener("click", function () {
+      $("ltrRoot").hidden = true; ltr.busy = false;
+      rpc("ble_letter_done", { p_name: state.me.name, p_pin: state.me.pin, p_key: ltr.key }).catch(function () {});
+    });
+  }
   /* ---------- novita dall'ultima uscita + log accessi ---------- */
   var news = { vid: null, last: 0 };
   var NEWS_I = { chat: "&#128172;", trade: "&#128260;", ai: "&#128260;", gem: "&#128142;", ins: "&#128520;", dec: "&#128220;", cm: "&#9878;&#65039;", sug: "&#128161;", notice: "&#128227;", md: "&#9917;", recap: "&#127937;", duel: "&#9876;&#65039;", title: "&#127941;", el: "&#128499;&#65039;" };
@@ -2376,6 +2430,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (news.vid && state.me) rpc("ble_news_seen", { p_name: state.me.name, p_pin: state.me.pin, p_vid: news.vid }).catch(function () {});
   }
   function newsShow(r) {
+    if (ltr.busy) { setTimeout(function () { newsShow(r); }, 1200); return; }
     var more = (r.total || r.items.length) - r.items.length;
     $("newsBox").innerHTML = "<button type='button' id='newsXX' aria-label='Chiudi' style='float:right;border:2px solid var(--edge);background:transparent;color:inherit;border-radius:10px;font:inherit;font-size:1rem;line-height:1;padding:4px 9px;cursor:pointer'>&#10005;</button><h3>&#127881; Novit&agrave; dall&rsquo;ultima volta</h3><p class='gmeta' style='margin:0 0 10px'>Da " + esc(new Date(r.since).toLocaleString("it-IT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" })) + "</p><div class='news'>" + r.items.map(function (i) { return "<button type='button' data-ng='" + esc(i.go) + "'><span>" + (NEWS_I[i.k] || "&#10024;") + "</span>" + esc(i.tx) + "</button>"; }).join("") + "</div>" + (more > 0 ? "<p class='gmeta'>&hellip;e altre " + more + " novit&agrave;.</p>" : "") + "<div class='gact'><button type='button' id='newsX'>Ok, ho visto</button></div>";
     $("newsDlg").hidden = false;
@@ -2403,7 +2458,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     return d.entries.map(function (e, i) {
       var mv = e.prev === null || e.prev === undefined || e.prev === e.pos ? "" : e.prev > e.pos ? "<b style='color:#4ade80'>&#9650;" + (e.prev - e.pos) + "</b>" : "<b style='color:#f87171'>&#9660;" + (e.pos - e.prev) + "</b>";
       var last = i === d.entries.length - 1;
-      return "<div class='iqr" + (e.me ? " me" : "") + (last ? " last" : "") + "'><b class='iqp'>" + e.pos + "&deg;" + (cnt[e.pos] > 1 ? "=" : "") + "</b><span class='iqn'>" + esc(e.name) + (e.name === "Blu" ? " &#127891;" : "") + (last ? " &#129313;" : "") + "</span><span class='iqs'>" + e.pts + " pt</span><span class='iqm'>" + mv + "</span></div>";
+      return "<div class='iqr" + (e.me ? " me" : "") + (last ? " last" : "") + "'><b class='iqp'>" + e.pos + "&deg;" + (cnt[e.pos] > 1 ? "=" : "") + "</b><span class='iqn'>" + esc(e.name) + (e.name === "Blu" ? " &#127891;" + cartIco(46) : "") + (last ? " &#129313;" : "") + "</span><span class='iqs'>" + e.pts + " pt</span><span class='iqm'>" + mv + "</span></div>";
     }).join("");
   }
   function iqDraw() {
