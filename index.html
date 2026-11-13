@@ -511,6 +511,13 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 .ltr-cart{display:flex;justify-content:flex-end;height:96px;margin-top:6px}
 .ltr-cart svg{width:260px;height:94px;transform-origin:70% 50%;animation:ltrDrop .9s cubic-bezier(.3,1.4,.5,1) both;filter:drop-shadow(0 6px 6px #0008)}
 @keyframes ltrDrop{0%{transform:translateY(-320px) rotate(-60deg);opacity:0}60%{opacity:1}100%{transform:translateY(0) rotate(-6deg)}}
+.lost{width:min(94vw,520px);background:#fffdf7;color:#111;border:4px solid #111;border-radius:14px;padding:16px;text-align:center;box-shadow:0 14px 40px #000b;animation:ltrUp .4s ease-out}
+.lost img{width:100%;border-radius:8px;display:block;background:#fff}
+.lost h3{margin:12px 0 4px;font:700 1.3rem Georgia,serif}
+.lost p{margin:8px 0 0;font:600 1.05rem Georgia,serif;line-height:1.35}
+.lost .row{display:flex;gap:10px;margin-top:14px}
+.lost .row button{flex:1;padding:14px;border-radius:12px;border:3px solid #111;font:800 1.1rem sans-serif;cursor:pointer;color:#111}
+.lost .y{background:#9be39b}.lost .n{background:#ff9d9d}
 .ltr-ok{display:block;margin:14px auto 0;padding:12px 22px;border-radius:12px;border:3px solid #222;background:#ffd23f;color:#111;font:700 1rem sans-serif;cursor:pointer}
 .ico-cart{display:inline-block;vertical-align:middle;margin:0 2px 2px 4px}
 #pkRoot [hidden]{display:none!important}
@@ -2381,7 +2388,26 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function cartIco(w) { return "<svg class='ico-cart' width='" + w + "' height='" + Math.round(w * 112 / 310) + "' viewBox='0 0 310 112' aria-label='cartuccia'><use href='#cart'/></svg>"; }
   function ltrCheck() {
     if (!state.me) return; ltr.busy = true;
-    rpc("ble_letter_state", { p_name: state.me.name, p_pin: state.me.pin, p_key: ltr.key }).then(function (p) { if (p) ltrEnvelope(); else ltr.busy = false; }).catch(function () { ltr.busy = false; });
+    rpc("ble_letter_state", { p_name: state.me.name, p_pin: state.me.pin, p_key: ltr.key }).then(function (p) { if (p) ltrEnvelope(); else lostCheck(); }).catch(function () { ltr.busy = false; });
+  }
+  /* ---------- "hai perso queste?" ---------- */
+  var LOST_KEY = "perso1";
+  function lostCheck() {
+    ltr.busy = true;
+    rpc("ble_letter_state", { p_name: state.me.name, p_pin: state.me.pin, p_key: LOST_KEY }).then(function (p) { if (p) lostShow(); else ltr.busy = false; }).catch(function () { ltr.busy = false; });
+  }
+  function lostShow() {
+    var r = $("ltrRoot"); r.hidden = false;
+    r.innerHTML = "<div class='lost'><img src='cartucce.jpg' alt='Cartucce rosse da fucile'><h3>Per caso hai perso queste?</h3><div class='row'><button type='button' class='y' data-l='si'>S&igrave;</button><button type='button' class='n' data-l='no'>No</button></div></div>";
+    r.querySelector(".row").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return; var a = b.getAttribute("data-l");
+      var a1 = { p_name: state.me.name, p_pin: state.me.pin };
+      rpc("ble_letter_done", { p_name: a1.p_name, p_pin: a1.p_pin, p_key: LOST_KEY + ":" + a }).catch(function () {});
+      rpc("ble_letter_done", { p_name: a1.p_name, p_pin: a1.p_pin, p_key: LOST_KEY }).catch(function () {});
+      var t = a === "si" ? "Allora stai attento: Blu &egrave; andato dalle guardie." : "Ok, allora contatta Blu: le ha lui.";
+      r.querySelector(".lost").innerHTML = "<img src='cartucce.jpg' alt=''><p>" + t + "</p><div class='row'><button type='button' class='y' id='lostOk'>Ok</button></div>";
+      $("lostOk").addEventListener("click", function () { r.hidden = true; ltr.busy = false; });
+    });
   }
   function ltrEnvelope() {
     var r = $("ltrRoot"); r.hidden = false;
@@ -2407,7 +2433,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     }, n * 120 + 700);
     $("ltrOk").addEventListener("click", function () {
       $("ltrRoot").hidden = true; ltr.busy = false;
-      rpc("ble_letter_done", { p_name: state.me.name, p_pin: state.me.pin, p_key: ltr.key }).catch(function () {});
+      rpc("ble_letter_done", { p_name: state.me.name, p_pin: state.me.pin, p_key: ltr.key }).catch(function () {}).then(function () { lostCheck(); });
     });
   }
   /* ---------- novita dall'ultima uscita + log accessi ---------- */
