@@ -2570,6 +2570,18 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     for (var k = 1; k <= 5; k++) h += "<button type='button' class='" + (k <= m ? "on" : "") + "' data-st='" + k + "'" + (closed || i.own ? " disabled" : "") + " aria-label='" + k + " stelle'>&#9733;</button>";
     return h + "<small>" + (i.votes ? String(i.avg).replace(".", ",") + " &middot; " + i.votes + (i.votes === 1 ? " voto" : " voti") : "nessun voto") + (i.own ? " &middot; la tua" : "") + "</small></div>";
   }
+  function insMediaBox(d) {
+    var left = d.media_left == null ? 7 : d.media_left, nx = d.media_next, today = d.cur_day || "", blocked = "";
+    if (left <= 0) blocked = "Questa settimana sono gi\u00e0 stati caricati 7 tra foto e video: riprova da luned\u00ec.";
+    else if (nx && nx > (d.today || "")) blocked = "Foto o video: potrai caricarne uno dal " + insDay(nx) + ".";
+    if (blocked) return "<p class='gmeta' style='margin:0 0 8px'>\ud83d\udcf7 " + esc(blocked) + "</p>";
+    return "<label style='display:block;margin:0 0 8px;font-size:.85rem'>\ud83d\udcf7 Allega una foto o un video (facoltativo; 1 ogni 3 giorni, max 7 a settimana in totale: restano " + left + ")<input type='file' id='insFile' accept='image/*,video/*' style='display:block;width:100%;margin-top:4px'></label>";
+  }
+  function insMediaHtml(m) {
+    if (!m) return "";
+    var u = SB + "/storage/v1/object/public/ble-gems/" + m.path.split("/").map(encodeURIComponent).join("/");
+    return m.kind === "video" ? "<video src='" + u + "' controls playsinline preload='metadata' style='width:100%;max-height:320px;border-radius:10px;margin:6px 0;background:#000'></video>" : "<a href='" + u + "' target='_blank' rel='noopener'><img src='" + u + "' loading='lazy' alt='' style='width:100%;max-height:360px;object-fit:contain;border-radius:10px;margin:6px 0;background:var(--surface-2)'></a>";
+  }
   function drawIns() {
     var box = $("insPane"), d = ins.d; if (!box || !d) return;
     var h = "<h2 class='gold-h'>&#128520; Offese a Blu</h2><p class='gold-sub'>Ogni giorno ognuno pu&ograve; scrivere una sola offesa. Si vota da 1 a 5 stelle (min. 2 voti): ogni domenica sera esce l&rsquo;offesa della settimana, a fine mese quella del mese.</p>";
@@ -2577,7 +2589,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (d.week === d.cur) {
       if (d.me_target) h += "<p class='gmeta'>Sei il bersaglio: tu puoi solo votare.</p>";
       else if (d.wrote_today) h += "<p class='gmeta'>&#9989; Oggi hai gi&agrave; offeso Blu. Torna domani!</p>";
-      else h += "<form class='sug' id='insForm'><b>Non hai ancora offeso Blu? Ma a chi aspetti munnezz?!?!</b><textarea id='insText' maxlength='200' rows='3' placeholder='Scrivi la tua offesa a Blu (max 200 caratteri)' required style='width:100%;box-sizing:border-box;padding:10px;border:2px solid var(--edge);border-radius:10px;font:inherit;margin:8px 0'></textarea><button class='go' type='submit' style='font-family:var(--font-label);text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--azzurro);color:var(--azzurro-ink);width:100%;cursor:pointer'>Offendi Blu</button><button type='button' data-irec='1' style='margin-top:8px;width:100%;font-family:var(--font-label);text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--surface-2);color:var(--ink);cursor:pointer'>&#127908; Oppure offendi a voce (max 30 s)</button><div id='insRecBar' class='recbar' style='position:static;margin-top:8px;padding:8px 10px' hidden><span class='rdot'></span><b id='insRecT'>0:00</b><span class='rl'>Sto registrando&hellip;</span><button type='button' data-irx='1'>Annulla</button><button type='button' class='go' data-iok='1'>Invia</button></div></form>";
+      else h += "<form class='sug' id='insForm'><b>Non hai ancora offeso Blu? Ma a chi aspetti munnezz?!?!</b><textarea id='insText' maxlength='200' rows='3' placeholder='Scrivi la tua offesa a Blu (max 200 caratteri)' required style='width:100%;box-sizing:border-box;padding:10px;border:2px solid var(--edge);border-radius:10px;font:inherit;margin:8px 0'></textarea>"+insMediaBox(d)+"<button class='go' type='submit' style='font-family:var(--font-label);text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--azzurro);color:var(--azzurro-ink);width:100%;cursor:pointer'>Offendi Blu</button><button type='button' data-irec='1' style='margin-top:8px;width:100%;font-family:var(--font-label);text-transform:uppercase;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--surface-2);color:var(--ink);cursor:pointer'>&#127908; Oppure offendi a voce (max 30 s)</button><div id='insRecBar' class='recbar' style='position:static;margin-top:8px;padding:8px 10px' hidden><span class='rdot'></span><b id='insRecT'>0:00</b><span class='rl'>Sto registrando&hellip;</span><button type='button' data-irx='1'>Annulla</button><button type='button' class='go' data-iok='1'>Invia</button></div></form>";
     }
     var w = d.winner && d.items.filter(function (x) { return x.id === d.winner; })[0];
     if (w) h += "<div class='ins-card win'><div class='ins-who'>&#127942; Offesa della settimana &middot; " + esc(w.author) + "</div><p>&laquo;" + esc(w.body) + "&raquo;</p><small>" + String(w.avg).replace(".", ",") + " &#9733; &middot; " + w.votes + " voti</small></div>";
@@ -2585,7 +2597,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var lastDay = "";
     d.items.forEach(function (i) {
       if (i.day !== lastDay) { lastDay = i.day; h += "<div class='ins-day'>" + esc(insDay(i.day)) + "</div>"; }
-      h += "<div class='ins-card' style='border-left-color:" + carCol(i.author) + "'><div class='ins-who'>" + esc(i.author) + (state.admin ? " <button type='button' data-idel='" + i.id + "' style='float:right;border:0;background:none;cursor:pointer'>&times;</button>" : "") + "</div>" + (i.audio_secs ? "<p><button type='button' class='aup' data-iau='" + i.id + "'>" + (iau.id === i.id && iau.el && !iau.el.paused ? "&#9208;" : "&#9654;&#65039;") + " <span class='wv'>&#9602;&#9604;&#9606;&#9608;&#9606;&#9604;&#9602;&#9604;&#9606;</span> " + mmss(i.audio_secs) + "</button></p>" : "<p>" + esc(i.body) + "</p>") + starsHtml(i, d.closed) + "</div>";
+      h += "<div class='ins-card' style='border-left-color:" + carCol(i.author) + "'><div class='ins-who'>" + esc(i.author) + (state.admin ? " <button type='button' data-idel='" + i.id + "' style='float:right;border:0;background:none;cursor:pointer'>&times;</button>" : "") + "</div>" + (i.media ? insMediaHtml(i.media) : "") + (i.audio_secs ? "<p><button type='button' class='aup' data-iau='" + i.id + "'>" + (iau.id === i.id && iau.el && !iau.el.paused ? "&#9208;" : "&#9654;&#65039;") + " <span class='wv'>&#9602;&#9604;&#9606;&#9608;&#9606;&#9604;&#9602;&#9604;&#9606;</span> " + mmss(i.audio_secs) + "</button></p>" : "<p>" + esc(i.body) + "</p>") + starsHtml(i, d.closed) + "</div>";
     });
     if (!d.items.length) h += "<p class='gmeta'>Ancora nessuna offesa in questa settimana.</p>";
     if (d.hall_w.length || d.hall_m.length) {
@@ -2600,7 +2612,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     r.items.slice().reverse().forEach(function (i) { if (!by[i.day]) { by[i.day] = []; days.push(i.day); } by[i.day].push(i); });
     var out = "\ud83d\ude08 OFFESE A BLU \u2013 settimana " + insRange(r.week) + "\n", rest = 0;
     days.forEach(function (dd) {
-      var blk = "\n" + insDay(dd).toUpperCase() + "\n" + by[dd].map(function (i) { return "\u2022 " + i.author + ": " + (i.audio_secs ? i.body + " (ascoltala nell'app)" : "\u00ab" + i.body + "\u00bb"); }).join("\n") + "\n";
+      var blk = "\n" + insDay(dd).toUpperCase() + "\n" + by[dd].map(function (i) { return "\u2022 " + i.author + ": " + (i.media ? "\u00ab" + i.body + "\u00bb (" + (i.media.kind === "video" ? "video" : "foto") + " nell'app)" : i.audio_secs ? i.body + " (ascoltala nell'app)" : "\u00ab" + i.body + "\u00bb"); }).join("\n") + "\n";
       if (out.length + blk.length > 3200) rest += by[dd].length; else out += blk;
     });
     if (rest) out += "\n\u2026e altre " + rest + " nell'app\n";
@@ -2608,6 +2620,21 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   $("insPane").addEventListener("submit", function (e) {
     if (e.target.id !== "insForm") return; e.preventDefault();
+    var f = $("insFile") && $("insFile").files[0];
+    if (f) {
+      var k = detectKind(f), ext = (f.name.split(".").pop() || "").toLowerCase();
+      if (k !== "image" && k !== "video" || !EXT_MIME[ext]) { toast("Formato non supportato (es. le foto HEIC)"); return; }
+      if (f.size > 40 * 1024 * 1024) { toast("File troppo grande (max 40 MB)"); return; }
+      var sb = e.target.querySelector("button.go"); if (sb) { sb.disabled = true; sb.textContent = "Carico\u2026"; }
+      var body = $("insText").value, rst = function () { if (sb) { sb.disabled = false; sb.textContent = "Offendi Blu"; } };
+      fnCall({ action: "sign", kind: k, ext: ext }).then(function (s) {
+        var fd = new FormData(); fd.append("cacheControl", "31536000"); fd.append("", new File([f], "f." + ext, { type: EXT_MIME[ext] }));
+        return fetch(s.signedUrl, { method: "PUT", body: fd }).then(function (r) { if (!r.ok) throw new Error("Upload non riuscito"); return s.path; });
+      }).then(function (path) {
+        return rpc("ble_ins_send_media", { p_name: state.me.name, p_pin: state.me.pin, p_body: body, p_kind: k, p_path: path });
+      }).then(function () { play("done"); toast("Offesa inviata!"); insLoad(); }).catch(function (err) { rst(); toast(err.message); });
+      return;
+    }
     rpc("ble_ins_send", { p_name: state.me.name, p_pin: state.me.pin, p_body: $("insText").value }).then(function () { play("done"); toast("Offesa inviata!"); insLoad(); }).catch(function (err) { toast(err.message); });
   });
   $("insPane").addEventListener("click", function (e) {
