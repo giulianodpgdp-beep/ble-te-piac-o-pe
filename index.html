@@ -1817,7 +1817,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     $("trList").innerHTML = a.length ? a.map(trHtml).join("") : "<p class='empty'>" + (tr.f === "tovote" && (tr.list || []).length ? "Hai votato tutto! Tocca &laquo;Tutti&raquo; per rivedere gli scambi." : tr.kind === "oscena" ? "Nessuna proposta oscena. Per ora il gruppo si comporta bene." : "Nessuno scambio ufficiale caricato.") + "</p>";
   }
   function drawTrades() {
-    var h = "<h2 class='gold-h'>Scambi</h2><p class='gold-sub'>Il mercato del gruppo: carica lo screenshot, poi si vota quanto conviene a uno o all'altro.</p>" +
+    var h = "<h2 class='gold-h'>Scambi</h2><p class='gold-sub'>Il mercato del gruppo: carica lo screenshot, poi si vota quanto conviene a uno o all'altro. Ogni scambio ufficiale va al Comitato; il voto di tutti &egrave; solo per sapere cosa ne pensa il gruppo.</p>" +
       "<label class='gform' style='padding:0;margin:0 4px 12px 0'>Il tuo nickname al fantacalcio<span class='adm-row'><input type='text' id='myFanta' maxlength='40' placeholder='Es. Stolto Ceruleo' value='" + esc(state.fanta || "") + "'><button type='button' class='wa' id='myFantaBtn' style='background:var(--giallo);color:var(--giallo-ink)'>Salva</button></span></label>" +
       kindsBar() +
       "<details class='gadd' id='trAdd'><summary>+ Carica uno screenshot</summary><form class='gform' id='trForm'>" +
@@ -1898,7 +1898,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function drawCommittee() {
     var st = cm.st; if (!st) return;
-    var h = "<h2 class='gold-h'>Il Comitato delli Scambi</h2><p class='gold-sub'>I giudici decidono sugli scambi ufficiali votati da tutti al massimo (almeno 3 voti e media di +4 o pi&ugrave; oppure di &minus;4 o meno). Il giudice supremo scioglie i pareggi.</p>" + kindsBar();
+    var h = "<h2 class='gold-h'>Il Comitato delli Scambi</h2><p class='gold-sub'>Ogni scambio ufficiale trascritto passa al Comitato, senza soglie di voto: i giudici decidono. Il voto degli altri serve solo a vedere cosa ne pensa il gruppo. Il giudice supremo scioglie i pareggi.</p>" + kindsBar();
     h += "<div class='gform' style='padding:0;margin:0 4px 12px 0'><p class='gmeta'><b>Giudici:</b> " + (st.judges.length ? st.judges.map(function (j) { return esc(j.name) + (j.admin ? " (supremo)" : ""); }).join(", ") : "nessuno") + "</p></div>";
     if (st.pending > 0) h += "<div class='note'><p>&#9878; Hai " + st.pending + (st.pending === 1 ? " scambio" : " scambi") + " da giudicare.</p></div>";
     var el = st.election;
@@ -1919,7 +1919,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       var names = Object.keys(tl).sort(function (a, b) { return tl[b].p - tl[a].p || tl[b].r - tl[a].r || (a < b ? -1 : 1); });
       h += "<div class='gform' style='padding:0;margin:0 4px 12px 0'><h4>Storico del Comitato</h4><p class='gmeta'>" + dec.length + (dec.length === 1 ? " caso deciso" : " casi decisi") + "</p>" + names.map(function (n) { return "<div class='pg'><span>" + esc(n) + "</span><small>" + tl[n].p + " Pacco &middot; " + tl[n].r + " regolari</small></div>"; }).join("") + "</div>";
     }
-    h += st.cases.length ? st.cases.map(cmCase).join("") : "<p class='empty'>Nessun caso al Comitato. Ci arrivano gli scambi votati da tutti al massimo.</p>";
+    h += st.cases.length ? st.cases.map(cmCase).join("") : "<p class='empty'>Nessun caso al Comitato. Ci arrivano tutti gli scambi ufficiali.</p>";
     $("tradePane").innerHTML = h;
   }
   function cmDo(fn, args, ok) {
