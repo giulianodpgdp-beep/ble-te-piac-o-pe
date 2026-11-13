@@ -668,6 +668,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 <div class="dlg" id="profDlg" hidden><div class="dlgcard" id="profCard"></div></div>
 <button type="button" id="chatFab" aria-label="Apri la chat">&#128172;<span id="chatFabN" class="fabn" hidden></span></button>
 <div class="dlg" id="duDlg" hidden><div class="dlgcard" id="duBox"></div></div>
+<div class="dlg" id="exitDlg" hidden style="z-index:200"><div class="dlgcard" style="text-align:center"><b style="font-size:1.1rem">Vuoi uscire dall'app?</b><div style="display:flex;gap:10px;margin-top:14px"><button type="button" id="exitNo" style="flex:1;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--surface-2);color:var(--ink);font:inherit;cursor:pointer">No, resto</button><button type="button" id="exitYes" style="flex:1;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--azzurro);color:var(--azzurro-ink);font:inherit;cursor:pointer">S&igrave;, esci</button></div></div></div>
 <div class="dlg" id="newsDlg" hidden><div class="dlgcard" id="newsBox"></div></div>
 <div class="dlg" id="decDlg" hidden><div class="dlgcard" id="decBox"></div></div>
 <div class="dlg" id="fgDlg" hidden><div class="dlgcard" id="fgBox"></div></div>
@@ -820,6 +821,30 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     else setTab("home");
     window.scrollTo(0, 0);
   }
+  /* ---------- tasto indietro del telefono ---------- */
+  (function () {
+    var leaving = false;
+    function arm() { try { history.pushState({ ble: 1 }, "", location.href); } catch (e) {} }
+    try { history.replaceState({ ble: 0 }, "", location.href); } catch (e) {} arm();
+    function exitAsk(show) { $("exitDlg").hidden = !show; }
+    $("exitNo").addEventListener("click", function () { exitAsk(false); });
+    $("exitYes").addEventListener("click", function () {
+      leaving = true; exitAsk(false);
+      try { history.go(-2); } catch (e) {}
+      setTimeout(function () { try { window.close(); } catch (e) {} leaving = false; }, 400);
+    });
+    window.addEventListener("popstate", function () {
+      if (leaving) return;
+      arm();
+      if (!$("exitDlg").hidden) { exitAsk(false); return; }
+      if (!$("ltrRoot").hidden) return;
+      if (document.querySelector(".drawer.open")) { closeDrawers(); return; }
+      var dl = document.querySelectorAll(".dlg:not([hidden])");
+      if (dl.length) { for (var i = 0; i < dl.length; i++) { if (dl[i].id === "newsDlg") newsSeen(); else dl[i].hidden = true; } return; }
+      if (state.me && state.tab !== "home") { setTab("home"); window.scrollTo(0, 0); return; }
+      if (state.me) exitAsk(true); else exitAsk(true);
+    });
+  })();
   try { navigator.serviceWorker.addEventListener("message", function (e) { if (e.data && e.data.go) goTo(e.data.go); }); } catch (e) {}
   function stripInvite() { try { history.replaceState(null, "", location.pathname); } catch (e) {} invite = null; }
   $("loginForm").addEventListener("submit", function (e) {
