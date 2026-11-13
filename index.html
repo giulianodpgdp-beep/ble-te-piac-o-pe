@@ -2230,16 +2230,27 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function noteHtml(id, text, yes, no) {
     return "<div class='note' data-note='" + id + "'><p>" + text + "</p><div class='nact'>" + (yes ? "<button type='button' data-ny='" + id + "'>" + yes + "</button>" : "") + "<button type='button' class='ghost' data-nn='" + id + "'>" + (no || "Ho capito") + "</button></div></div>";
   }
+  var deferredInstall = null;
+  function installDue() { return !STANDALONE && !IN_APP && !store("ble.installed") && Date.now() > Number(store("ble.noteInst") || 0); }
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferredInstall = e; try { drawNote(); } catch (x) {} });
+  window.addEventListener("appinstalled", function () { deferredInstall = null; store("ble.installed", "1"); try { drawNote(); } catch (x) {} });
   function drawNote() {
     var h = "";
     if (IN_APP && !store("ble.noteWV")) h = noteHtml("wv", "Stai usando il browser interno di un'altra app (ad esempio WhatsApp). Qui notifiche e installazione non funzionano: tocca <b>&#8942;</b> e scegli <b>Apri nel browser</b> (Chrome o Safari).");
-    else if (!pushOk()) { if (IS_IOS && !STANDALONE && !store("ble.noteIOS")) h = noteHtml("ios", "Per le notifiche su iPhone: apri il gioco con Safari, tocca <b>Condividi &rarr; Aggiungi a Home</b> e usa l'icona. Serve iOS 16.4 o pi&ugrave; recente."); }
+    else if (installDue()) {
+      if (IS_IOS) h = noteHtml("inst", "&#128241; <b>Installa l'app</b>: tocca <b>Condividi</b> (il quadrato con la freccia in su) &rarr; <b>Aggiungi a Home</b> &rarr; <b>Aggiungi**, poi apri sempre il gioco dall'icona. Cos&igrave; entri al volo e ricevi le notifiche (serve iOS 16.4 o pi&ugrave; recente).".replace("**", ""), null, "Pi&ugrave; tardi");
+      else if (deferredInstall) h = noteHtml("inst", "&#128241; <b>Installa l'app</b> sul telefono: si apre al volo dall'icona e ricevi le notifiche.", "Installa ora", "Pi&ugrave; tardi");
+      else h = noteHtml("inst", "&#128241; <b>Installa l'app</b>: tocca <b>&#8942;</b> in alto a destra nel browser e scegli <b>Installa app</b> (o <b>Aggiungi a schermata Home</b>). Poi aprila dall'icona.", null, "Pi&ugrave; tardi");
+    }
+    else if (!pushOk()) { }
     else if (Notification.permission === "default" && !store("ble.noteNtf")) h = noteHtml("ntf", "Vuoi le notifiche? Ti avviso di nuove pietre, scambi, sfide, chat e risultati.", "Attiva", "Non ora");
     $("topNote").innerHTML = h;
   }
   $("topNote").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
     var yes = b.getAttribute("data-ny"), no = b.getAttribute("data-nn");
+    if (yes === "inst") { var di = deferredInstall; if (di) { di.prompt(); di.userChoice.then(function (c) { deferredInstall = null; if (c && c.outcome === "accepted") store("ble.installed", "1"); drawNote(); }).catch(function () { drawNote(); }); } return; }
+    if (no === "inst") { store("ble.noteInst", String(Date.now() + 2 * 864e5)); drawNote(); return; }
     if (yes === "ntf") { store("ble.noteNtf", "1"); $("topNote").innerHTML = ""; ntfEnable(); }
     else if (no) { store("ble.note" + (no === "ntf" ? "Ntf" : no === "wv" ? "WV" : "IOS"), "1"); drawNote(); }
   });
