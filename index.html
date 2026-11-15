@@ -668,6 +668,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
 <div class="dlg" id="profDlg" hidden><div class="dlgcard" id="profCard"></div></div>
 <button type="button" id="chatFab" aria-label="Apri la chat">&#128172;<span id="chatFabN" class="fabn" hidden></span></button>
 <div class="dlg" id="duDlg" hidden><div class="dlgcard" id="duBox"></div></div>
+<div class="dlg" id="wvDlg" hidden><div class="dlgcard" id="wvBox"></div></div>
 <div class="dlg" id="exitDlg" hidden style="z-index:200"><div class="dlgcard" style="text-align:center"><b style="font-size:1.1rem">Vuoi uscire dall'app?</b><div style="display:flex;gap:10px;margin-top:14px"><button type="button" id="exitNo" style="flex:1;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--surface-2);color:var(--ink);font:inherit;cursor:pointer">No, resto</button><button type="button" id="exitYes" style="flex:1;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--azzurro);color:var(--azzurro-ink);font:inherit;cursor:pointer">S&igrave;, esci</button></div></div></div>
 <div class="dlg" id="newsDlg" hidden><div class="dlgcard" id="newsBox"></div></div>
 <div class="dlg" id="decDlg" hidden><div class="dlgcard" id="decBox"></div></div>
@@ -821,6 +822,19 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     else setTab("home");
     window.scrollTo(0, 0);
   }
+  /* ---------- admin: chi ha votato ---------- */
+  function whoBtn(kind, id) { return state.admin ? "<button type='button' class='whov' data-wv='" + kind + ":" + id + "' style='margin:6px 0;padding:6px 10px;border:2px solid var(--edge);border-radius:10px;background:var(--surface-2);color:var(--ink);font:inherit;font-size:.8rem;cursor:pointer'>&#128065; Chi ha votato</button>" : ""; }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-wv]"); if (!b) return;
+    e.stopPropagation(); e.preventDefault();
+    var a = b.getAttribute("data-wv").split(":");
+    rpc("ble_admin_voters", { p_name: state.me.name, p_pin: state.me.pin, p_kind: a[0], p_id: Number(a[1]) }).then(function (r) {
+      var h = "<b>Chi ha votato (" + r.voted.length + ")</b>" + (r.voted.length ? "<ul style='margin:6px 0 10px;padding-left:18px'>" + r.voted.map(function (x) { return "<li>" + esc(x.name) + ": <b>" + esc(x.v) + "</b></li>"; }).join("") + "</ul>" : "<p class='gmeta'>Nessuno.</p>");
+      h += "<b>Non hanno votato (" + r.missing.length + ")</b><p class='gmeta' style='margin:6px 0'>" + (r.missing.length ? r.missing.map(esc).join(", ") : "Tutti hanno votato") + "</p><button type='button' id='wvOk' style='width:100%;margin-top:10px;padding:12px;border:2px solid var(--edge);border-radius:10px;background:var(--azzurro);color:var(--azzurro-ink);font:inherit;cursor:pointer'>Chiudi</button>";
+      $("wvBox").innerHTML = h; $("wvDlg").hidden = false;
+      $("wvOk").addEventListener("click", function () { $("wvDlg").hidden = true; });
+    }).catch(function (err) { toast(err.message); });
+  }, true);
   /* ---------- tasto indietro del telefono ---------- */
   (function () {
     var leaving = false;
@@ -1603,7 +1617,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (open) {
       h += mediaHtml(g);
       if (g.kind !== "text" && g.body) h += "<p class='gcap'>" + esc(g.body) + "</p>";
-      h += "<div class='rate'>" + rateHtml(g) + "</div>" + rxHtml("gem", g.id) + "<div class='gact'><button type='button' class='wabtn' data-sg='1'>" + WAI + "Condividi su WhatsApp</button></div>";
+      h += "<div class='rate'>" + rateHtml(g) + "</div>" + whoBtn("gem", g.id) + rxHtml("gem", g.id) + "<div class='gact'><button type='button' class='wabtn' data-sg='1'>" + WAI + "Condividi su WhatsApp</button></div>";
       if (gold.admin) {
         h += "<div class='gact'><button type='button' data-act='edit'>Modifica</button>" +
           (gold.del === g.id ? "<button type='button' class='danger' data-act='delok'>Sicuro? Elimina</button>" : "<button type='button' data-act='del'>Elimina</button>") + "</div>";
@@ -1799,7 +1813,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (open) {
       h += "<a href='" + esc(trUrl(t)) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(trUrl(t)) + "' style='width:100%;border-radius:10px;display:block;max-height:420px;object-fit:contain;background:var(--surface-2)'></a>";
       if (done) h += "<div class='tr-gives'><div><b>" + esc(t.party_a) + " cede</b>" + esc(t.gives_a || "—") + "</div><div><b>" + esc(t.party_b) + " cede</b>" + esc(t.gives_b || "—") + "</div></div>";
-      h += "<div class='rate'>" + trRate(t) + "</div>" + rxHtml("trade", t.id);
+      h += "<div class='rate'>" + trRate(t) + "</div>" + whoBtn("trade", t.id) + rxHtml("trade", t.id);
       if (state.admin) h += "<div class='gact'><button type='button' data-tact='edit'>" + (done ? "Modifica" : "Compila") + "</button>" + (tr.del === t.id ? "<button type='button' class='danger' data-tact='delok'>Sicuro? Elimina</button>" : "<button type='button' data-tact='del'>Elimina</button>") + "</div>";
     }
     return h + "</article>";
@@ -1853,7 +1867,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       if (my === null || my === undefined) h += "<p class='gmeta'><b>Sei uno dei due titolari: decidi!</b></p><div class='gact'><button type='button' data-ad='1'>S&igrave;, lo faccio</button><button type='button' data-ad='0'>No, fottiti</button></div>";
       else h += "<p class='gmeta'>Hai risposto " + (my ? "s&igrave;" : "no") + ". Aspetto l'altro titolare.</p>";
     } else if (open) h += "<p class='gmeta'>" + a + ": " + (t.dec_a === null ? "non ha ancora deciso" : t.dec_a ? "s&igrave;" : "no") + " &middot; " + b + ": " + (t.dec_b === null ? "non ha ancora deciso" : t.dec_b ? "s&igrave;" : "no") + "</p>";
-    return h + "</article>";
+    return h + whoBtn("ai", t.id) + "</article>";
   }
   function aiDraw() {
     var d = ai.d; if (!d) return;
@@ -2659,7 +2673,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var lastDay = "";
     d.items.forEach(function (i) {
       if (i.day !== lastDay) { lastDay = i.day; h += "<div class='ins-day'>" + esc(insDay(i.day)) + "</div>"; }
-      h += "<div class='ins-card' style='border-left-color:" + carCol(i.author) + "'><div class='ins-who'>" + esc(i.author) + (state.admin ? " <button type='button' data-idel='" + i.id + "' style='float:right;border:0;background:none;cursor:pointer'>&times;</button>" : "") + "</div>" + (i.media ? insMediaHtml(i.media) : "") + (i.audio_secs ? "<p><button type='button' class='aup' data-iau='" + i.id + "'>" + (iau.id === i.id && iau.el && !iau.el.paused ? "&#9208;" : "&#9654;&#65039;") + " <span class='wv'>&#9602;&#9604;&#9606;&#9608;&#9606;&#9604;&#9602;&#9604;&#9606;</span> " + mmss(i.audio_secs) + "</button></p>" : "<p>" + esc(i.body) + "</p>") + starsHtml(i, d.closed) + "</div>";
+      h += "<div class='ins-card' style='border-left-color:" + carCol(i.author) + "'><div class='ins-who'>" + esc(i.author) + (state.admin ? " <button type='button' data-idel='" + i.id + "' style='float:right;border:0;background:none;cursor:pointer'>&times;</button>" : "") + "</div>" + (i.media ? insMediaHtml(i.media) : "") + (i.audio_secs ? "<p><button type='button' class='aup' data-iau='" + i.id + "'>" + (iau.id === i.id && iau.el && !iau.el.paused ? "&#9208;" : "&#9654;&#65039;") + " <span class='wv'>&#9602;&#9604;&#9606;&#9608;&#9606;&#9604;&#9602;&#9604;&#9606;</span> " + mmss(i.audio_secs) + "</button></p>" : "<p>" + esc(i.body) + "</p>") + starsHtml(i, d.closed) + whoBtn("insult", i.id) + "</div>";
     });
     if (!d.items.length) h += "<p class='gmeta'>Ancora nessuna offesa in questa settimana.</p>";
     if (d.hall_w.length || d.hall_m.length) {
