@@ -1896,14 +1896,19 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function cmCase(c) {
     var a = esc(c.party_a), b = esc(c.party_b), st = cm.st, v = Number(c.avg);
     var h = "<article class='gem open' data-c='" + c.trade_id + "'><div class='gem-head' style='cursor:default'><span class='gh-main'><span class='tr-who'><span>" + a + "</span><i>&#8646;</i><span>" + b + "</span></span>" +
-      "<span class='gmeta'>" + c.votes + " voti, tutti " + (v > 0 ? "+5 (a favore di " + b + ")" : "&minus;5 (a favore di " + a + ")") + "</span></span><span class='gscore'>" + (c.verdict ? "&#9878;" : "&#8987;") + "</span></div>";
+      "<span class='gmeta'>" + (c.votes ? "Gruppo: " + c.votes + (c.votes === 1 ? " voto" : " voti") + ", media " + (v > 0 ? "+" : v < 0 ? "&minus;" : "") + Math.abs(v) : "Nessun voto dal gruppo") + "</span></span><span class='gscore'>" + (c.verdict ? "&#9878;" : "&#8987;") + "</span></div>";
     h += "<a href='" + esc(trUrl(c)) + "' target='_blank' rel='noopener'><img loading='lazy' alt='Screenshot dello scambio' src='" + esc(trUrl(c)) + "' style='width:100%;border-radius:10px;display:block;max-height:320px;object-fit:contain;background:var(--surface-2)'></a>";
     h += "<div class='tr-gives'><div><b>" + a + " cede</b>" + esc(c.gives_a || "—") + "</div><div><b>" + b + " cede</b>" + esc(c.gives_b || "—") + "</div></div>";
+    h += whoBtn("trade", c.trade_id);
     if (c.verdict) {
       h += "<p class='tr-pend'><b>Sentenza: " + VERD[c.verdict] + (c.verdict === "irregolare" && c.culprit ? " &mdash; la colpa &egrave; di " + esc(c.culprit) : "") + "</b></p><div class='gact'><button type='button' class='wabtn' data-cs='1'>" + WAI + "Condividi su WhatsApp</button></div>";
       if (c.jv.length) h += "<p class='gmeta'>" + c.jv.map(function (j) { return esc(j.name) + ": " + VERD[j.verdict] + (j.verdict === "irregolare" && j.culprit ? " (" + esc(j.culprit) + ")" : ""); }).join(" &middot; ") + "</p>";
     } else {
       h += "<p class='gmeta'>Hanno votato " + c.voted + " giudici su " + c.needed + ".</p>";
+      if (st.admin) {
+        if (c.jv && c.jv.length) h += "<p class='gmeta'><b>Giudici che hanno votato:</b> " + c.jv.map(function (j) { return esc(j.name) + ": " + VERD[j.verdict] + (j.verdict === "irregolare" && j.culprit ? " (" + esc(j.culprit) + ")" : ""); }).join(" &middot; ") + "</p>";
+        if (c.jmiss && c.jmiss.length) h += "<p class='gmeta'><b>Giudici che non hanno ancora votato:</b> " + c.jmiss.map(esc).join(", ") + "</p>";
+      }
       if (st.judge && c.conflict) h += "<p class='gmeta'>Sei coinvolto in questo scambio: ti astieni.</p>";
       else if (st.judge) h += "<div class='rate-b' style='grid-template-columns:1fr 1fr 1fr'><button type='button' data-cv='regolare' aria-pressed='" + (c.my === "regolare") + "'>Regolare</button><button type='button' data-cv='irregolare' data-cu='" + a + "' aria-pressed='" + (c.my === "irregolare" && c.my_culprit === c.party_a) + "'>Pacco di " + a + "</button><button type='button' data-cv='irregolare' data-cu='" + b + "' aria-pressed='" + (c.my === "irregolare" && c.my_culprit === c.party_b) + "'>Pacco di " + b + "</button></div>";
     }
