@@ -916,7 +916,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       state.preds = {}; state.ans = {};
       r[1].predictions.forEach(function (p) { state.preds[p.match_id] = { h: p.home_goals, a: p.away_goals }; });
       r[1].answers.forEach(function (a) { state.ans[a.question_id] = a.answer; });
-      state.revP = r[2]; state.revA = r[3];
+      state.revP = r[2]; state.revA = r[3]; state.revAt = Date.now();
       var first = state.matches[0];
       var sub = $("mdSub"); if (sub && first) sub.textContent = fmtWhen(first.kickoff).replace(/,.*$/, "") ;
       renderPlay(); drawExtra(); playDot();
@@ -994,6 +994,33 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     rpc("ble_list_banners", { p_name: state.me.name, p_pin: state.me.pin }).then(function (l) { bans = l; drawBanners(); }).catch(function () {});
   }
   setInterval(tickLeft, 30000); setInterval(function () { if (!document.hidden) loadBanners(); }, 120000);
+  /* Al calcio d'inizio (e quando i risultati cambiano) ricarica in silenzio i pronostici degli altri */
+  var revBusy = false;
+  function refreshRev() {
+    if (!state.me || !state.md || revBusy || !state.matches.length) return;
+    var now = Date.now(), n = state.md;
+    var due = state.matches.some(function (m) {
+      var k = new Date(m.kickoff).getTime();
+      return k <= now && (!state.revAt || k > state.revAt);
+    });
+    var live = state.matches.some(function (m) { return m.status !== "finished" && new Date(m.kickoff).getTime() <= now; });
+    if (!due && !live) return;
+    revBusy = true;
+    Promise.all([
+      get("ble_matches?select=*,questions:ble_questions(*)&matchday=eq." + n + "&order=kickoff.asc,id.asc"),
+      rpc("ble_rev_pred", { p_matchday: n }),
+      rpc("ble_rev_ans", { p_matchday: n })
+    ]).then(function (r) {
+      revBusy = false;
+      if (n !== state.md) return;
+      var open = document.querySelector("details.others[open]");
+      var changed = JSON.stringify([r[0], r[1], r[2]]) !== JSON.stringify([state.matches, state.revP, state.revA]);
+      state.matches = r[0]; state.revP = r[1]; state.revA = r[2]; state.revAt = Date.now();
+      if (changed && !open) renderPlay();
+    }).catch(function () { revBusy = false; });
+  }
+  setInterval(function () { if (!document.hidden) refreshRev(); }, 20000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) refreshRev(); });
   $("topBanners").addEventListener("click", function (e) {
     var c = e.target.closest("[data-ban]"); if (!c) return;
     var t = c.getAttribute("data-tab");
