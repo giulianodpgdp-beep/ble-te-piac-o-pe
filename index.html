@@ -818,6 +818,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (g === "giorno") { tr.kind = "giorno"; tr.list = null; setTab("scambi"); }
     else if (g === "comitato") { tr.kind = "comitato"; tr.list = null; setTab("scambi"); }
     else if (g === "scambi") { tr.kind = "ufficiale"; tr.list = null; setTab("scambi"); }
+    else if (g === "clamorosi") { gold.sec = "clamorosi"; gold.gems = null; gold.filter = "all"; setTab("gold"); }
     else if (g === "gold" || g === "play" || g === "ins" || g === "iq" || g === "home" || g === "rank" || g === "hist") setTab(g);
     else setTab("home");
     window.scrollTo(0, 0);
@@ -933,7 +934,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   function siteUrl() { return location.origin + location.pathname.replace(/index\.html$/, ""); }
   function shareWa(text) { waOpen(text + "\n" + siteUrl()); }
   function shareGem(g) {
-    var text = "🤌 " + g.title + (g.votes ? " (voto " + Number(g.avg).toFixed(1) + ")" : "") + " — di " + g.author + (g.body ? "\n«" + g.body + "»" : "");
+    var text = (gold.sec === "clamorosi" ? "🤯 " : "🤌 ") + g.title + (g.votes ? " (voto " + Number(g.avg).toFixed(1) + ")" : "") + " — di " + g.author + (g.matchday || g.involved ? " (" + [g.matchday ? "giornata " + g.matchday : "", g.involved || ""].filter(Boolean).join(", ") + ")" : "") + (g.body ? "\n«" + g.body + "»" : "");
     var raw = gemUrl(g); if (g.kind === "text" || !raw) { shareWa(text); return; }
     var abs = new URL(raw, siteUrl()).href;
     toast("Preparo il file…");
@@ -1639,7 +1640,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     h += "<button type='button' class='gem-head' data-act='toggle' aria-expanded='" + open + "'>" +
       "<span class='gh-main'><span class='gh-row'><span class='gtitle'>" + (gold.pod && gold.pod.indexOf(g.id) >= 0 ? ["🥇", "🥈", "🥉"][gold.pod.indexOf(g.id)] + " " : "") + esc(g.title) + "</span><span class='gkind'>" + KIND_L[g.kind] + "</span></span>" +
       (!open && g.body ? "<span class='gdesc'>" + esc(g.body) + "</span>" : "") +
-      "<span class='gmeta'>di " + esc(g.author) + " &middot; inserita il " + fmtDT(g.created_at) + "</span></span>" +
+      "<span class='gmeta'>" + (g.matchday || g.involved ? (g.matchday ? "Giornata " + g.matchday : "") + (g.matchday && g.involved ? " &middot; " : "") + esc(g.involved || "") + " &middot; " : "") + "di " + esc(g.author) + " &middot; inserita il " + fmtDT(g.created_at) + "</span></span>" +
       "<span class='gscore'>" + (g.votes ? Number(g.avg).toFixed(1) : "&ndash;") + "</span><span class='gchev' aria-hidden='true'></span></button>";
     if (open) {
       h += mediaHtml(g);
@@ -1654,14 +1655,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   }
   function sortedGems() {
     var a = (gold.gems || []).slice();
-    if (gold.sec === "gold" && gold.filter === "tovote") a = a.filter(function (g) { return g.mine === null || g.mine === undefined; });
-    else if (gold.sec === "gold" && gold.filter !== "all") a = a.filter(function (g) { return g.kind === gold.filter; });
+    if (gold.sec !== "scambi" && gold.filter === "tovote") a = a.filter(function (g) { return g.mine === null || g.mine === undefined; });
+    else if (gold.sec !== "scambi" && gold.filter !== "all") a = a.filter(function (g) { return g.kind === gold.filter; });
     if (gold.sort === "top") a.sort(function (x, y) { return (y.votes ? Number(y.avg) : -1) - (x.votes ? Number(x.avg) : -1) || y.votes - x.votes; });
     return a;
   }
   function drawGemList() {
     var a = sortedGems();
-    $("gemList").innerHTML = a.length ? a.map(gemHtml).join("") : "<p class='empty'>" + (gold.sec === "gold" && gold.filter === "tovote" && (gold.gems || []).length ? "Hai votato tutto! Tocca &laquo;Tutti&raquo; per rivedere le pietre." : gold.sec === "gold" && gold.filter !== "all" && (gold.gems || []).length ? "Nessun contenuto di questo tipo." : gold.sec === "scambi" ? "Ancora nessuno scambio memorabile. Aggiungi il primo!" : "Ancora nessuna pietra preziosa. Aggiungi la prima!") + "</p>";
+    $("gemList").innerHTML = a.length ? a.map(gemHtml).join("") : "<p class='empty'>" + (gold.sec !== "scambi" && gold.filter === "tovote" && (gold.gems || []).length ? "Hai votato tutto! Tocca &laquo;Tutti&raquo; per rivedere " + (gold.sec === "clamorosi" ? "gli eventi." : "le pietre.") : gold.sec !== "scambi" && gold.filter !== "all" && (gold.gems || []).length ? "Nessun contenuto di questo tipo." : gold.sec === "scambi" ? "Ancora nessuno scambio memorabile. Aggiungi il primo!" : gold.sec === "clamorosi" ? "Ancora nessun evento clamoroso. Racconta il primo!" : "Ancora nessuna pietra preziosa. Aggiungi la prima!") + "</p>";
   }
   var EXT_KIND = { mp3: "audio", m4a: "audio", aac: "audio", ogg: "audio", opus: "audio", wav: "audio", oga: "audio", jpg: "image", jpeg: "image", png: "image", webp: "image", gif: "image", mp4: "video", mov: "video", webm: "video", m4v: "video" };
   var EXT_MIME = { mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac", ogg: "audio/ogg", opus: "audio/ogg", oga: "audio/ogg", wav: "audio/wav", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", webm: "video/webm" };
@@ -1671,13 +1672,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     return EXT_KIND[ext] || null;
   }
   function drawGold() {
-    var sc = gold.sec === "scambi";
-    var h = "<h2 class='gold-h'>" + (sc ? "Scambi memorabili" : "Old but Gold") + "</h2><p class='gold-sub'>" + (sc ? "Gli scambi di fantacalcio tra giocatori da ricordare: testo e screenshot." : "Le pietre preziose del gruppo: vocali, frasi, foto e video da ricordare.") + "</p>" +
-      "<details class='gadd' id='gAdd'><summary>+ " + (sc ? "Aggiungi uno scambio" : "Aggiungi una pietra preziosa") + "</summary><form class='gform' id='gForm'>" +
+    var sc = gold.sec === "scambi", cl = gold.sec === "clamorosi";
+    var h = (sc ? "" : "<div class='tkinds' id='gSecBar' style='grid-template-columns:1fr 1fr'><button type='button' data-gs='gold' data-n='" + (sub.gold || 0) + "' aria-pressed='" + !cl + "'>Pietre preziose</button><button type='button' data-gs='clamorosi' data-n='" + (sub.clam || 0) + "' aria-pressed='" + cl + "'>Eventi clamorosi</button></div>") +
+      "<h2 class='gold-h'>" + (sc ? "Scambi memorabili" : cl ? "Eventi clamorosi" : "Old but Gold") + "</h2><p class='gold-sub'>" + (sc ? "Gli scambi di fantacalcio tra giocatori da ricordare: testo e screenshot." : cl ? "Le cose pi&ugrave; assurde successe nel fantacalcio: gol assurdi, risultati incredibili, gol dalla panchina impensabili. Solo in app, senza notifiche." : "Le pietre preziose del gruppo: vocali, frasi, foto e video da ricordare.") + "</p>" +
+      "<details class='gadd' id='gAdd'><summary>+ " + (sc ? "Aggiungi uno scambio" : cl ? "Racconta un evento clamoroso" : "Aggiungi una pietra preziosa") + "</summary><form class='gform' id='gForm'>" +
       "<label>Titolo<input type='text' id='gTitle' maxlength='80' required placeholder='Es. Il vocale del secolo'></label>" +
-      "<label id='gBodyL'>Testo o didascalia<textarea id='gBody' maxlength='8000' rows='6' placeholder='Scrivi quanto vuoi (fino a 8000 caratteri)'></textarea><small id='gCnt' style='display:block;text-align:right;opacity:.6'></small></label>" +
-      "<label id='gFileL'>" + (sc ? "Immagine (facoltativa, max 40 MB)" : "File (facoltativo: audio, immagine o video, max 40 MB)") + "<input type='file' id='gFile' accept='" + (sc ? "image/*" : "audio/*,image/*,video/*,.opus,.m4a") + "'></label>" +
-      "<p class='gmeta' id='gHint'>Senza file viene salvata come frase. Con un file scelgo io il tipo dal formato.</p>" +
+      (cl ? "<label>Giornata (facoltativa)<input type='number' id='gMd' min='1' max='99' inputmode='numeric'></label><label>Squadra o giocatore coinvolti (facoltativo)<input type='text' id='gInv' maxlength='80'></label>" : "") + "<label id='gBodyL'>" + (cl ? "Cosa &egrave; successo" : "Testo o didascalia") + "<textarea id='gBody' maxlength='" + (cl ? 1000 : 8000) + "' rows='" + (cl ? 4 : 6) + "' placeholder='" + (cl ? "Racconta in breve (max 1000 caratteri)" : "Scrivi quanto vuoi (fino a 8000 caratteri)") + "'></textarea><small id='gCnt' style='display:block;text-align:right;opacity:.6'></small></label>" +
+      "<label id='gFileL'>" + (sc ? "Immagine (facoltativa, max 40 MB)" : cl ? "Foto, video, audio o screenshot (facoltativo, max 40 MB)" : "File (facoltativo: audio, immagine o video, max 40 MB)") + "<input type='file' id='gFile' accept='" + (sc ? "image/*" : "audio/*,image/*,video/*,.opus,.m4a") + "'></label>" +
+      "<p class='gmeta' id='gHint'>" + (cl ? "Va bene anche solo il testo. Con un file scelgo io il tipo dal formato." : "Senza file viene salvata come frase. Con un file scelgo io il tipo dal formato.") + "</p>" +
       "<button class='go' id='gGo' type='submit'>Aggiungi</button></form></details>" +
       (sc ? "" : "<div class='gbar gfilt'>" + [["tovote", "Da votare" + (gold.gems ? " (" + gold.gems.filter(function (g) { return g.mine === null || g.mine === undefined; }).length + ")" : "")], ["all", "Tutti"], ["text", "Frasi"], ["audio", "Audio"], ["image", "Immagini"], ["video", "Video"]].map(function (x) { return "<button type='button' data-f='" + x[0] + "' aria-pressed='" + (gold.filter === x[0]) + "'>" + x[1] + "</button>"; }).join("") + "</div>") +
       "<div id='podio'></div><div class='gbar'><button type='button' data-sort='new' aria-pressed='" + (gold.sort === "new") + "'>Novit&agrave;</button><button type='button' data-sort='top' aria-pressed='" + (gold.sort === "top") + "'>Pi&ugrave; votate</button></div>" +
@@ -1688,7 +1690,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     var el = $("podio"); if (!el) return;
     var top = gold.podTop || [];
     var mesi = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
-    if (gold.sec !== "gold" || !top.length) { el.innerHTML = ""; return; }
+    if (gold.sec === "scambi" || !top.length) { el.innerHTML = ""; return; }
     el.innerHTML = "<div class='podio'><h4>&#127942; Podio di " + mesi[new Date().getMonth()] + "</h4>" + top.map(function (t, i) {
       var g = findGem(t.id); if (!g) return "";
       return "<button type='button' data-pod='" + g.id + "'><span>" + ["🥇", "🥈", "🥉"][i] + " " + esc(g.title) + "</span><b>" + Number(t.avg).toFixed(1) + " &middot; " + t.n + " voti</b></button>";
@@ -1730,6 +1732,8 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (f && body.length > 1000) { toast("Con un file la didascalia arriva a 1000 caratteri"); return; }
     var k = f ? detectKind(f) : "text", ext = f ? (f.name.split(".").pop() || "").toLowerCase() : "";
     if (f && (!k || !EXT_MIME[ext])) { toast("Formato non supportato (es. le foto HEIC)"); return; }
+    if (f && body.length > 1000) { toast("Con un file la didascalia arriva a 1000 caratteri"); return; }
+    if (gold.sec === "clamorosi" && !body) { toast("Racconta cosa è successo"); return; }
     if (f && gold.sec === "scambi" && k !== "image") { toast("Qui solo testo e immagini"); return; }
     if (!f && !body) { toast("Scrivi un testo o scegli un file"); return; }
     if (f && f.size > 40 * 1024 * 1024) { toast("File troppo grande (max 40 MB)"); return; }
@@ -1743,9 +1747,10 @@ details.gadd > summary::-webkit-details-marker { display: none; }
       });
     }
     step.then(function (path) {
+      if (gold.sec === "clamorosi") { var md = parseInt($("gMd").value, 10); return rpc("ble_add_event", { p_name: state.me.name, p_pin: state.me.pin, p_kind: k, p_title: title, p_body: body, p_path: path, p_matchday: md > 0 ? md : null, p_involved: $("gInv").value.trim() || null }); }
       return rpc("ble_add_gem", { p_name: state.me.name, p_pin: state.me.pin, p_kind: k, p_title: title, p_body: body || null, p_path: path, p_section: gold.sec });
     }).then(function () {
-      done(); $("gTitle").value = ""; $("gBody").value = ""; $("gFile").value = ""; $("gAdd").open = false;
+      done(); $("gTitle").value = ""; $("gBody").value = ""; if ($("gMd")) { $("gMd").value = ""; $("gInv").value = ""; } $("gFile").value = ""; $("gAdd").open = false;
       play("done"); toast("Salvato"); gold.sort = "new"; renderGold();
     }).catch(function (err) { done(); toast(err.message); });
   }
@@ -1771,6 +1776,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   });
   $("goldPane").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
+    if (b.hasAttribute("data-gs")) { var ns = b.getAttribute("data-gs"); if (ns !== gold.sec) { gold.sec = ns; gold.gems = null; gold.filter = "all"; gold.edit = null; gold.del = null; gold.sort = "new"; play("chip"); renderGold(); } return; }
     if (b.hasAttribute("data-f")) { gold.filter = b.getAttribute("data-f"); play("chip"); Array.prototype.forEach.call(document.querySelectorAll(".gfilt button"), function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-f") === gold.filter); }); drawGemList(); return; }
     if (b.hasAttribute("data-sort")) { gold.sort = b.getAttribute("data-sort"); play("chip"); var bs = document.querySelectorAll(".gbar:not(.gfilt) button"); Array.prototype.forEach.call(bs, function (x) { x.setAttribute("aria-pressed", x.getAttribute("data-sort") === gold.sort); }); drawGemList(); return; }
     if (b.hasAttribute("data-sg")) { var sgm = findGem(Number(b.closest("[data-g]").getAttribute("data-g"))); if (sgm) shareGem(sgm); return; }
@@ -2304,7 +2310,7 @@ details.gadd > summary::-webkit-details-marker { display: none; }
   var dots = { gold: 0, tr: 0, maxGold: 0, maxTr: 0 };
   function setDot(id, n) { $(id).setAttribute("data-n", String(n)); }
   function maxId(l) { return l.reduce(function (m, x) { return Math.max(m, x.id); }, 0); }
-  var sub = { ufficiale: 0, oscena: 0, giorno: 0, comitato: 0 };
+  var sub = { ufficiale: 0, oscena: 0, giorno: 0, comitato: 0, clam: 0, gold: 0 };
   function playDot() {
     if (!state.matches) return;
     var n = state.matches.filter(function (m) { return new Date(m.kickoff).getTime() > Date.now() && !isComplete(m); }).length;
@@ -2314,13 +2320,14 @@ details.gadd > summary::-webkit-details-marker { display: none; }
     if (!state.me || document.hidden) return;
     var a = { p_name: state.me.name, p_pin: state.me.pin };
     var none = function (v) { return function () { return v; }; };
-    Promise.all([rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: "gold" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "ufficiale" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "oscena" }), rpc("ble_committee_state", { p_name: a.p_name, p_pin: a.p_pin }).catch(none({ pending: 0 })), rpc("ble_ai_list", { p_name: a.p_name, p_pin: a.p_pin }).catch(none({ items: [] }))]).then(function (r) {
+    Promise.all([rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: "gold" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "ufficiale" }), rpc("ble_list_trades", { p_name: a.p_name, p_pin: a.p_pin, p_kind: "oscena" }), rpc("ble_committee_state", { p_name: a.p_name, p_pin: a.p_pin }).catch(none({ pending: 0 })), rpc("ble_ai_list", { p_name: a.p_name, p_pin: a.p_pin }).catch(none({ items: [] })), rpc("ble_list_gems", { p_name: a.p_name, p_pin: a.p_pin, p_section: "clamorosi" }).catch(none([]))]).then(function (r) {
       var unv = function (x) { return x.mine === null || x.mine === undefined; };
       var tv = function (t) { return t.status === "done" && !t.blocked && unv(t); };
       var ng = r[0].filter(unv).length;
       sub.ufficiale = r[1].filter(tv).length; sub.oscena = r[2].filter(tv).length; sub.comitato = Number(r[3].pending || 0);
       sub.giorno = (r[4].items || []).filter(function (t) { return t.status === "open" && (unv(t) || (t.side && (t.side === "a" ? t.dec_a : t.dec_b) === null)); }).length;
-      setDot("tabGold", ng); setDot("tabScambi", sub.ufficiale + sub.oscena + sub.comitato + sub.giorno); playDot();
+      sub.clam = r[5].filter(unv).length; sub.gold = ng; setDot("tabGold", ng + sub.clam); setDot("tabScambi", sub.ufficiale + sub.oscena + sub.comitato + sub.giorno); playDot();
+      var cb = document.querySelector("#gSecBar [data-gs='clamorosi']"); if (cb) cb.setAttribute("data-n", String(sub.clam)); var gb = document.querySelector("#gSecBar [data-gs='gold']"); if (gb) gb.setAttribute("data-n", String(sub.gold));
       Array.prototype.forEach.call(document.querySelectorAll(".tkinds [data-tk]"), function (b) { b.setAttribute("data-n", String(sub[b.getAttribute("data-tk")] || 0)); });
     }).catch(function () {});
   }
@@ -2977,7 +2984,7 @@ window.pkStart=start;
     if (t === "rank") renderRank();
     if (t === "hist") renderHist();
     markSeen(t);
-    if (t === "gold") { if (gold.sec !== t) { gold.sec = t; gold.gems = null; gold.filter = "all"; gold.edit = null; gold.del = null; gold.sort = "new"; } renderGold(); }
+    if (t === "gold") { if (gold.sec !== t && gold.sec !== "clamorosi") { gold.sec = t; gold.gems = null; gold.filter = "all"; gold.edit = null; gold.del = null; gold.sort = "new"; } renderGold(); }
     if (t === "scambi") renderTrades();
     if (t === "ins") { ins.week = null; insLoad(); }
     if (t === "iq") iqLoad();
